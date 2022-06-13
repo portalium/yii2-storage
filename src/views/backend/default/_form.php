@@ -3,10 +3,10 @@
 use yii\helpers\Html;
 use kartik\file\FileInput;
 use yii\widgets\ActiveForm;
-use diginova\storage\Module;
+use portalium\storage\Module;
 use portalium\theme\widgets\Panel;
-use diginova\storage\models\Storage;
-use diginova\storage\widgets\FilePicker;
+use portalium\storage\models\Storage;
+use portalium\storage\widgets\FilePicker;
 
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\Storage */

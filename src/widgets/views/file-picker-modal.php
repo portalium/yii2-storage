@@ -1,15 +1,15 @@
 <?php
 
-use diginova\storage\bundles\LightBoxAsset;
+use portalium\storage\bundles\LightBoxAsset;
 use yii\web\View;
 use yii\widgets\Pjax;
 use yii\widgets\ListView;
 use yii\widgets\ActiveForm;
-use diginova\storage\Module;
+use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Modal;
 use portalium\theme\widgets\Panel;
-use diginova\storage\models\Storage;
+use portalium\storage\models\Storage;
 
 
 

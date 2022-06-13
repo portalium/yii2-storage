@@ -4,11 +4,11 @@ use yii\web\View;
 use yii\helpers\Url;
 use yii\helpers\Html;
 use yii2assets\pdfjs\PdfJs;
-use diginova\storage\Module;
+use portalium\storage\Module;
 use diginova\media\models\Media;
 use portalium\theme\widgets\Modal;
 use portalium\theme\widgets\Panel;
-use diginova\storage\models\Storage;
+use portalium\storage\models\Storage;
 
 $name = $model->name;
 $ext = substr($name, strrpos($name, '.') + 1);

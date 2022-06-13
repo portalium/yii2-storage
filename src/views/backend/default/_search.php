@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use diginova\storage\Module;
+use portalium\storage\Module;
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\StorageSearch */
 /* @var $form yii\widgets\ActiveForm */

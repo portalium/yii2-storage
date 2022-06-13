@@ -1,6 +1,6 @@
 <?php
 
-namespace diginova\storage\bundles;
+namespace portalium\storage\bundles;
 
 use yii\web\AssetBundle;
 
