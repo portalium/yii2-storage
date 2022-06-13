@@ -1,5 +1,5 @@
 {
-	"name" : "diginova/portalium-storage",
+	"name" : "portalium/portalium-storage",
 	"description" : "Module storage for Portalium",
 	"type" : "yii2-extension",
 	"license": "MIT",
@@ -12,11 +12,11 @@
 		}
 	],
 	"support" : {
-		"issues" : "https://github.com/diginova/portalium-storage/issues"
+		"issues" : "https://github.com/portalium/portalium-storage/issues"
 	},
 	"autoload" : {
 		"psr-4" : {
-			"diginova\\storage\\" : "src/"
+			"portalium\\storage\\" : "src/"
 		}
 	},
 	"require": {
