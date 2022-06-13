@@ -1,13 +1,13 @@
 <?php
 
-namespace diginova\storage\controllers\api;
-use diginova\storage\models\Storage;
+namespace portalium\storage\controllers\api;
+use portalium\storage\models\Storage;
 use Yii;
 use portalium\rest\ActiveController as RestActiveController;
 
 class DefaultController extends RestActiveController
 {
-    public $modelClass = 'diginova\storage\models\Storage';
+    public $modelClass = 'portalium\storage\models\Storage';
 
     public function actionUpload()
     {

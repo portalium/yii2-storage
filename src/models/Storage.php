@@ -1,9 +1,9 @@
 <?php
 
-namespace diginova\storage\models;
+namespace portalium\storage\models;
 
 use Yii;
-use diginova\storage\Module;
+use portalium\storage\Module;
 use yii\helpers\ArrayHelper;
 use portalium\user\models\User;
 

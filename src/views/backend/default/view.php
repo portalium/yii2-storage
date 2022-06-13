@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\DetailView;
-use diginova\storage\Module;
+use portalium\storage\Module;
 use portalium\theme\widgets\Panel;
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\Storage */

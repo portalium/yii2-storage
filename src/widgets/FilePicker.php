@@ -1,15 +1,15 @@
 <?php
 
-namespace diginova\storage\widgets;
+namespace portalium\storage\widgets;
 
 use Yii;
 use yii\base\Model;
 use yii\base\Widget;
 use yii\widgets\ListView;
 use kartik\file\FileInput;
-use diginova\storage\Module;
+use portalium\storage\Module;
 use portalium\theme\widgets\Html;
-use diginova\storage\models\Storage;
+use portalium\storage\models\Storage;
 use portalium\theme\widgets\InputWidget;
 use portalium\theme\widgets\Modal;
 

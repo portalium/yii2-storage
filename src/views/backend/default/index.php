@@ -4,10 +4,10 @@ use yii\helpers\Url;
 use yii\helpers\Html;
 use yii\grid\GridView;
 use yii\grid\ActionColumn;
-use diginova\storage\Module;
+use portalium\storage\Module;
 use portalium\theme\widgets\Panel;
-use diginova\storage\models\Storage;
-use diginova\storage\widgets\FilePicker;
+use portalium\storage\models\Storage;
+use portalium\storage\widgets\FilePicker;
 /* @var $this yii\web\View */
 /* @var $searchModel portalium\storage\models\StorageSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */

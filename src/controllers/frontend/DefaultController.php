@@ -1,6 +1,6 @@
 <?php
 
-namespace diginova\storage\controllers\frontend;
+namespace portalium\storage\controllers\frontend;
 
 use portalium\web\Controller as WebController;
 

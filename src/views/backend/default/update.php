@@ -1,7 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use diginova\storage\Module;
+use portalium\storage\Module;
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\Storage */
 

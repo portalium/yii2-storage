@@ -1,16 +1,16 @@
 <?php
 
-namespace diginova\storage\controllers\backend;
+namespace portalium\storage\controllers\backend;
 
 use Yii;
 use yii\web\UploadedFile;
 use yii\filters\VerbFilter;
 use portalium\web\Controller;
 use yii\web\NotFoundHttpException;
-use diginova\storage\models\Storage;
-use diginova\storage\models\StorageSearch;
-use diginova\storage\Module;
-use diginova\storage\widgets\FilePicker;
+use portalium\storage\models\Storage;
+use portalium\storage\models\StorageSearch;
+use portalium\storage\Module;
+use portalium\storage\widgets\FilePicker;
 
 /**
  * StorageController implements the CRUD actions for Storage model.

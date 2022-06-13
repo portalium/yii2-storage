@@ -1,10 +1,10 @@
 <?php
 
-namespace diginova\storage\models;
+namespace portalium\storage\models;
 
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use diginova\storage\models\Storage;
+use portalium\storage\models\Storage;
 
 /**
  * StorageSearch represents the model behind the search form of `portalium\storage\models\Storage`.
