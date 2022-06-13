@@ -14,12 +14,12 @@
 	"support" : {
 		"issues" : "https://github.com/portalium/portalium-storage/issues"
 	},
+	"require": {
+		"kartik-v/yii2-widget-fileinput": "@dev"
+	},
 	"autoload" : {
 		"psr-4" : {
 			"portalium\\storage\\" : "src/"
 		}
-	},
-	"require": {
-		"kartik-v/yii2-widget-fileinput": "@dev"
 	}
 }
