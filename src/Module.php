@@ -1,6 +1,6 @@
 <?php
 
-namespace portalium\template;
+namespace diginova\storage;
 
 class Module extends \portalium\base\Module
 {
@@ -8,20 +8,20 @@ class Module extends \portalium\base\Module
         [
             'class' => 'yii\rest\UrlRule',
             'controller' => [
-                'template/default',
+                'storage/default',
             ]
         ],
     ];
-    
+    public static $tablePrefix = 'storage_';
     public static function moduleInit()
     {
-        self::registerTranslation('template','@portalium/template/messages',[
-            'template' => 'template.php',
+        self::registerTranslation('storage','@diginova/storage/messages',[
+            'storage' => 'storage.php',
         ]);
     }
 
     public static function t($message, array $params = [])
     {
-        return parent::coreT('template', $message, $params);
+        return parent::coreT('storage', $message, $params);
     }
 }
