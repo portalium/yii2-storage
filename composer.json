@@ -1,6 +1,6 @@
 {
-	"name" : "portalium/portalium-template",
-	"description" : "Module Template for Portalium",
+	"name" : "diginova/portalium-storage",
+	"description" : "Module storage for Portalium",
 	"type" : "yii2-extension",
 	"license": "MIT",
 	"homepage" : "https://portalium.dev",
@@ -12,11 +12,14 @@
 		}
 	],
 	"support" : {
-		"issues" : "https://github.com/portalium/portalium-template/issues"
+		"issues" : "https://github.com/diginova/portalium-storage/issues"
 	},
 	"autoload" : {
 		"psr-4" : {
-			"portalium\\template\\" : "src/"
+			"diginova\\storage\\" : "src/"
 		}
+	},
+	"require": {
+		"kartik-v/yii2-widget-fileinput": "dev-master"
 	}
 }
