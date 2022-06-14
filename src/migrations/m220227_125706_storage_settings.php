@@ -10,7 +10,7 @@ class m220227_125706_storage_settings extends Migration
     {
         $this->insert('site_setting', [
             'module' => 'site',
-            'name' => 'page::logo',
+            'name' => 'app::logo',
             'label' => 'Page Logo',
             'value' => '0',
             'type' => Form::TYPE_WIDGET,
@@ -27,6 +27,6 @@ class m220227_125706_storage_settings extends Migration
 
     public function safeDown()
     {
-        $this->delete('site_setting', ['name' => 'page::logo']);
+        $this->delete('site_setting', ['name' => 'app::logo']);
     }
 }
