@@ -15,8 +15,8 @@ $path = Url::base() . '/data/';
     'bodyOptions' => ['style' => 'height: 200px; display: block;'],
     'actions' => [
         'header' => ($view == 1) ? [
-            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => json_encode($model->getAttributes($returnAttribute)), 'onclick' => "updatedItem(this)"]),
-            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => json_encode($model->getAttributes($returnAttribute)) , 'onclick' => "selectItem(this)"]),
+            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "updatedItem(this)"]),
+            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "selectItem(this)"]),
         ] : [],
         'footer' => [
             Html::tag("div",(strlen($model->title) > 25) ? substr(str_replace("’","´",$model->title), 0, 25) . '...' : Html::encode($model->title), ['style' => 'float: left;']),

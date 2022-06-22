@@ -27,6 +27,7 @@ Modal::begin([
             'viewParams' => [
                 'view' => 1,
                 'returnAttribute' => $returnAttribute,
+                'json' => $json,
             ],
             'options' => [
                 'tag' => 'div',
@@ -44,12 +45,7 @@ Modal::begin([
     Pjax::end();
 Modal::end();
 
-$storageForm = ActiveForm::begin([
-    'options' => [
-        'data-pjax' => true,
-        'id' => 'storage-form',
-    ]
-]);
+
 $modals = Modal::begin([
     'id' => 'file-update-modal',
     'size' => Modal::SIZE_DEFAULT,
@@ -61,12 +57,9 @@ $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $stor
 $this->registerJs('id_storage = '.$id_storage.';', View::POS_END);
 echo $this->render('./_formModal', [
     'model' => ($storageModel != null) ? $storageModel : new Storage(),
-    'storageForm' => $storageForm,
     ]);
 Pjax::end();
 Modal::end();
-ActiveForm::end();
-
 echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'data-toggle' => 'modal', 'data-target' => '#file-picker-modal']);
 
 $this->registerJs(
