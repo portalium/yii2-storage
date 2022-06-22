@@ -2,11 +2,7 @@
 
 use yii\helpers\Html;
 use kartik\file\FileInput;
-use yii\widgets\ActiveForm;
 use portalium\storage\Module;
-use portalium\theme\widgets\Panel;
-use portalium\storage\models\Storage;
-use portalium\storage\widgets\FilePicker;
 
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\Storage */
@@ -41,9 +37,4 @@ use portalium\storage\widgets\FilePicker;
         }
         echo Html::endTag('div');
     ?>
-
-   
-
-
-
 </div>
