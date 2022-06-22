@@ -20,6 +20,7 @@ class FilePicker extends InputWidget
     public $selected;
     public $multiple = 0;
     public $returnAttribute = ['id_storage'];
+    public $json = 1;
     public function init()
     {
         parent::init();
@@ -33,10 +34,12 @@ class FilePicker extends InputWidget
         if (Yii::$app->user->can('storageWidgetFilePickerAllShowFile')){
             $this->files = new \yii\data\ActiveDataProvider([
                 'query' => Storage::find(),
+                'pagination' => false
             ]);
         }else{
             $this->files = new \yii\data\ActiveDataProvider([
                 'query' => Storage::find()->where(['id_user' => Yii::$app->user->id]),
+                'pagination' => false
             ]);
         }
         
@@ -57,6 +60,7 @@ class FilePicker extends InputWidget
             'model' => $this->model,
             'attribute' => $this->attribute,
             'multiple' => $this->multiple,
+            'json' => $this->json,
             'files' => $this->files,
             'storageModel' => $model,
             'returnAttribute' => $this->returnAttribute,

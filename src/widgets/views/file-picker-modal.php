@@ -1,5 +1,4 @@
 <?php
-
 use portalium\storage\bundles\LightBoxAsset;
 use yii\web\View;
 use yii\widgets\Pjax;
@@ -28,6 +27,7 @@ Modal::begin([
             'viewParams' => [
                 'view' => 1,
                 'returnAttribute' => $returnAttribute,
+                'json' => $json,
             ],
             'options' => [
                 'tag' => 'div',
@@ -45,12 +45,7 @@ Modal::begin([
     Pjax::end();
 Modal::end();
 
-$storageForm = ActiveForm::begin([
-    'options' => [
-        'data-pjax' => true,
-        'id' => 'storage-form',
-    ]
-]);
+
 $modals = Modal::begin([
     'id' => 'file-update-modal',
     'size' => Modal::SIZE_DEFAULT,
@@ -62,14 +57,10 @@ $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $stor
 $this->registerJs('id_storage = '.$id_storage.';', View::POS_END);
 echo $this->render('./_formModal', [
     'model' => ($storageModel != null) ? $storageModel : new Storage(),
-    'storageForm' => $storageForm,
     ]);
 Pjax::end();
 Modal::end();
-ActiveForm::end();
-
 echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'data-toggle' => 'modal', 'data-target' => '#file-picker-modal']);
-
 
 $this->registerJs(
     <<<JS
@@ -131,30 +122,30 @@ $this->registerJs(
         JS, View::POS_END
     ); 
 
-$this->registerJs(
-    <<<JS
-    $(document).ready(function () {
-        $('#update-storage').click(function () {
-            var myFormData = new FormData();
-            myFormData.append('title', $('#storage-title').val());
-            myFormData.append('file', document.getElementById('storage-file').files[0]);
-            myFormData.append('id_storage', id_storage);
-            $.ajax({
-                url: '/admin/storage/default/create',
-                type: 'POST',
-                data: myFormData,
-                contentType: false,
-                processData: false,
-                success: function (data) {
-                    $.pjax.reload({container: '#file-picker-pjax'});
-                    $('#file-update-modal').modal('hide');
-                }
+    $this->registerJs(
+        <<<JS
+        $(document).ready(function () {
+            $('#update-storage').click(function () {
+                var myFormData = new FormData();
+                myFormData.append('title', $('#storage-title').val());
+                myFormData.append('file', document.getElementById('storage-file').files[0]);
+                myFormData.append('id_storage', id_storage);
+                $.ajax({
+                    url: '/admin/storage/default/create',
+                    type: 'POST',
+                    data: myFormData,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        $.pjax.reload({container: '#file-picker-pjax'});
+                        $('#file-update-modal').modal('hide');
+                    }
+                });
+            });
+            $('#file-picker-select').click(function () {
+                $('#file-picker-modal').modal('hide');
             });
         });
-        $('#file-picker-select').click(function () {
-            $('#file-picker-modal').modal('hide');
-        });
-    });
-    JS
-);
-LightBoxAsset::register($this);
+        JS
+    );
+    //LightBoxAsset::register($this);
