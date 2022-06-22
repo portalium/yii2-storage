@@ -1,5 +1,4 @@
 <?php
-
 use portalium\storage\bundles\LightBoxAsset;
 use yii\web\View;
 use yii\widgets\Pjax;
@@ -70,7 +69,6 @@ ActiveForm::end();
 
 echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'data-toggle' => 'modal', 'data-target' => '#file-picker-modal']);
 
-
 $this->registerJs(
     <<<JS
         selectedValue = [];
@@ -131,30 +129,30 @@ $this->registerJs(
         JS, View::POS_END
     ); 
 
-$this->registerJs(
-    <<<JS
-    $(document).ready(function () {
-        $('#update-storage').click(function () {
-            var myFormData = new FormData();
-            myFormData.append('title', $('#storage-title').val());
-            myFormData.append('file', document.getElementById('storage-file').files[0]);
-            myFormData.append('id_storage', id_storage);
-            $.ajax({
-                url: '/admin/storage/default/create',
-                type: 'POST',
-                data: myFormData,
-                contentType: false,
-                processData: false,
-                success: function (data) {
-                    $.pjax.reload({container: '#file-picker-pjax'});
-                    $('#file-update-modal').modal('hide');
-                }
+    $this->registerJs(
+        <<<JS
+        $(document).ready(function () {
+            $('#update-storage').click(function () {
+                var myFormData = new FormData();
+                myFormData.append('title', $('#storage-title').val());
+                myFormData.append('file', document.getElementById('storage-file').files[0]);
+                myFormData.append('id_storage', id_storage);
+                $.ajax({
+                    url: '/admin/storage/default/create',
+                    type: 'POST',
+                    data: myFormData,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        $.pjax.reload({container: '#file-picker-pjax'});
+                        $('#file-update-modal').modal('hide');
+                    }
+                });
+            });
+            $('#file-picker-select').click(function () {
+                $('#file-picker-modal').modal('hide');
             });
         });
-        $('#file-picker-select').click(function () {
-            $('#file-picker-modal').modal('hide');
-        });
-    });
-    JS
-);
-LightBoxAsset::register($this);
+        JS
+    );
+    //LightBoxAsset::register($this);
