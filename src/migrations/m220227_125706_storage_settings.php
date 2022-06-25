@@ -18,7 +18,7 @@ class m220227_125706_storage_settings extends Migration
                 'widget' => '\portalium\storage\widgets\FilePicker',
                 'options' => [
                     'multiple' => 0,
-                    'returnAttribute' => ['id_storage']
+                    'returnAttribute' => ['name']
                 ]
             ])
         ]);
