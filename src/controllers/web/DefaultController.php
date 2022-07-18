@@ -42,6 +42,9 @@ class DefaultController extends Controller
      */
     public function actionIndex()
     {
+        if (!Yii::$app->user->can('storageWebDefaultIndex')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
         $searchModel = new StorageSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
@@ -59,6 +62,9 @@ class DefaultController extends Controller
      */
     public function actionView($id_storage)
     {
+        if (!Yii::$app->user->can('storageWebDefaultView')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
         return $this->render('view', [
             'model' => $this->findModel($id_storage),
         ]);
@@ -71,6 +77,9 @@ class DefaultController extends Controller
      */
     public function actionCreate()
     {
+        if (!Yii::$app->user->can('storageWebDefaultCreate')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
         $model = new Storage();
         if($this->request->isAjax){
             if ( $this->request->post('id_storage') != 'null' ) {
@@ -124,6 +133,9 @@ class DefaultController extends Controller
      */
     public function actionUpdate($id_storage)
     {
+        if (!Yii::$app->user->can('storageWebDefaultUpdate')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
         $model = $this->findModel($id_storage);
         if ($this->request->isPost && $model->load($this->request->post())) 
         {
@@ -172,6 +184,9 @@ class DefaultController extends Controller
      */
     public function actionDelete($id_storage)
     {
+        if (!Yii::$app->user->can('storageWebDefaultDelete')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
         $model = $this->findModel($id_storage);
         $model->deleteFile($model->name);
         $model->delete();
