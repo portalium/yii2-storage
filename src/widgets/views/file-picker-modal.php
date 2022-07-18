@@ -131,7 +131,7 @@ $this->registerJs(
                 myFormData.append('file', document.getElementById('storage-file').files[0]);
                 myFormData.append('id_storage', id_storage);
                 $.ajax({
-                    url: '/admin/storage/default/create',
+                    url: '/storage/default/create',
                     type: 'POST',
                     data: myFormData,
                     contentType: false,
