@@ -1,6 +1,6 @@
 <?php
 
-namespace portalium\storage\controllers\backend;
+namespace portalium\storage\controllers\web;
 
 use Yii;
 use yii\web\UploadedFile;

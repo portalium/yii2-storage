@@ -9,16 +9,16 @@ class m220227_125706_storage_settings extends Migration
     public function safeUp()
     {
         $this->insert('site_setting', [
-            'module' => 'storage',
-            'name' => 'app::logo',
-            'label' => 'Application Logo',
+            'module' => 'site',
+            'name' => 'page::logo',
+            'label' => 'Page Logo',
             'value' => '0',
             'type' => Form::TYPE_WIDGET,
             'config' => json_encode([
                 'widget' => '\portalium\storage\widgets\FilePicker',
                 'options' => [
                     'multiple' => 0,
-                    'returnAttribute' => ['name']
+                    'returnAttribute' => ['id_storage']
                 ]
             ])
         ]);
@@ -27,6 +27,6 @@ class m220227_125706_storage_settings extends Migration
 
     public function safeDown()
     {
-        $this->delete('site_setting', ['name' => 'app::logo']);
+        $this->delete('site_setting', ['name' => 'page::logo']);
     }
 }
