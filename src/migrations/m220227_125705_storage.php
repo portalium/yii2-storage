@@ -16,7 +16,7 @@ class m220227_125705_storage extends Migration
     {
         $tableOptions = 'ENGINE=InnoDB';
 
-        $this->createTable('{{%storage}}',[
+        $this->createTable('{{%storage_storage}}',[
             'id_storage'=> $this->primaryKey(11),
             'name'=> $this->string(255)->notNull(),
             'title'=> $this->string(255)->notNull(),
@@ -28,6 +28,6 @@ class m220227_125705_storage extends Migration
 
     public function safeDown()
     {
-            $this->dropTable('{{%storage}}');
+            $this->dropTable('{{%storage_storage}}');
     }
 }

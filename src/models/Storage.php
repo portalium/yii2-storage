@@ -8,7 +8,7 @@ use yii\helpers\ArrayHelper;
 use portalium\user\models\User;
 
 /**
- * This is the model class for table "{{%storage}}".
+ * This is the model class for table "{{%storage_storage}}".
  *
  * @property int $id_storage
  * @property string $name
@@ -115,7 +115,8 @@ class Storage extends \yii\db\ActiveRecord
      */
     public static function tableName()
     {
-        return '{{%storage}}';
+        //use prefix from module
+        return '{{%' . Module::$tablePrefix . 'storage}}';
     }
 
     /**
