@@ -15,4 +15,6 @@ return [
     'Create Storage' => 'Dosya oluştur',
     'Update Storage' => 'Dosya güncelle',
     'Delete Storage' => 'Dosya sil',
+    'Select' => 'Seç',
+    'Select File' => 'Dosya seç',
 ];
