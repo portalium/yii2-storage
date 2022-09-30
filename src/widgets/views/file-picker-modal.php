@@ -15,7 +15,7 @@ use portalium\storage\models\Storage;
 Modal::begin([
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_LARGE,
-    'header' => Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'data-toggle' => 'modal', 'data-target' => '#file-update-modal', 'style' => 'float:right;', 'id' => 'file-picker-add-button']),
+    'title' => Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-update-modal', 'style' => 'float:right;', 'id' => 'file-picker-add-button']),
     'footer' => Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select', 'style' => 'float:right; margin-right:10px;']),
     'closeButton' => false,
     ]);
@@ -60,7 +60,7 @@ echo $this->render('./_formModal', [
     ]);
 Pjax::end();
 Modal::end();
-echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'data-toggle' => 'modal', 'data-target' => '#file-picker-modal']);
+echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
 
 $this->registerJs(
     <<<JS
