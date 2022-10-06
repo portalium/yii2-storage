@@ -189,7 +189,7 @@ class Storage extends \yii\db\ActiveRecord
                 return true;
             }
             
-            $path = realpath(Yii::$app->basePath . '/../data');
+            $path = realpath(Yii::$app->basePath . Yii::$app->setting->getValue('app::data'));
             $filename = md5(rand()) . "." . $this->file->extension;
             // check if file extension is allowed
             if (in_array($this->file->extension, self::$allowExtensions)) {
@@ -207,7 +207,7 @@ class Storage extends \yii\db\ActiveRecord
 
     public function deleteFile($filename)
     {
-        $path = realpath(Yii::$app->basePath . '/../data');
+        $path = realpath(Yii::$app->basePath . Yii::$app->setting->getValue('app::data'));
         if (file_exists($path . '/' . $filename)) {
             unlink($path . '/' . $filename);
         }

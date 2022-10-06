@@ -11,7 +11,7 @@ use portalium\theme\widgets\Panel;
 
 $name = $model->name;
 $ext = substr($name, strrpos($name, '.') + 1);
-$path = Url::base() . '/data/';
+$path = Url::base() . Yii::$app->setting->getValue('app::data');
 ?>
 <?php Panel::begin([
     'title' => (strlen($model->title) > 25) ? substr(str_replace("’","´",$model->title), 0, 25) . '...' : Html::encode($model->title),

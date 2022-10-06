@@ -88,7 +88,7 @@ class DefaultController extends Controller
             $file = UploadedFile::getInstanceByName('file');
             if($file){
                 $fileName = md5(rand()) . '.' . $file->extension;
-                if($file->saveAs(Yii::$app->basePath . '/../data/' . $fileName)){
+                if($file->saveAs(Yii::$app->basePath . Yii::$app->setting->getValue('app::data') . $fileName)){
                     $model->name = $fileName;
                     $model->title = $this->request->post('title');
                     $model->id_user = Yii::$app->user->id;
