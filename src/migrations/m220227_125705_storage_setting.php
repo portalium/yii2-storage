@@ -12,7 +12,7 @@ class m220227_125705_storage_setting extends Migration
             'name' => 'app::data',
             'label' => 'Default Data Folder',
             'value' => 'data',
-            'type' => Form::TYPE_INPUTTEXT,
+            'type' => 'input',
             'config' => ''
         ]);
 
