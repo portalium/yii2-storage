@@ -21,7 +21,6 @@ class m220227_125705_storage extends Migration
             'name'=> $this->string(255)->notNull(),
             'title'=> $this->string(255)->notNull(),
             'id_user'=> $this->integer(11)->notNull(),
-            'mime_type'=> $this->integer(11)->notNull(),
         ], $tableOptions);
 
     }

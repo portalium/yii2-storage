@@ -1,7 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use kartik\file\FileInput;
+use portalium\theme\widgets\FileInput;
 use yii\widgets\ActiveForm;
 use portalium\storage\Module;
 use portalium\theme\widgets\Panel;
@@ -24,15 +24,14 @@ use portalium\storage\widgets\FilePicker;
         ],
         'footer' => [
             (!$model->isNewRecord) ?  Html::submitButton(Module::t('Save'), ['class' => 'btn btn-primary']) : 
-            Html::submitButton(Module::t('Update'), ['class' => 'btn btn-primary'])
+            Html::submitButton(Module::t('Upload'), ['class' => 'btn btn-primary'])
         ]
     ]
 ]) ?>
     <?= $form->field($model, 'title')->textInput(['maxlength' => true]) ?>
 
-    <?= $form->field($model, 'file')->widget(FileInput::className()); ?>
+    <?= $form->field($model, 'file')->fileInput() ?>
 
-    <?= $form->field($model, 'mime_type')->dropDownList(Storage::getMimeTypeList()) ?>
 
 
     <?php Panel::end() ?>

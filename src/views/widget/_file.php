@@ -24,17 +24,5 @@ $path = Url::base() . Yii::$app->setting->getValue('app::data');
     ]
 ]) ?>
 
-<?php 
-
-    if (in_array($model->mime_type, Storage::MIME_TYPE['image'])) {
-        echo Html::img(Html::encode($path . $model->name), ['width' => '100%', 'height' => '100%']);
-    } elseif (in_array($model->mime_type, Storage::MIME_TYPE['video'])) {
-        echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
-    } elseif (in_array($model->mime_type, Storage::MIME_TYPE['audio'])) {
-        echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
-    } else {
-        echo Html::tag('i', '', ['class' => 'fa fa-file-o']);
-    }
-?>
 <?php Panel::end() ?>
 
