@@ -14,84 +14,11 @@ use portalium\user\models\User;
  * @property string $name
  * @property string $title
  * @property string $id_user
- * @property string $mime_type
- */
+ *  */
 class Storage extends \yii\db\ActiveRecord
 {
     public $file;
 
-    const MIME_TYPE = [
-        'audio/aac' => '0',
-        'audio/mpeg' => '1',
-        'audio/ogg' => '2',
-        'audio/opus' => '3',
-        'audio/wav' => '4',
-        'audio/webm' => '5',
-        'audio/midi audio/x-midi' => '6',
-        'video/x-msvideo' => '7',
-        'video/mpeg' => '8',
-        'video/ogg' => '9',
-        'video/mp2t' => '10',
-        'video/webm' => '11',
-        'video/3gpp' => '12',
-        'image/bmp' => '13',
-        'image/gif' => '14',
-        'image/vnd.microsoft.icon' => '15',
-        'image/jpg' => '16',
-        'image/jpeg' => '17',
-        'image/png' => '18',
-        'image/svg+xml' => '19',
-        'image/tiff' => '20',
-        'image/webp' => '21',
-        'application/x-abiword' => '22',
-        'application/x-freearc' => '23',
-        'application/vnd.amazon.ebook' => '24',
-        'application/octet-stream' => '25',
-        'application/x-bzip' => '26',
-        'application/x-bzip2' => '27',
-        'application/x-csh' => '28',
-        'text/css' => '29',
-        'text/csv' => '30',
-        'application/msword' => '31',
-        'application/vnd.ms-fontobject' => '32',
-        'application/epub+zip' => '33',
-        'application/gzip' => '34',
-        'text/html' => '35',
-        'text/calendar' => '36',
-        'application/java-archive' => '37',
-        'text/javascript' => '38',
-        'application/json' => '39',
-        'application/ld+json' => '40',
-        'text/javascript' => '41',
-        'application/vnd.apple.installer+xml' => '42',
-        'application/vnd.oasis.opendocument.presentation' => '43',
-        'application/vnd.oasis.opendocument.spreadsheet' => '44',
-        'application/vnd.oasis.opendocument.text' => '45',
-        'application/ogg' => '46',
-        'font/otf' => '47',
-        'application/pdf' => '48',
-        'application/x-httpd-php' => '49',
-        'application/vnd.ms-powerpoint' => '50',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => '51',
-        'application/vnd.rar' => '52',
-        'application/rtf' => '53',
-        'application/x-sh' => '54',
-        'application/x-shockwave-flash' => '55',
-        'application/x-tar' => '56',
-        'font/ttf' => '57',
-        'text/plain' => '58',
-        'application/vnd.visio' => '59',
-        'font/woff' => '60',
-        'font/woff2' => '61',
-        'application/xhtml+xml' => '62',
-        'application/vnd.ms-excel' => '63',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '64',
-        'application/xml' => '65',
-        'application/vnd.mozilla.xul+xml' => '66',
-        'application/zip' => '67',
-        'application/x-7z-compressed' => '68',
-        'other' => '69',
-    ];
         
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
     // behaviors id_user is set to current user
@@ -129,7 +56,6 @@ class Storage extends \yii\db\ActiveRecord
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             ['file', 'safe'],
-            ['mime_type', 'integer']
         ];
     }
 
@@ -153,23 +79,7 @@ class Storage extends \yii\db\ActiveRecord
             'name' => Module::t('Name'),
             'title' => Module::t('Title'),
             'id_user' => Module::t('Id User'),
-            'mime_type' => Module::t('Mime Type'),
         ];
-    }
-
-    public static function getMimeTypeList()
-    {
-        $array = [];
-        foreach (self::MIME_TYPE as $key => $value) {
-            if (is_array($value)) {
-                foreach ($value as $k => $v) {
-                    $array[$key][$v] = $k;
-                }
-            } else {
-                $array[$value] = $key;
-            }
-        }
-        return $array;
     }
 
     public function getAllowedExtensions()
@@ -188,10 +98,16 @@ class Storage extends \yii\db\ActiveRecord
                 $this->save();
                 return true;
             }
-            
-            $path = realpath(Yii::$app->basePath . '/../data');
+            $path = realpath(Yii::$app->basePath ."/../". Yii::$app->setting->getValue('app::data'));
+            /*echo var_dump(is_dir($path));
+            exit;*/
+            if(!is_dir($path)){
+                \Yii::$app->session->addFlash('error', Module::t('Error, directory not found'));
+                return false;
+            }
             $filename = md5(rand()) . "." . $this->file->extension;
             // check if file extension is allowed
+
             if (in_array($this->file->extension, self::$allowExtensions)) {
                 if ($this->file->saveAs($path . '/' . $filename)) {
                     $this->name = $filename;
@@ -207,7 +123,7 @@ class Storage extends \yii\db\ActiveRecord
 
     public function deleteFile($filename)
     {
-        $path = realpath(Yii::$app->basePath . '/../data');
+        $path = realpath(Yii::$app->basePath . Yii::$app->setting->getValue('app::data'));
         if (file_exists($path . '/' . $filename)) {
             unlink($path . '/' . $filename);
         }
