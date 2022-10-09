@@ -1,7 +1,6 @@
 <?php
 
 use yii\helpers\Html;
-use portalium\theme\widgets\FileInput;
 use yii\widgets\ActiveForm;
 use portalium\storage\Module;
 use portalium\theme\widgets\Panel;
