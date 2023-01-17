@@ -20,7 +20,7 @@ class DefaultController extends RestActiveController
         $model->title = Yii::$app->request->post('title');
         $model->file = \yii\web\UploadedFile::getInstanceByName('file');
         if ($model->file && $model->validate()) {
-            $path = realpath(Yii::$app->basePath . Yii::$app->setting->getValue('app::data'));
+            $path = realpath(Yii::$app->basePath . '/../data');
             $filename = md5(rand()) . "." . $model->file->extension;
             
            
