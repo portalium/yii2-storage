@@ -15,7 +15,7 @@ use portalium\storage\models\Storage;
 Modal::begin([
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_LARGE,
-    'title' => Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-update-modal', 'style' => 'float:right;', 'id' => 'file-picker-add-button']),
+    'title' => Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', /* 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-update-modal', */ 'style' => 'float:right;', 'id' => 'file-picker-add-button']),
     'footer' => Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select', 'style' => 'float:right; margin-right:10px;']),
     'closeButton' => false,
     ]);
@@ -63,9 +63,14 @@ echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary'
 //show image
 Pjax::begin(['id' => 'file-picker-input-pjax']);
 if ($model->value != null && isset(json_decode($model->value, true)['name']))
-    echo Html::img('/data/' . json_decode($model->value, true)['name'], ['class' => 'img-thumbnail', 'style' => 'width:100px; height:100px;', 'id' => 'file-picker-input-image-' . $model->id]);
+    echo Html::img('/data/' . json_decode($model->value, true)['name'], ['class' => 'img-thumbnail', 'style' => 'height:100px;', 'id' => 'file-picker-input-image-' . $model->id, 'onclick' => 'showImage(this)']);
 Pjax::end();
-
+Modal::begin([
+    'id' => 'show-image-modal',
+    'size' => Modal::SIZE_DEFAULT,
+]);
+echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'show-image']);
+Modal::end();
 $this->registerJs(
     <<<JS
         selectedValue = [];
@@ -141,6 +146,11 @@ $this->registerJs(
             //show modal
             $('#file-update-modal').modal('show');
         });
+
+        showImage = function(e){
+            document.getElementById("show-image").src = e.src;
+            $('#show-image-modal').modal('show');
+        }
         JS, View::POS_END
     ); 
 

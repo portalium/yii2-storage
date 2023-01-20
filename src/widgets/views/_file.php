@@ -21,9 +21,9 @@ if (isset($returnAttribute)) {
     }
 }
 ?>
-<?php Panel::begin([
+<?php ($view == 1) ? Panel::begin([
     'title' => '',
-    'bodyOptions' => ['style' => 'height: 200px; display: block;'],
+    'bodyOptions' => ['style' => 'height: 200px; display: block; overflow: hidden;'],
     'actions' => [
         'header' => ($view == 1) ? [
             Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "updatedItem(this)"]),
@@ -33,7 +33,7 @@ if (isset($returnAttribute)) {
             Html::tag("div",(strlen($model->title) > 25) ? substr(str_replace("’","´",$model->title), 0, 25) . '...' : Html::encode($model->title), ['style' => 'float: left;']),
         ]
     ]
-]) ?>
+]) : null ?>
 
 <?php 
     if(isset(Storage::getMimeTypeList()[$model->mime_type])){
@@ -43,7 +43,13 @@ if (isset($returnAttribute)) {
     }
     $mime = explode('/', $mimeType)[0];
     if ($mime == 'image') {
-        echo Html::img(Html::encode($path . $model->name), ['width' => '100%', 'height' => '100%']);
+        echo Html::img(Html::encode($path . $model->name),['style' => ' 
+        object-fit: cover;
+        width: 100%;
+        height: 177px;
+        object-position: center 40%;
+        padding-top: 20px;
+      ']);
     } elseif ($mime == 'video') {
         echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
     } elseif ($mime == 'audio') {
@@ -52,7 +58,7 @@ if (isset($returnAttribute)) {
         echo Html::tag('i', '', ['class' => 'fa fa-file-o']);
     }
 ?>
-<?php Panel::end() ?>
+<?php ($view == 1) ? Panel::end() : null ?>
 
 <?php 
     if($view == 1){
