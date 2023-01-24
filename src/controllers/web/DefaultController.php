@@ -42,11 +42,13 @@ class DefaultController extends Controller
      */
     public function actionIndex()
     {
-        if (!Yii::$app->user->can('storageWebDefaultIndex')) {
+        if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $searchModel = new StorageSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
+        if(!\Yii::$app->user->can('storageWebDefaultIndex'))
+            $dataProvider->query->andWhere(['id_user'=>\Yii::$app->user->id]);
 
         return $this->render('index', [
             'searchModel' => $searchModel,
@@ -62,7 +64,7 @@ class DefaultController extends Controller
      */
     public function actionView($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultView')) {
+        if (!Yii::$app->user->can('storageWebDefaultView', ['model' => $this->findModel($id_storage)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         return $this->render('view', [
@@ -133,7 +135,7 @@ class DefaultController extends Controller
      */
     public function actionUpdate($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultUpdate')) {
+        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id_storage)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = $this->findModel($id_storage);
@@ -184,7 +186,7 @@ class DefaultController extends Controller
      */
     public function actionDelete($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultDelete')) {
+        if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id_storage)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = $this->findModel($id_storage);
