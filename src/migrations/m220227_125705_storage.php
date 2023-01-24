@@ -2,6 +2,7 @@
 
 use yii\db\Schema;
 use yii\db\Migration;
+use portalium\storage\Module;
 
 class m220227_125705_storage extends Migration
 {
@@ -16,17 +17,18 @@ class m220227_125705_storage extends Migration
     {
         $tableOptions = 'ENGINE=InnoDB';
 
-        $this->createTable('{{%storage_storage}}',[
+        $this->createTable('{{%' . Module::$tablePrefix . 'storage}}',[
             'id_storage'=> $this->primaryKey(11),
             'name'=> $this->string(255)->notNull(),
             'title'=> $this->string(255)->notNull(),
             'id_user'=> $this->integer(11)->notNull(),
+            'mime_type'=> $this->integer(11)->notNull(),
         ], $tableOptions);
 
     }
 
     public function safeDown()
     {
-            $this->dropTable('{{%storage_storage}}');
+            $this->dropTable('{{%' . Module::$tablePrefix . 'storage}}');
     }
 }

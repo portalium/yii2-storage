@@ -2,7 +2,7 @@
 
 use yii\helpers\Url;
 use yii\helpers\Html;
-use yii\grid\GridView;
+use portalium\theme\widgets\GridView;
 use yii\grid\ActionColumn;
 use portalium\storage\Module;
 use portalium\theme\widgets\Panel;

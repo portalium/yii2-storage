@@ -42,11 +42,13 @@ class DefaultController extends Controller
      */
     public function actionIndex()
     {
-        if (!Yii::$app->user->can('storageWebDefaultIndex')) {
+        if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $searchModel = new StorageSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
+        if(!\Yii::$app->user->can('storageWebDefaultIndex'))
+            $dataProvider->query->andWhere(['id_user'=>\Yii::$app->user->id]);
 
         return $this->render('index', [
             'searchModel' => $searchModel,
@@ -62,7 +64,7 @@ class DefaultController extends Controller
      */
     public function actionView($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultView')) {
+        if (!Yii::$app->user->can('storageWebDefaultView', ['model' => $this->findModel($id_storage)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         return $this->render('view', [
@@ -88,10 +90,11 @@ class DefaultController extends Controller
             $file = UploadedFile::getInstanceByName('file');
             if($file){
                 $fileName = md5(rand()) . '.' . $file->extension;
-                if($file->saveAs(Yii::$app->basePath . Yii::$app->setting->getValue('app::data') . $fileName)){
+                if($file->saveAs(Yii::$app->basePath . '/../data/' . $fileName)){
                     $model->name = $fileName;
                     $model->title = $this->request->post('title');
                     $model->id_user = Yii::$app->user->id;
+                    $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
                     if($model->save()){
                         return json_encode(['name' => $fileName]);
                     }
@@ -104,11 +107,12 @@ class DefaultController extends Controller
             if ($model->load($this->request->post())) {
                 $model->file = UploadedFile::getInstance($model, 'file');
                 if ($model->upload()) {
-                    \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
+                    \Yii::$app->session->setFlash('success', Module::t('File uploaded successfully'));
                     return $this->redirect(['view', 'id_storage' => $model->id_storage]);
                 }else{
-                    \Yii::$app->session->addFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
-                   return $this->render('create', [
+                    \Yii::$app->session->setFlash('error', Module::t('Error uploading file'));
+                    \Yii::$app->session->setFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
+                    return $this->render('create', [
                         'model' => $model,
                     ]);
                 }
@@ -131,7 +135,7 @@ class DefaultController extends Controller
      */
     public function actionUpdate($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultUpdate')) {
+        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id_storage)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = $this->findModel($id_storage);
@@ -142,12 +146,11 @@ class DefaultController extends Controller
                 $model->deleteFile($model->name);
             }
             if ($model->upload()) {
-
-                \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
+                \Yii::$app->session->setFlash('success', Module::t('File uploaded successfully'));
                 return $this->redirect(['view', 'id_storage' => $model->id_storage]);
             }else{
-                \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
-                \Yii::$app->session->addFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
+                \Yii::$app->session->setFlash('error', Module::t('Error uploading file'));
+                \Yii::$app->session->setFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
                 return $this->render('update', [
                     'model' => $model,
                 ]);
@@ -183,7 +186,7 @@ class DefaultController extends Controller
      */
     public function actionDelete($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultDelete')) {
+        if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id_storage)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = $this->findModel($id_storage);
