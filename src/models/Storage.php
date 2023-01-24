@@ -213,4 +213,15 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
+/*     //before delete file
+    public function beforeDelete()
+    {
+        if ($this->id_user == Yii::$app->user->id || Yii::$app->user->can('admin')) {
+            $this->deleteFile($this->name);
+            return parent::beforeDelete();
+        }else{
+            return false;
+        }
+    } */
+
 }

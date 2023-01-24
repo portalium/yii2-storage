@@ -1,13 +1,65 @@
 <?php
 
 namespace portalium\storage\controllers\api;
-use portalium\storage\models\Storage;
 use Yii;
+use portalium\storage\Module;
+use portalium\storage\models\Storage;
+use portalium\storage\models\StorageSearch;
 use portalium\rest\ActiveController as RestActiveController;
 
 class DefaultController extends RestActiveController
 {
     public $modelClass = 'portalium\storage\models\Storage';
+
+    public function actions()
+    {
+        $actions = parent::actions();
+        $actions['index']['dataFilter'] = [
+            'class' => \yii\data\ActiveDataFilter::class,
+            'searchModel' => $this->modelClass,
+        ];
+        
+        $actions['index']['prepareDataProvider'] = function ($action) {
+            $searchModel = new StorageSearch();
+            $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+            if(!Yii::$app->user->can('storageApiDefaultIndex')){
+                $dataProvider->query->andWhere(['id_user'=>Yii::$app->user->id]);
+            }
+            return $dataProvider;
+        };  
+        return $actions;
+    }
+
+    public function beforeAction($action)
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+        switch ($action->id) {
+            case 'view':
+                if (!Yii::$app->user->can('storageApiDefaultView')) 
+                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
+                break;
+            case 'create':
+                if (!Yii::$app->user->can('storageApiDefaultCreate')) 
+                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to create this storage.'));
+                break;
+            case 'update':
+                if (!Yii::$app->user->can('storageApiDefaultUpdate')) 
+                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to update this storage.'));
+                break;
+            case 'delete':
+                if (!Yii::$app->user->can('storageApiDefaultDelete'))
+                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to delete this storage.'));
+                break;
+            default:
+                if (!Yii::$app->user->can('storageApiDefaultIndex') && !Yii::$app->user->can('storageApiDefaultIndexOwn'))
+                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
+                break;
+        }
+        
+        return true;
+    }
 
     public function actionUpload()
     {
