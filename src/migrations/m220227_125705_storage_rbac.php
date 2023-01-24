@@ -6,9 +6,7 @@ class m220227_125705_storage_rbac extends Migration
     public function up()
     {
         $auth = Yii::$app->authManager;
-        
-        $settings = yii\helpers\ArrayHelper::map(portalium\site\models\Setting::find()->asArray()->all(),'name','value');
-        $role = 'admin';
+        $role = Yii::$app->settings->getValue('default::role');
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $permissionNames = [
             'storageApiDefaultView',
