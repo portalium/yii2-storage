@@ -3,6 +3,7 @@
 use yii\db\Schema;
 use yii\db\Migration;
 use portalium\storage\Module;
+use portalium\user\Module as UserModule;
 
 class m220227_125705_storage extends Migration
 {
@@ -25,6 +26,22 @@ class m220227_125705_storage extends Migration
             'mime_type'=> $this->integer(11)->notNull(),
         ], $tableOptions);
 
+        // creates index for column `id_user`
+        $this->createIndex(
+            '{{%idx-' . Module::$tablePrefix . 'storage-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage}}',
+            'id_user'
+        );
+
+        // add foreign key for table `{{%user}}`
+        $this->addForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage}}',
+            'id_user',
+            '{{%' . UserModule::$tablePrefix . 'user}}',
+            'id_user',
+            'RESTRICT'
+        );
     }
 
     public function safeDown()
