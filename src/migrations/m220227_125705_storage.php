@@ -1,7 +1,7 @@
 <?php
 
 use yii\db\Schema;
-use yii\db\Migration;
+use portalium\db\Migration;
 use portalium\storage\Module;
 use portalium\user\Module as UserModule;
 

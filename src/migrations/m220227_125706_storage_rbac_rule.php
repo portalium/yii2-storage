@@ -1,7 +1,7 @@
 <?php
 
 use portalium\storage\rbac\OwnRule;
-use yii\db\Migration;
+use portalium\db\Migration;
 
 
 class m220227_125706_storage_rbac_rule extends Migration
