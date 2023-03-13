@@ -61,10 +61,10 @@ Pjax::end();
 Modal::end();
 echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
 //show image
-Pjax::begin(['id' => 'file-picker-input-pjax']);
+/* Pjax::begin(['id' => 'file-picker-input-pjax']);
 if ($model->value != null && isset(json_decode($model->value, true)['name']))
     echo Html::img('/data/' . json_decode($model->value, true)['name'], ['class' => 'img-thumbnail', 'style' => 'height:100px;', 'id' => 'file-picker-input-image-' . $model->id, 'onclick' => 'showImage(this)']);
-Pjax::end();
+Pjax::end(); */
 Modal::begin([
     'id' => 'show-image-modal',
     'size' => Modal::SIZE_DEFAULT,
@@ -74,7 +74,7 @@ Modal::end();
 $this->registerJs(
     <<<JS
         selectedValue = [];
-        //get all checkedItems[] and search id_storage in data
+        /* //get all checkedItems[] and search id_storage in data
         try{
             var name = document.getElementById('file-picker-input-image-' + $model->id).getAttribute("src");
             name = name.replace("/data/", "");
@@ -87,7 +87,7 @@ $this->registerJs(
         });
         }
         catch(err){
-        }
+        } */
         
         function selectItem(e){
             if(selectedValue.indexOf($(e).attr("data")) == -1){
@@ -96,8 +96,9 @@ $this->registerJs(
                     }else{
                         selectedValue = [$(e).attr("data")];
                     }
+                    console.log("file-picker-input-image-$model->id");
                     document.getElementById("file-picker-input").value = selectedValue;
-                    document.getElementById("file-picker-input-image-$model->id").src = "/data/" + JSON.parse(selectedValue).name;
+                    /* document.getElementById("file-picker-input-image-$model->id").src = "/data/" + JSON.parse(selectedValue).name; */
                     updateItemsStatus();
             }else{
                 selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
@@ -144,7 +145,7 @@ $this->registerJs(
             document.getElementById("update-storage").classList.remove("btn-primary");
             document.getElementById("update-storage").classList.add("btn-success");
             //show modal
-            $('#file-update-modal').modal('show');
+            /* $('#file-update-modal').modal('show'); */
         });
 
         showImage = function(e){
