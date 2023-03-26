@@ -74,7 +74,7 @@ Modal::end();
 $this->registerJs(
     <<<JS
         selectedValue = [];
-        //get all checkedItems[] and search id_storage in data
+        /* //get all checkedItems[] and search id_storage in data
         try{
             var name = document.getElementById('file-picker-input-image-' + $model[$id]).getAttribute("src");
             name = name.replace("/data/", "");
@@ -87,7 +87,7 @@ $this->registerJs(
         });
         }
         catch(err){
-        }
+        } */
         
         function selectItem(e){
             if(selectedValue.indexOf($(e).attr("data")) == -1){
@@ -96,11 +96,13 @@ $this->registerJs(
                     }else{
                         selectedValue = [$(e).attr("data")];
                     }
+                    console.log("file-picker-input-image-$model->id");
                     document.getElementById("file-picker-input").value = selectedValue;
                     console.log("file-picker-input-image-$model[$id]");
                     console.log(JSON.parse(selectedValue));
                     console.log(document.getElementById("file-picker-input-image-5"));
                     document.getElementById("file-picker-input-image-$model[$id]").src = "/data/" + JSON.parse(selectedValue).name;
+
                     updateItemsStatus();
             }else{
                 selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
@@ -147,7 +149,7 @@ $this->registerJs(
             document.getElementById("update-storage").classList.remove("btn-primary");
             document.getElementById("update-storage").classList.add("btn-success");
             //show modal
-            $('#file-update-modal').modal('show');
+            /* $('#file-update-modal').modal('show'); */
         });
 
         showImage = function(e){
