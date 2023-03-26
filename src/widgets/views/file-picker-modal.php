@@ -62,8 +62,8 @@ Modal::end();
 echo '<br>'.Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
 //show image
 Pjax::begin(['id' => 'file-picker-input-pjax']);
-if ($model->value != null && isset(json_decode($model->value, true)['name']))
-    echo Html::img('/data/' . json_decode($model->value, true)['name'], ['class' => 'img-thumbnail', 'style' => 'height:100px;', 'id' => 'file-picker-input-image-' . $model->id, 'onclick' => 'showImage(this)']);
+if ($model[$preview] != null && isset(json_decode($model[$preview], true)['name']))
+    echo Html::img('/' . Yii::$app->setting->getValue('storage::path') . '/' . json_decode($model[$preview], true)['name'], ['class' => 'img-thumbnail', 'style' => 'height:100px;', 'id' => 'file-picker-input-image-' . $model[$id], 'onclick' => 'showImage(this)']);
 Pjax::end();
 Modal::begin([
     'id' => 'show-image-modal',
@@ -76,7 +76,7 @@ $this->registerJs(
         selectedValue = [];
         //get all checkedItems[] and search id_storage in data
         try{
-            var name = document.getElementById('file-picker-input-image-' + $model->id).getAttribute("src");
+            var name = document.getElementById('file-picker-input-image-' + $model[$id]).getAttribute("src");
             name = name.replace("/data/", "");
             document.getElementsByName("checkedItems[]").forEach(function(item){
             var data = JSON.parse(item.getAttribute("data"));
@@ -97,7 +97,10 @@ $this->registerJs(
                         selectedValue = [$(e).attr("data")];
                     }
                     document.getElementById("file-picker-input").value = selectedValue;
-                    document.getElementById("file-picker-input-image-$model->id").src = "/data/" + JSON.parse(selectedValue).name;
+                    console.log("file-picker-input-image-$model[$id]");
+                    console.log(JSON.parse(selectedValue));
+                    console.log(document.getElementById("file-picker-input-image-5"));
+                    document.getElementById("file-picker-input-image-$model[$id]").src = "/data/" + JSON.parse(selectedValue).name;
                     updateItemsStatus();
             }else{
                 selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
