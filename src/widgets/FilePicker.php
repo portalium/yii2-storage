@@ -15,47 +15,44 @@ use portalium\theme\widgets\Modal;
 
 class FilePicker extends InputWidget
 {
-
     public $files;
     public $selected;
-    public $multiple = 0;
+    public $multiple = false;
     public $returnAttribute = ['id_storage'];
-    public $json = 1;
+    public $json = true;
+    public $modelIdField = 'id';
+
     public function init()
     {
         parent::init();
         $this->options['id'] = 'file-picker-input';
-
+        $this->multiple = isset($this->options['multiple']) && $this->options['multiple'];
+        $this->returnAttribute = isset($this->options['returnAttribute']) ? $this->options['returnAttribute'] : ['id_storage'];
+        $this->json = isset($this->options['json']) && $this->options['json'];
+        $this->modelIdField = isset($this->options['modelIdField']) ? $this->options['modelIdField'] : 'id';
     }
 
     public function run()
     {
+        $query = Yii::$app->user->can('storageWidgetFilePickerAllShowFile')
+            ? Storage::find()
+            : Storage::find()->where(['id_user' => Yii::$app->user->id]);
 
-        if (Yii::$app->user->can('storageWidgetFilePickerAllShowFile')){
-            $this->files = new \yii\data\ActiveDataProvider([
-                'query' => Storage::find(),
-                'pagination' => false
-            ]);
-        }else{
-            $this->files = new \yii\data\ActiveDataProvider([
-                'query' => Storage::find()->where(['id_user' => Yii::$app->user->id]),
-                'pagination' => false
-            ]);
-        }
-        
+        $this->files = new \yii\data\ActiveDataProvider([
+            'query' => $query,
+            'pagination' => false,
+        ]);
+
         if ($this->hasModel()) {
-            $input = 'activeHiddenInput';
-            echo Html::$input($this->model, $this->attribute, $this->options);
+            echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         }
 
         $model = new Storage();
-        if (Yii::$app->request->isGet) {
-            $id_storage = Yii::$app->request->get('id_storage');
-            if ($id_storage) {
-                $model = Storage::findOne($id_storage);
-            }
+        $id_storage = Yii::$app->request->get('id_storage');
+        if ($id_storage) {
+            $model = Storage::findOne($id_storage);
         }
-        
+
         echo $this->render('./file-picker-modal', [
             'model' => $this->model,
             'attribute' => $this->attribute,
@@ -64,6 +61,7 @@ class FilePicker extends InputWidget
             'files' => $this->files,
             'storageModel' => $model,
             'returnAttribute' => $this->returnAttribute,
+            'modelIdField' => $this->modelIdField,
         ]);
     }
 }
