@@ -1,7 +1,7 @@
 <?php
 
 use yii\helpers\Html;
-use yii\widgets\ActiveForm;
+use portalium\theme\widgets\ActiveForm;
 use portalium\storage\Module;
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\StorageSearch */

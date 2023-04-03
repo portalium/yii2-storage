@@ -3,7 +3,7 @@ use portalium\storage\bundles\LightBoxAsset;
 use yii\web\View;
 use yii\widgets\Pjax;
 use yii\widgets\ListView;
-use yii\widgets\ActiveForm;
+use portalium\theme\widgets\ActiveForm;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Modal;
