@@ -3,7 +3,7 @@ use portalium\storage\bundles\LightBoxAsset;
 use yii\web\View;
 use yii\widgets\Pjax;
 use yii\widgets\ListView;
-use yii\widgets\ActiveForm;
+use portalium\theme\widgets\ActiveForm;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Modal;
@@ -60,8 +60,8 @@ echo $this->render('./_formModal', [
 Pjax::end();
 Modal::end();
 echo Html::beginTag('div', ['class' => 'row']);
-echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col-2', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
-echo Html::beginTag('div', ['class' => 'col-2', 'id' => 'file-picker-input-check-selected', 'style' => 'display:none;']);
+echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
+echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected', 'style' => 'display:none;']);
 echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
 echo Html::endTag('div');
 echo Html::endTag('div');
@@ -168,14 +168,14 @@ $this->registerJs(
     ); 
 
     $this->registerJs(
-        <<<JS
+        "
         $(document).ready(function () {
             function checkFilePickerInput() {
                 var input = $('#file-picker-input');
                 if (input.val() == undefined || input.val() == '') {
-                    document.getElementById("file-picker-input-check-selected").style.display = "none";
+                    document.getElementById(\"file-picker-input-check-selected\").style.display = \"none\";
                 }else{
-                    document.getElementById("file-picker-input-check-selected").style.display = "block";
+                    document.getElementById(\"file-picker-input-check-selected\").style.display = \"block\";
                 }
             }
             checkFilePickerInput();
@@ -185,6 +185,8 @@ $this->registerJs(
                 myFormData.append('title', $('#storage-title').val());
                 myFormData.append('file', document.getElementById('storage-file').files[0]);
                 myFormData.append('id_storage', id_storage);
+                myFormData.append('" . Yii::$app->request->csrfParam . "', '" . Yii::$app->request->getCsrfToken() . "');
+
                 $.ajax({
                     url: '/storage/default/create',
                     type: 'POST',
@@ -202,6 +204,6 @@ $this->registerJs(
                 
             });
         });
-        JS
+        "
     );
     //LightBoxAsset::register($this);

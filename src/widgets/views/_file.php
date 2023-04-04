@@ -9,11 +9,8 @@ use portalium\storage\models\Storage;
 $name = $model->name;
 $ext = substr($name, strrpos($name, '.') + 1);
 $path = Url::base() . '/data/';
-// if returnAttribute 
 if (isset($returnAttribute)) {
-    // check if returnAttribute is array
     if (is_array($returnAttribute)) {
-        // check if returnAttribute include id_storage
         if (in_array('id_storage', $returnAttribute)) {
         }else{
             $returnAttribute[] = 'id_storage';
