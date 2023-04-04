@@ -168,14 +168,14 @@ $this->registerJs(
     ); 
 
     $this->registerJs(
-        <<<JS
+        "
         $(document).ready(function () {
             function checkFilePickerInput() {
                 var input = $('#file-picker-input');
                 if (input.val() == undefined || input.val() == '') {
-                    document.getElementById("file-picker-input-check-selected").style.display = "none";
+                    document.getElementById(\"file-picker-input-check-selected\").style.display = \"none\";
                 }else{
-                    document.getElementById("file-picker-input-check-selected").style.display = "block";
+                    document.getElementById(\"file-picker-input-check-selected\").style.display = \"block\";
                 }
             }
             checkFilePickerInput();
@@ -185,6 +185,8 @@ $this->registerJs(
                 myFormData.append('title', $('#storage-title').val());
                 myFormData.append('file', document.getElementById('storage-file').files[0]);
                 myFormData.append('id_storage', id_storage);
+                myFormData.append('" . Yii::$app->request->csrfParam . "', '" . Yii::$app->request->getCsrfToken() . "');
+
                 $.ajax({
                     url: '/storage/default/create',
                     type: 'POST',
@@ -202,6 +204,6 @@ $this->registerJs(
                 
             });
         });
-        JS
+        "
     );
     //LightBoxAsset::register($this);
