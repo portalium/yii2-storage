@@ -3,7 +3,7 @@
 use yii\helpers\Url;
 use yii\helpers\Html;
 use portalium\theme\widgets\GridView;
-use yii\grid\ActionColumn;
+use portalium\theme\widgets\ActionColumn;
 use portalium\storage\Module;
 use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;

@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use kartik\file\FileInput;
-use yii\widgets\ActiveForm;
+use portalium\theme\widgets\ActiveForm;
 use portalium\storage\Module;
 use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;
