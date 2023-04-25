@@ -15,9 +15,11 @@ use portalium\storage\models\Storage;
 Modal::begin([
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_LARGE,
-    'title' => Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button']),
-    'footer' => Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select', 'style' => 'float:right; margin-right:10px;']),
-    'closeButton' => false,
+    'title' =>  Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button']),
+                
+    'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
+                Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select', 'style' => 'float:right; margin-right:10px;']),
+    'closeButton' => false
     ]);
 
     Pjax::begin(['id' => 'file-picker-pjax']);
@@ -49,7 +51,9 @@ Modal::end();
 $modals = Modal::begin([
     'id' => 'file-update-modal',
     'size' => Modal::SIZE_DEFAULT,
-    'footer' => Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage'])
+    'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
+                Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage']),
+    'closeButton' => false,
 ]);
 Pjax::begin(['id' => 'file-update-pjax']);
 $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";
