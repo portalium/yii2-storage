@@ -126,11 +126,11 @@ class Storage extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title'], 'required'],
+            [['title', 'id_workspace'], 'required'],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             ['file', 'safe'],
-            ['mime_type', 'integer']
+            ['mime_type', 'integer'],
         ];
     }
 
@@ -155,6 +155,7 @@ class Storage extends \yii\db\ActiveRecord
             'title' => Module::t('Title'),
             'id_user' => Module::t('Id User'),
             'mime_type' => Module::t('Mime Type'),
+            'id_workspace' => Module::t('Workspace'),
         ];
     }
 

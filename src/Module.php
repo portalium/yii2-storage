@@ -15,7 +15,7 @@ class Module extends \portalium\base\Module
     public static $tablePrefix = 'storage_';
 
     public static $name = 'Storage';
-    
+    public static $supportWorkspace = true;
     public static function moduleInit()
     {
         self::registerTranslation('storage','@portalium/storage/messages',[

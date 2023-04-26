@@ -14,7 +14,16 @@ class m220228_125709_storage_rule_rbac extends Migration
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $endPrefix = 'ForWorkspace';
         $permissions = [
-
+            'storageApiDefaultView' => 'Storage Api Default View',
+            'storageApiDefaultCreate' => 'Storage Api Default Create',
+            'storageApiDefaultUpdate' => 'Storage Api Default Update',
+            'storageApiDefaultDelete' => 'Storage Api Default Delete',
+            'storageApiDefaultIndex' => 'Storage Api Default Index',
+            'storageWebDefaultIndex' => 'Storage Web Default Index',
+            'storageWebDefaultView' => 'Storage Web Default View',
+            'storageWebDefaultCreate' => 'Storage Web Default Create',
+            'storageWebDefaultUpdate' => 'Storage Web Default Update',
+            'storageWebDefaultDelete' => 'Storage Web Default Delete',
 
         ];
 
@@ -36,7 +45,16 @@ class m220228_125709_storage_rule_rbac extends Migration
         $auth = Yii::$app->authManager;
         $endPrefix = 'ForWorkspace';
         $permissions = [
-
+            'storageApiDefaultView',
+            'storageApiDefaultCreate',
+            'storageApiDefaultUpdate',
+            'storageApiDefaultDelete',
+            'storageApiDefaultIndex',
+            'storageWebDefaultIndex',
+            'storageWebDefaultView',
+            'storageWebDefaultCreate',
+            'storageWebDefaultUpdate',
+            'storageWebDefaultDelete',
         ];
 
         foreach ($permissions as $permission) {
