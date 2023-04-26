@@ -42,13 +42,11 @@ class DefaultController extends Controller
      */
     public function actionIndex()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
+        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $searchModel = new StorageSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
-        if(!\Yii::$app->user->can('storageWebDefaultIndex'))
-            $dataProvider->query->andWhere(['id_user'=>\Yii::$app->user->id]);
 
         return $this->render('index', [
             'searchModel' => $searchModel,
@@ -79,7 +77,7 @@ class DefaultController extends Controller
      */
     public function actionCreate()
     {
-        if (!Yii::$app->user->can('storageWebDefaultCreate')) {
+        if (!Yii::$app->user->can('storageWebDefaultCreate', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = new Storage();
@@ -165,6 +163,9 @@ class DefaultController extends Controller
     protected function updatePjax($id_storage)
     {
             $model = $this->findModel($id_storage);
+            if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id_storage)])) {
+                return json_encode(['error' => Module::t('Error uploading file')]);
+            }
             $model->title = $this->request->post('title');
             $model->file = UploadedFile::getInstanceByName('file');
             if ($model->file){
