@@ -43,17 +43,12 @@ class FilePicker extends InputWidget
     public function run()
     {
 
-        if (Yii::$app->user->can('storageWidgetFilePickerAllShowFile')){
+
             $this->files = new \yii\data\ActiveDataProvider([
                 'query' => Storage::find(),
                 'pagination' => false
             ]);
-        }else{
-            $this->files = new \yii\data\ActiveDataProvider([
-                'query' => Storage::find()->where(['id_user' => Yii::$app->user->id]),
-                'pagination' => false
-            ]);
-        }
+
         
         if ($this->hasModel()) {
             $input = 'activeHiddenInput';

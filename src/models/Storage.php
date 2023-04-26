@@ -2,6 +2,7 @@
 
 namespace portalium\storage\models;
 
+use portalium\workspace\models\WorkspaceUser;
 use Yii;
 use portalium\storage\Module;
 use yii\helpers\ArrayHelper;
@@ -125,11 +126,11 @@ class Storage extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title'], 'required'],
+            [['title', 'id_workspace'], 'required'],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             ['file', 'safe'],
-            ['mime_type', 'integer']
+            ['mime_type', 'integer'],
         ];
     }
 
@@ -154,6 +155,7 @@ class Storage extends \yii\db\ActiveRecord
             'title' => Module::t('Title'),
             'id_user' => Module::t('Id User'),
             'mime_type' => Module::t('Mime Type'),
+            'id_workspace' => Module::t('Workspace'),
         ];
     }
 
@@ -213,15 +215,32 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
-/*     //before delete file
-    public function beforeDelete()
+    public static function find()
     {
-        if ($this->id_user == Yii::$app->user->id || Yii::$app->user->can('admin')) {
-            $this->deleteFile($this->name);
-            return parent::beforeDelete();
-        }else{
-            return false;
+        $activeWorkspaceId = WorkspaceUser::getActiveWorkspaceId();
+        $query = parent::find();
+        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
+            return $query;
         }
-    } */
+        if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
+            return $query->andWhere('0=1');
+        }
+        if ($activeWorkspaceId) {
+            $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId]);
+        }else{
+            return $query->andWhere('0=1');
+        }
+        return $query;
+    }
+
+
+
+    public function beforeSave($insert)
+    {
+        if (Yii::$app->workspace->checkOwner($this->id_workspace)) {
+            return parent::beforeSave($insert);
+        }
+        return false;
+    }
 
 }

@@ -21,7 +21,7 @@ $this->params['breadcrumbs'][] = $this->title;
     'title' => Module::t('Media List'),
     'actions' => [
         'header' => [
-            Html::a(Module::t('Create Storage'), ['create'], ['class' => 'btn btn-success']) 
+            Html::a(Module::t(''), ['create'], ['class' => 'fa fa-plus btn btn-success'])
         ]
     ]
 ]) ?>
