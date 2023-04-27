@@ -23,6 +23,20 @@ class Module extends \portalium\base\Module
         ]);
     }
 
+    public function getMenuItems()
+    {
+        $menuItems = [
+            [
+                [
+                    'menu' => 'web',
+                    'type' => 'action',
+                    'route' => '/storage/default/index',
+                ]
+            ],
+        ];
+        return $menuItems;
+    }
+
     public static function t($message, array $params = [])
     {
         return parent::coreT('storage', $message, $params);
