@@ -197,14 +197,42 @@ class Storage extends \yii\db\ActiveRecord
             if (in_array($this->file->extension, self::$allowExtensions)) {
                 if ($this->file->saveAs($path . '/' . $filename)) {
                     $this->name = $filename;
-                    $this->save();
-                    return true;
+                    $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
+                    if($this->save()){
+                        return true;
+                    }else{
+                        return false;
+                    }
                 }
             }else{
                 return false;
             }
         }
         return false;
+    }
+
+    protected function getMIMEType($filename)
+    {
+        $mime_types = self::MIME_TYPE;
+        $ext = strtolower(substr(strrchr($filename, '.'), 1));
+        if (array_key_exists($ext, $mime_types)) {
+            if (is_array($mime_types[$ext])) {
+                //; charset=binary to ''
+                $mime_types[$ext][0] = str_replace('; charset=binary', '', $mime_types[$ext][0]);
+                return $mime_types[$ext][0];
+            } else {
+                $mime_types[$ext] = str_replace('; charset=binary', '', $mime_types[$ext]);
+                return $mime_types[$ext];
+            }
+        } elseif (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME);
+            $mimetype = finfo_file($finfo, $filename);
+            finfo_close($finfo);
+            $mimetype = explode(';', $mimetype);
+            return $mimetype[0];
+        } else {
+            return 'application/octet-stream';
+        }
     }
 
     public function deleteFile($filename)

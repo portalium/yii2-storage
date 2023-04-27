@@ -102,7 +102,7 @@ class DefaultController extends Controller
             $file = UploadedFile::getInstanceByName('file');
             if($file){
                 $fileName = md5(rand()) . '.' . $file->extension;
-                if($file->saveAs(Yii::$app->basePath . '/../data/' . $fileName)){
+                if($file->saveAs(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $fileName)){
                     $model->name = $fileName;
                     $model->title = $this->request->post('title');
                     $model->id_user = Yii::$app->user->id;
@@ -117,6 +117,7 @@ class DefaultController extends Controller
         }
         if ($this->request->isPost) {
             if ($model->load($this->request->post())) {
+                $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
                 $model->file = UploadedFile::getInstance($model, 'file');
                 if ($model->upload()) {
                     \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
@@ -145,12 +146,12 @@ class DefaultController extends Controller
      * @return string|\yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionUpdate($id_storage)
+    public function actionUpdate($id)
     {
-        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id_storage)])) {
+        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        $model = $this->findModel($id_storage);
+        $model = $this->findModel($id);
         if ($this->request->isPost && $model->load($this->request->post())) 
         {
             $model->file = UploadedFile::getInstance($model, 'file');

@@ -8,7 +8,7 @@ use portalium\storage\models\Storage;
 
 $name = $model->name;
 $ext = substr($name, strrpos($name, '.') + 1);
-$path = Url::base() . '/data/';
+$path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
 if (isset($returnAttribute)) {
     if (is_array($returnAttribute)) {
         if (in_array('id_storage', $returnAttribute)) {
