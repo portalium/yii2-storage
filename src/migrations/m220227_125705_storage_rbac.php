@@ -19,6 +19,8 @@ class m220227_125705_storage_rbac extends Migration
             'storageWebDefaultCreate',
             'storageWebDefaultUpdate',
             'storageWebDefaultDelete',
+            'storageStorageFindAll',
+            'storageStorageFindOwner',
         ];
         
         foreach ($permissionNames as $permissionName) {
@@ -39,6 +41,13 @@ class m220227_125705_storage_rbac extends Migration
         $auth->remove($auth->getPermission('storageWebDefaultCreate'));
         $auth->remove($auth->getPermission('storageWebDefaultUpdate'));
         $auth->remove($auth->getPermission('storageWebDefaultDelete'));
+        $auth->remove($auth->getPermission('storageApiDefaultView'));
+        $auth->remove($auth->getPermission('storageApiDefaultCreate'));
+        $auth->remove($auth->getPermission('storageApiDefaultUpdate'));
+        $auth->remove($auth->getPermission('storageApiDefaultDelete'));
+        $auth->remove($auth->getPermission('storageApiDefaultIndex'));
+        $auth->remove($auth->getPermission('storageStorageFindAll'));
+        $auth->remove($auth->getPermission('storageStorageFindOwner'));
 
     }
 }

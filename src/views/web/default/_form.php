@@ -32,7 +32,7 @@ use portalium\storage\widgets\FilePicker;
 
     <?= $form->field($model, 'file')->widget(FileInput::className()); ?>
 
-    <?= $form->field($model, 'mime_type')->dropDownList(Storage::getMimeTypeList()) ?>
+    <?php //$form->field($model, 'mime_type')->dropDownList(Storage::getMimeTypeList()) ?>
 
 
     <?php Panel::end() ?>

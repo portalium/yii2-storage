@@ -16,8 +16,9 @@
 	},
 	"require": {
 		"kartik-v/yii2-widget-fileinput": "@dev",
-                "portalium/portalium-user": "*"
-  	},
+		"portalium/portalium-user": "*",
+		"portalium/portalium-workspace": "*"
+	},
 	"autoload" : {
 		"psr-4" : {
 			"portalium\\storage\\" : "src/"
