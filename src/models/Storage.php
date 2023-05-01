@@ -134,7 +134,7 @@ class Storage extends \yii\db\ActiveRecord
         ];
     }
 
-    //fields add url
+    /* //fields add url
     public function fields()
     {
         return array_merge(parent::fields(), [
@@ -142,7 +142,7 @@ class Storage extends \yii\db\ActiveRecord
                 return Yii::getAlias('@data') . '/' . $model->name;
             },
         ]);
-    }
+    } */
 
     /**
      * {@inheritdoc}
