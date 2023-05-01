@@ -107,8 +107,11 @@ class DefaultController extends Controller
                     $model->title = $this->request->post('title');
                     $model->id_user = Yii::$app->user->id;
                     $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
+                    $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
                     if($model->save()){
                         return json_encode(['name' => $fileName]);
+                    }else{
+                        return json_encode($model->errors);
                     }
                 }else{
                     return "error";
