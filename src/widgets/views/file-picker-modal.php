@@ -63,8 +63,10 @@ echo $this->render('./_formModal', [
     ]);
 Pjax::end();
 Modal::end();
-echo Html::beginTag('div', ['class' => 'row']);
+
+echo Html::beginTag('div', ['class' => 'd-flex']);
 echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
+
 echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected', 'style' => 'display:none;']);
 echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
 echo Html::endTag('div');
@@ -80,6 +82,7 @@ echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' =
 Modal::end();
 $this->registerJs(
     <<<JS
+        $('.modal-backdrop').remove();
         selectedValue = [];
         //get all checkedItems[] and search id_storage in data
         try{
@@ -174,6 +177,7 @@ $this->registerJs(
     $this->registerJs(
         "
         $(document).ready(function () {
+            $('.modal-backdrop').remove();
             function checkFilePickerInput() {
                 var input = $('#file-picker-input');
                 if (input.val() == undefined || input.val() == '') {
@@ -206,6 +210,13 @@ $this->registerJs(
             $('#file-picker-select').click(function () {
                 $('#file-picker-modal').modal('hide');
                 
+            });
+
+            $('#file-picker-modal').on('show.bs.modal', function () {
+
+                setTimeout(function(){
+                    $('.modal-backdrop').remove();
+                }, 100);
             });
         });
         "
