@@ -82,7 +82,6 @@ echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' =
 Modal::end();
 $this->registerJs(
     <<<JS
-        $('.modal-backdrop').remove();
         selectedValue = [];
         //get all checkedItems[] and search id_storage in data
         try{
@@ -157,7 +156,7 @@ $this->registerJs(
 
         document.getElementById("file-picker-add-button").addEventListener("click", function(){
             //reload pjax
-            $.pjax.reload({container: "#file-update-pjax", timeout: false});
+            $.pjax.reload({container: "#file-update-pjax", url: "?id_storage=null"});
             //update-storage change name to create
             document.getElementById("update-storage").innerHTML = "Create";
             document.getElementById("update-storage").classList.remove("btn-primary");
@@ -177,7 +176,6 @@ $this->registerJs(
     $this->registerJs(
         "
         $(document).ready(function () {
-            $('.modal-backdrop').remove();
             function checkFilePickerInput() {
                 var input = $('#file-picker-input');
                 if (input.val() == undefined || input.val() == '') {
@@ -215,7 +213,6 @@ $this->registerJs(
             $('#file-picker-modal').on('show.bs.modal', function () {
 
                 setTimeout(function(){
-                    $('.modal-backdrop').remove();
                 }, 100);
             });
         });
