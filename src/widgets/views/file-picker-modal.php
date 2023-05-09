@@ -63,8 +63,10 @@ echo $this->render('./_formModal', [
     ]);
 Pjax::end();
 Modal::end();
-echo Html::beginTag('div', ['class' => 'row']);
+
+echo Html::beginTag('div', ['class' => 'd-flex']);
 echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
+
 echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected', 'style' => 'display:none;']);
 echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
 echo Html::endTag('div');
@@ -154,7 +156,7 @@ $this->registerJs(
 
         document.getElementById("file-picker-add-button").addEventListener("click", function(){
             //reload pjax
-            $.pjax.reload({container: "#file-update-pjax", timeout: false});
+            $.pjax.reload({container: "#file-update-pjax", url: "?id_storage=null"});
             //update-storage change name to create
             document.getElementById("update-storage").innerHTML = "Create";
             document.getElementById("update-storage").classList.remove("btn-primary");
@@ -206,6 +208,12 @@ $this->registerJs(
             $('#file-picker-select').click(function () {
                 $('#file-picker-modal').modal('hide');
                 
+            });
+
+            $('#file-picker-modal').on('show.bs.modal', function () {
+
+                setTimeout(function(){
+                }, 100);
             });
         });
         "

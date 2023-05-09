@@ -10,7 +10,7 @@ class m220228_125709_storage_rule_rbac extends Migration
 
         $rule = $auth->getRule('WorkspaceCheckRule');
 
-        $role = Yii::$app->setting->getValue('default::role');
+        $role = Yii::$app->setting->getValue('site::admin_role');
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $endPrefix = 'ForWorkspace';
         $permissions = [
