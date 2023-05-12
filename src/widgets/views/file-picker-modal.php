@@ -59,6 +59,7 @@ $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $stor
 $this->registerJs('id_storage = '.$id_storage.';', View::POS_END);
 echo $this->render('./_formModal', [
     'model' => ($storageModel != null) ? $storageModel : new Storage(),
+    'widgetName' => $name,
     ]);
 Pjax::end();
 Modal::end();
@@ -204,6 +205,12 @@ $this->registerJs(
                     success: function (data) {
                         $.pjax.reload({container: '#file-picker-pjax' + '$name'});
                         $('#file-update-modal' + '$name').modal('hide');
+                    },
+                    error: function (data) {
+                        $('#storage-error' + '$name').html(data.responseJSON.message);
+                        setTimeout(function(){
+                            $('#storage-error' + '$name').html('');
+                        }, 5000);
                     }
                 });
             });
