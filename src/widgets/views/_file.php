@@ -24,7 +24,7 @@ if (isset($returnAttribute)) {
     'actions' => [
         'header' => ($view == 1) ? [
             Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "updatedItem(this)"]),
-            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "selectItem(this)"]),
+            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]),
         ] : [],
         'footer' => [
             Html::tag("div",(strlen($model->title) > 25) ? substr(str_replace("’","´",$model->title), 0, 25) . '...' : Html::encode($model->title), ['style' => 'float: left;']),
@@ -64,14 +64,14 @@ if (isset($returnAttribute)) {
                 function updatedItem(e){
                     var data = $(e).attr('data');
                     var data = JSON.parse(data);
-                    document.getElementById('storage-title').value = data.title;
-                    $('#file-update-modal .file-caption-name').attr('title', "");
-                    document.getElementById("update-storage").innerHTML = "Update";
-                    document.getElementById("update-storage").classList.remove("btn-success");
-                    document.getElementById("update-storage").classList.add("btn-primary");
+                    document.getElementById('storage-title' + '$widgetName').value = data.title;
+                    $('#file-update-modal' + '$widgetName' + ' .file-caption-name').attr('title', "");
+                    document.getElementById("update-storage" + '$widgetName').innerHTML = "Update";
+                    document.getElementById("update-storage" + '$widgetName').classList.remove("btn-success");
+                    document.getElementById("update-storage" + '$widgetName').classList.add("btn-primary");
                     //file-update-pjax
-                    $.pjax.reload({container: '#file-update-pjax', url: '?id_storage=' + data.id_storage, timeout: false});
-                    $('#file-update-modal').modal('show');
+                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '?id_storage=' + data.id_storage, timeout: false});
+                    $('#file-update-modal' + '$widgetName').modal('show');
                 }
                 JS, View::POS_END
             ); 
