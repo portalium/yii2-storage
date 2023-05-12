@@ -1,28 +1,26 @@
 <?php
-use portalium\storage\bundles\LightBoxAsset;
 use yii\web\View;
 use yii\widgets\Pjax;
 use yii\widgets\ListView;
-use portalium\theme\widgets\ActiveForm;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Modal;
-use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;
 
 
 
 Modal::begin([
-    'id' => 'file-picker-modal',
+    'id' => 'file-picker-modal' . $name,
     'size' => Modal::SIZE_LARGE,
-    'title' =>  Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button']),
+    'title' =>  Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]),
                 
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-                Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select', 'style' => 'float:right; margin-right:10px;']),
+                Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
     'closeButton' => false
     ]);
 
-    Pjax::begin(['id' => 'file-picker-pjax']);
+    Pjax::begin(['id' => 'file-picker-pjax' . $name]);
+    //Yii::warning($name);
         echo ListView::widget([
             'dataProvider' => $files,
             'itemView' => '_file',
@@ -30,6 +28,7 @@ Modal::begin([
                 'view' => 1,
                 'returnAttribute' => $returnAttribute,
                 'json' => $json,
+                'widgetName' => $name
             ],
             'options' => [
                 'tag' => 'div',
@@ -49,13 +48,13 @@ Modal::end();
 
 
 $modals = Modal::begin([
-    'id' => 'file-update-modal',
+    'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-                Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage']),
+                Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]),
     'closeButton' => false,
 ]);
-Pjax::begin(['id' => 'file-update-pjax']);
+Pjax::begin(['id' => 'file-update-pjax' . $name]);
 $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";
 $this->registerJs('id_storage = '.$id_storage.';', View::POS_END);
 echo $this->render('./_formModal', [
@@ -65,27 +64,28 @@ Pjax::end();
 Modal::end();
 
 echo Html::beginTag('div', ['class' => 'd-flex']);
-echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal']);
+echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $name]);
 
-echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected', 'style' => 'display:none;']);
+echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none;']);
 echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
 echo Html::endTag('div');
 echo Html::endTag('div');
 //show image
-Pjax::begin(['id' => 'file-picker-input-pjax']);
+Pjax::begin(['id' => 'file-picker-input-pjax' . $name]);
 Pjax::end();
 Modal::begin([
-    'id' => 'show-image-modal',
+    'id' => 'show-image-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
 ]);
-echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'show-image']);
+echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'show-image' . $name]);
 Modal::end();
 $this->registerJs(
     <<<JS
         selectedValue = [];
         //get all checkedItems[] and search id_storage in data
         try{
-            var name = document.getElementById('file-picker-input-image-create').getAttribute("src");
+            
+            var name = document.getElementById('file-picker-input-image-create' + '$name').getAttribute("src");
             name = name.replace("/data/", "");
             document.getElementsByName("checkedItems[]").forEach(function(item){
             var data = JSON.parse(item.getAttribute("data"));
@@ -98,33 +98,34 @@ $this->registerJs(
         catch(err){
         }
         
-        function selectItem(e){
-            
+        function selectItem(e, name){
             if(selectedValue.indexOf($(e).attr("data")) == -1){
                     if("$multiple" == "1"){
                         selectedValue.push($(e).attr("data"));
                         //file-picker-input-check-selected display block
-                        document.getElementById("file-picker-input-check-selected").style.display = "block";
+                        document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
                     }else{
                         selectedValue = [$(e).attr("data")];
                         //file-picker-input-check-selected display none
-                        document.getElementById("file-picker-input-check-selected").style.display = "block";
+                        document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
                     }
-                    document.getElementById("file-picker-input").value = selectedValue;
+                    document.getElementById("file-picker-input-" + name).value = selectedValue;
                     
                     
-                    updateItemsStatus();
+                    updateItemsStatus(name);
             }else{
                 selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
-                document.getElementById("file-picker-input").value = selectedValue;
+                document.getElementById("file-picker-input-" + name).value = selectedValue;
                 updateItemsStatus();
                 if(selectedValue.length == 0){
-                    document.getElementById("file-picker-input-check-selected").style.display = "none";
+                    
+                    document.getElementById("file-picker-input-check-selected" + '$name').style.display = "none";
                 }
             }
         }
 
-        function updateItemsStatus(){
+        function updateItemsStatus(name){
+            
             if(!Array.isArray(selectedValue)){
                     if(selectedValue == item.getAttribute("data")){
                         item.classList.remove("btn-success");
@@ -139,7 +140,8 @@ $this->registerJs(
                     }
                     return;
                 }
-            document.getElementsByName("checkedItems[]").forEach(function(item){
+            var pjax = document.getElementById("file-picker-pjax" + name);
+            pjax.querySelectorAll("[name='checkedItems[]']").forEach(function(item){
                 if(selectedValue.indexOf(item.getAttribute("data")) != -1){
                     item.classList.remove("btn-success");
                     item.classList.remove("fa-check");
@@ -154,20 +156,20 @@ $this->registerJs(
             });
         }
 
-        document.getElementById("file-picker-add-button").addEventListener("click", function(){
+        document.getElementById("file-picker-add-button" + '$name').addEventListener("click", function(){
             //reload pjax
-            $.pjax.reload({container: "#file-update-pjax", url: "?id_storage=null"});
+            $.pjax.reload({container: "#file-update-pjax" + '$name', url: "?id_storage=null"});
             //update-storage change name to create
-            document.getElementById("update-storage").innerHTML = "Create";
-            document.getElementById("update-storage").classList.remove("btn-primary");
-            document.getElementById("update-storage").classList.add("btn-success");
+            document.getElementById("update-storage" + '$name').innerHTML = "Create";
+            document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
+            document.getElementById("update-storage" + '$name').classList.add("btn-success");
             //show modal
-            $('#file-update-modal').modal('show');
+            $('#file-update-modal' + '$name').modal('show');
         });
 
         showImage = function(e){
-            document.getElementById("show-image").src = e.src;
-            $('#show-image-modal').modal('show');
+            document.getElementById("show-image" + '$name').src = e.src;
+            $('#show-image-modal' + '$name').modal('show');
         }
         
         JS, View::POS_END
@@ -177,19 +179,19 @@ $this->registerJs(
         "
         $(document).ready(function () {
             function checkFilePickerInput() {
-                var input = $('#file-picker-input');
+                var input = $('#file-picker-input' + '$name');
                 if (input.val() == undefined || input.val() == '') {
-                    document.getElementById(\"file-picker-input-check-selected\").style.display = \"none\";
+                    document.getElementById(\"file-picker-input-check-selected\" + '$name').style.display = \"none\";
                 }else{
-                    document.getElementById(\"file-picker-input-check-selected\").style.display = \"block\";
+                    document.getElementById(\"file-picker-input-check-selected\" + '$name').style.display = \"block\";
                 }
             }
             checkFilePickerInput();
 
-            $('#update-storage').click(function () {
+            $('#update-storage' + '$name').click(function () {
                 var myFormData = new FormData();
-                myFormData.append('title', $('#storage-title').val());
-                myFormData.append('file', document.getElementById('storage-file').files[0]);
+                myFormData.append('title', $('#storage-title' + '$name').val());
+                myFormData.append('file', document.getElementById('storage-file' + '$name').files[0]);
                 myFormData.append('id_storage', id_storage);
                 myFormData.append('" . Yii::$app->request->csrfParam . "', '" . Yii::$app->request->getCsrfToken() . "');
 
@@ -200,17 +202,17 @@ $this->registerJs(
                     contentType: false,
                     processData: false,
                     success: function (data) {
-                        $.pjax.reload({container: '#file-picker-pjax'});
-                        $('#file-update-modal').modal('hide');
+                        $.pjax.reload({container: '#file-picker-pjax' + '$name'});
+                        $('#file-update-modal' + '$name').modal('hide');
                     }
                 });
             });
-            $('#file-picker-select').click(function () {
-                $('#file-picker-modal').modal('hide');
+            $('#file-picker-select' + '$name').click(function () {
+                $('#file-picker-modal' + '$name').modal('hide');
                 
             });
 
-            $('#file-picker-modal').on('show.bs.modal', function () {
+            $('#file-picker-modal' + '$name').on('show.bs.modal', function () {
 
                 setTimeout(function(){
                 }, 100);
