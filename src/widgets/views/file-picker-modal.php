@@ -234,9 +234,7 @@ $this->registerJs(
                     },
                     error: function (data) {
                         $('#storage-error' + '$name').html(data.responseJSON.message);
-                        setTimeout(function(){
-                            $('#storage-error' + '$name').html('');
-                        }, 5000);
+                        $('#storage-error-modal' + '$name').modal('show');
                     }
                 }).always(function () {
                     $('#update-storage-spinner' + '$name').hide();
