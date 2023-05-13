@@ -221,9 +221,19 @@ class DefaultController extends Controller
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = $this->findModel($id_storage);
-        $model->deleteFile($model->name);
-        $model->delete();
+        if(!$model->deleteFile($model->name))
+        {
+            \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
+        }
 
+        if(!$model->delete())
+        {
+            \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
+        }
+        if ($this->request->isAjax) {
+            Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+            return ['success' => true];
+        }
         return $this->redirect(['index']);
     }
 

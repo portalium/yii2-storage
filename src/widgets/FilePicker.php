@@ -21,7 +21,6 @@ class FilePicker extends InputWidget
     public $multiple = 0;
     public $returnAttribute = ['id_storage'];
     public $json = 1;
-    public $modelIdField = 'id';
 
     public $name = '';
     public function init()
@@ -37,9 +36,6 @@ class FilePicker extends InputWidget
         }
         if (isset($this->options['json'])) {
             $this->json = $this->options['json'];
-        }
-        if (isset($this->options['modelIdField'])) {
-            $this->modelIdField = $this->options['modelIdField'];
         }
     }
 
@@ -73,7 +69,6 @@ class FilePicker extends InputWidget
             'files' => $this->files,
             'storageModel' => $model,
             'returnAttribute' => $this->returnAttribute,
-            'modelIdField' => $this->modelIdField,
             'name' => $this->name
         ]);
     }

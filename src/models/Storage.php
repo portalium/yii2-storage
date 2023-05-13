@@ -239,8 +239,11 @@ class Storage extends \yii\db\ActiveRecord
     {
         $path = realpath(Yii::$app->basePath . '/../data');
         if (file_exists($path . '/' . $filename)) {
-            unlink($path . '/' . $filename);
+            if(unlink($path . '/' . $filename)){
+                return true;
+            }
         }
+        return false;
     }
 
     public static function find()
