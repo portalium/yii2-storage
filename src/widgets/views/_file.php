@@ -95,9 +95,6 @@ if (isset($returnAttribute)) {
                     var data = JSON.parse(data);
                     document.getElementById('storage-title' + widgetName).value = data.title;
                     $('#file-update-modal .file-caption-name').attr('title', "");
-                    document.getElementById("update-storage" + widgetName).innerHTML = "Remove";
-                    document.getElementById("update-storage" + widgetName).classList.remove("btn-primary");
-                    document.getElementById("update-storage" + widgetName).classList.add("btn-danger");
                     //add spinner to button
                     var spinner = document.createElement("span");
                     spinner.classList.add("spinner-border");
