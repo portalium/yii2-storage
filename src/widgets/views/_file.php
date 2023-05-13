@@ -25,6 +25,7 @@ if (isset($returnAttribute)) {
         'header' => ($view == 1) ? [
             Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "updatedItem(this)"]),
             Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]),
+            Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "removeItem(this, '" . $widgetName . "')"]),
         ] : [],
         'footer' => [
             Html::tag("div",(strlen($model->title) > 25) ? substr(str_replace("’","´",$model->title), 0, 25) . '...' : Html::encode($model->title), ['style' => 'float: left;']),
@@ -69,9 +70,59 @@ if (isset($returnAttribute)) {
                     document.getElementById("update-storage" + '$widgetName').innerHTML = "Update";
                     document.getElementById("update-storage" + '$widgetName').classList.remove("btn-success");
                     document.getElementById("update-storage" + '$widgetName').classList.add("btn-primary");
+                    //add spinner to button
+                    var spinner = document.createElement("span");
+                    spinner.classList.add("spinner-border");
+                    spinner.classList.add("spinner-border-sm");
+                    spinner.setAttribute("role", "status");
+                    spinner.setAttribute("aria-hidden", "true");
+                    e.appendChild(spinner);
+                    //remove pencil icon
+                    e.classList.remove("fa-pencil");
+
+                    
                     //file-update-pjax
-                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '?id_storage=' + data.id_storage, timeout: false});
-                    $('#file-update-modal' + '$widgetName').modal('show');
+                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '?id_storage=' + data.id_storage, timeout: false}).done(function() {
+                        $('#file-update-modal' + '$widgetName').modal('show');
+                        spinner.remove();
+                        e.classList.add("fa-pencil");
+
+                    });
+                }
+
+                function removeItem(e, widgetName){
+                    var data = $(e).attr('data');
+                    var data = JSON.parse(data);
+                    document.getElementById('storage-title' + widgetName).value = data.title;
+                    $('#file-update-modal .file-caption-name').attr('title', "");
+                    //add spinner to button
+                    var spinner = document.createElement("span");
+                    spinner.classList.add("spinner-border");
+                    spinner.classList.add("spinner-border-sm");
+                    spinner.setAttribute("role", "status");
+                    spinner.setAttribute("aria-hidden", "true");
+                    e.appendChild(spinner);
+                    //remove pencil icon
+                    e.classList.remove("fa-trash");
+                    //show confirm
+                    if(confirm("Are you sure you want to delete this item?")){
+                        $.ajax({
+                            url: '/storage/default/delete?id_storage=' + data.id_storage,
+                            type: 'post',
+                            data: {
+                                '_csrf-web': yii.getCsrfToken()
+                            },
+                            success: function (data) {
+                                $.pjax.reload({container: '#file-picker-pjax' + widgetName, timeout: false}).done(function() {
+                                spinner.remove();
+                                e.classList.add("fa-trash");
+                            });
+                            }
+                        });
+                    }else{
+                        spinner.remove();
+                        e.classList.add("fa-trash");
+                    }
                 }
                 JS, View::POS_END
             ); 

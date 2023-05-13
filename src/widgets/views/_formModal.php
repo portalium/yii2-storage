@@ -1,5 +1,6 @@
 <?php
 
+use portalium\bootstrap5\Modal;
 use yii\helpers\Html;
 use kartik\file\FileInput;
 use portalium\storage\Module;
@@ -42,7 +43,18 @@ use portalium\storage\Module;
     ?>
     <?php
         //echo error message
-        echo Html::tag('div', '', ['id' => 'storage-error' . $widgetName, 'class' => 'help-block float-end', 'style' => 'color:red;']);
+        //echo Html::tag('div', '', ['id' => 'storage-error' . $widgetName, 'class' => 'help-block float-end', 'style' => 'color:red;']);
+        //create error modal
+        Modal::begin([
+            'id' => 'storage-error-modal' . $widgetName,
+            'title' => Module::t('Error'),
+            'footer' => '<a href="#" class="btn btn-primary" data-bs-dismiss="modal">' . Module::t('Close') . '</a>',
+            'size' => 'modal-sm',
+            'clientOptions' => ['backdrop' => 'static', 'keyboard' => false]
+        ]);
+        echo Html::tag('div', '', ['id' => 'storage-error' . $widgetName, 'class' => 'help-block float-start', 'style' => 'color:red;']);
+        Modal::end();
+
     ?>
     <?php
         echo Html::beginTag('div', ['id' => 'view-file']);

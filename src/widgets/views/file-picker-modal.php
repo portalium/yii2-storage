@@ -12,7 +12,10 @@ use portalium\storage\models\Storage;
 Modal::begin([
     'id' => 'file-picker-modal' . $name,
     'size' => Modal::SIZE_LARGE,
-    'title' =>  Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]),
+    'title' =>  Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]).
+                Html::tag('button', '
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
                 
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
                 Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
@@ -35,10 +38,23 @@ Modal::begin([
                 'class' => 'row',
                 'style' => 'overflow-y: auto; height:450px;',
             ],
-            'itemOptions' => [
-                'tag' => 'div',
-                'class' => 'col-lg-3 col-sm-4 col-md-3',
-            ],
+            'itemOptions' => 
+            function ($model, $key, $index, $widget) use ($returnAttribute, $json, $name) {
+                if (isset($returnAttribute)) {
+                    if (is_array($returnAttribute)) {
+                        if (in_array('id_storage', $returnAttribute)) {
+                        }else{
+                            $returnAttribute[] = 'id_storage';
+                        }
+                    }
+                }
+                return [
+                    'tag' => 'div',
+                    'class' => 'col-lg-3 col-sm-4 col-md-3',
+                    'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]],
+                    //'onclick' => 'selectItem(this, "' . $name . '")',
+                ];
+            },
             'summary' => false,
             'layout' => '{items}<div class="clearfix"></div>',
             
@@ -51,7 +67,10 @@ $modals = Modal::begin([
     'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-                Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]),
+                Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]).
+                Html::tag('button', '
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                ', ['id' => 'update-storage-spinner' . $name, 'class' => 'btn btn-primary', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
     'closeButton' => false,
 ]);
 Pjax::begin(['id' => 'file-update-pjax' . $name]);
@@ -159,18 +178,23 @@ $this->registerJs(
 
         document.getElementById("file-picker-add-button" + '$name').addEventListener("click", function(){
             //reload pjax
-            $.pjax.reload({container: "#file-update-pjax" + '$name', url: "?id_storage=null"});
-            //update-storage change name to create
-            document.getElementById("update-storage" + '$name').innerHTML = "Create";
-            document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
-            document.getElementById("update-storage" + '$name').classList.add("btn-success");
-            //show modal
-            $('#file-update-modal' + '$name').modal('show');
+            $('#file-picker-add-spinner' + '$name').show();
+            $('#file-picker-add-button' + '$name').hide();
+            $.pjax.reload({container: "#file-update-pjax" + '$name', url: "?id_storage=null"}).done(function(){
+                //update-storage change name to create
+                document.getElementById("update-storage" + '$name').innerHTML = "Create";
+                document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
+                document.getElementById("update-storage" + '$name').classList.add("btn-success");
+                //show modal
+                $('#file-update-modal' + '$name').modal('show');
+                $('#file-picker-add-spinner' + '$name').hide();
+                $('#file-picker-add-button' + '$name').show();
+            });
         });
 
         showImage = function(e){
             document.getElementById("show-image" + '$name').src = e.src;
-            $('#show-image-modal' + '$name').modal('show');
+            $('#show-image-modal').modal('show' + '$name');
         }
         
         JS, View::POS_END
@@ -195,7 +219,8 @@ $this->registerJs(
                 myFormData.append('file', document.getElementById('storage-file' + '$name').files[0]);
                 myFormData.append('id_storage', id_storage);
                 myFormData.append('" . Yii::$app->request->csrfParam . "', '" . Yii::$app->request->getCsrfToken() . "');
-
+                $('#update-storage-spinner' + '$name').show();
+                $('#update-storage' + '$name').hide();
                 $.ajax({
                     url: '/storage/default/create',
                     type: 'POST',
@@ -203,15 +228,17 @@ $this->registerJs(
                     contentType: false,
                     processData: false,
                     success: function (data) {
-                        $.pjax.reload({container: '#file-picker-pjax' + '$name'});
-                        $('#file-update-modal' + '$name').modal('hide');
+                        $.pjax.reload({container: '#file-picker-pjax' + '$name'}).done(function(){
+                            $('#file-update-modal' + '$name').modal('hide');
+                        });
                     },
                     error: function (data) {
                         $('#storage-error' + '$name').html(data.responseJSON.message);
-                        setTimeout(function(){
-                            $('#storage-error' + '$name').html('');
-                        }, 5000);
+                        $('#storage-error-modal' + '$name').modal('show');
                     }
+                }).always(function () {
+                    $('#update-storage-spinner' + '$name').hide();
+                    $('#update-storage' + '$name').show();
                 });
             });
             $('#file-picker-select' + '$name').click(function () {
