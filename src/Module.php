@@ -1,6 +1,8 @@
 <?php
 
 namespace portalium\storage;
+use portalium\base\Event;
+use portalium\storage\components\TriggerActions;
 
 class Module extends \portalium\base\Module
 {
@@ -40,5 +42,10 @@ class Module extends \portalium\base\Module
     public static function t($message, array $params = [])
     {
         return parent::coreT('storage', $message, $params);
+    }
+
+    public function registerEvents()
+    {
+        Event::on($this::className(), \portalium\workspace\Module::EVENT_ROLE_UPDATE_AFTER, [new TriggerActions(), 'onWorkspaceAvailableRoleUpdateAfter']);
     }
 }

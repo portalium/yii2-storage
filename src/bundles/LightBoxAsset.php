@@ -6,7 +6,7 @@ use yii\web\AssetBundle;
 
 class LightBoxAsset extends AssetBundle
 {
-    public $sourcePath = '@vendor/portalium/portalium-storage/src/assets/';
+    public $sourcePath = '@vendor/portalium/yii2-storage/src/assets/';
 
     public $depends = [
         'portalium\theme\bundles\AppAsset'

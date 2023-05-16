@@ -134,7 +134,7 @@ class Storage extends \yii\db\ActiveRecord
         ];
     }
 
-    //fields add url
+    /* //fields add url
     public function fields()
     {
         return array_merge(parent::fields(), [
@@ -142,7 +142,7 @@ class Storage extends \yii\db\ActiveRecord
                 return Yii::getAlias('@data') . '/' . $model->name;
             },
         ]);
-    }
+    } */
 
     /**
      * {@inheritdoc}
@@ -239,8 +239,11 @@ class Storage extends \yii\db\ActiveRecord
     {
         $path = realpath(Yii::$app->basePath . '/../data');
         if (file_exists($path . '/' . $filename)) {
-            unlink($path . '/' . $filename);
+            if(unlink($path . '/' . $filename)){
+                return true;
+            }
         }
+        return false;
     }
 
     public static function find()

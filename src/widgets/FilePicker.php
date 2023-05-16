@@ -21,11 +21,13 @@ class FilePicker extends InputWidget
     public $multiple = 0;
     public $returnAttribute = ['id_storage'];
     public $json = 1;
-    public $modelIdField = 'id';
+
+    public $name = '';
     public function init()
     {
         parent::init();
-        $this->options['id'] = 'file-picker-input';
+        $this->name = $this->generateHtmlId($this->name);
+        $this->options['id'] = 'file-picker-input-' . $this->name;
         if (isset($this->options['multiple'])) {
             $this->multiple = $this->options['multiple'];
         }
@@ -35,19 +37,15 @@ class FilePicker extends InputWidget
         if (isset($this->options['json'])) {
             $this->json = $this->options['json'];
         }
-        if (isset($this->options['modelIdField'])) {
-            $this->modelIdField = $this->options['modelIdField'];
-        }
     }
 
     public function run()
     {
 
-
-            $this->files = new \yii\data\ActiveDataProvider([
-                'query' => Storage::find(),
-                'pagination' => false
-            ]);
+        $this->files = new \yii\data\ActiveDataProvider([
+            'query' => Storage::find(),
+            'pagination' => false
+        ]);
 
         
         if ($this->hasModel()) {
@@ -71,7 +69,18 @@ class FilePicker extends InputWidget
             'files' => $this->files,
             'storageModel' => $model,
             'returnAttribute' => $this->returnAttribute,
-            'modelIdField' => $this->modelIdField
+            'name' => $this->name
         ]);
     }
+
+    function generateHtmlId($name) {
+
+        $name = preg_replace('/[^a-zA-Z0-9]+/', ' ', $name);
+    
+
+        $name = str_replace(' ', '-', strtolower(trim($name)));
+    
+        return $name;
+    }
+    
 }
