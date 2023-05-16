@@ -23,7 +23,6 @@ Modal::begin([
     ]);
 
     Pjax::begin(['id' => 'file-picker-pjax' . $name]);
-    //Yii::warning($name);
         echo ListView::widget([
             'dataProvider' => $files,
             'itemView' => '_file',
