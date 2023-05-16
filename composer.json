@@ -1,23 +1,23 @@
 {
-	"name" : "portalium/portalium-storage",
-	"description" : "Module storage for Portalium",
+	"name" : "portalium/yii2-storage",
+	"description" : "Storage Module for Portalium (Yii2)",
 	"type" : "portalium-core",
 	"license": "MIT",
 	"homepage" : "https://portalium.dev",
 	"authors" : [
 		{
 			"name" : "Uğur YILDIZ",
-			"email" : "yildiz@diginova.com.tr",
+			"email" : "ugur.yildiz@diginova.com.tr",
 			"homepage" : "https://uguryildiz.net"
 		}
 	],
 	"support" : {
-		"issues" : "https://github.com/portalium/portalium-storage/issues"
+		"issues" : "https://github.com/portalium/yii2-storage/issues"
 	},
 	"require": {
 		"kartik-v/yii2-widget-fileinput": "@dev",
-		"portalium/portalium-user": "*",
-		"portalium/portalium-workspace": "*"
+		"portalium/yii2-user": "*",
+		"portalium/yii2-workspace": "*"
 	},
 	"autoload" : {
 		"psr-4" : {
