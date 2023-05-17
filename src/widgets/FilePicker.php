@@ -26,6 +26,7 @@ class FilePicker extends InputWidget
     public function init()
     {
         parent::init();
+        Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
         $this->name = $this->generateHtmlId($this->name);
         $this->options['id'] = 'file-picker-input-' . $this->name;
         if (isset($this->options['multiple'])) {
