@@ -1,6 +1,6 @@
 <?php
 use yii\web\View;
-use yii\widgets\Pjax;
+use portalium\widgets\Pjax;
 use yii\widgets\ListView;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
@@ -22,7 +22,7 @@ Modal::begin([
     'closeButton' => false
     ]);
 
-    Pjax::begin(['id' => 'file-picker-pjax' . $name]);
+    Pjax::begin(['id' => 'file-picker-pjax' . $name, 'history' => false, 'timeout' => false]);
         echo ListView::widget([
             'dataProvider' => $files,
             'itemView' => '_file',
@@ -72,7 +72,7 @@ $modals = Modal::begin([
                 ', ['id' => 'update-storage-spinner' . $name, 'class' => 'btn btn-primary', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
     'closeButton' => false,
 ]);
-Pjax::begin(['id' => 'file-update-pjax' . $name]);
+Pjax::begin(['id' => 'file-update-pjax' . $name, 'history' => false, 'timeout' => false]);
 $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";
 $this->registerJs('id_storage = '.$id_storage.';', View::POS_END);
 echo $this->render('./_formModal', [
@@ -90,7 +90,7 @@ echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; f
 echo Html::endTag('div');
 echo Html::endTag('div');
 //show image
-Pjax::begin(['id' => 'file-picker-input-pjax' . $name]);
+Pjax::begin(['id' => 'file-picker-input-pjax' . $name, 'history' => false, 'timeout' => false]);
 Pjax::end();
 Modal::begin([
     'id' => 'show-image-modal' . $name,
@@ -188,6 +188,7 @@ $this->registerJs(
                 $('#file-update-modal' + '$name').modal('show');
                 $('#file-picker-add-spinner' + '$name').hide();
                 $('#file-picker-add-button' + '$name').show();
+                console.log("done22");
             });
         });
 
@@ -228,6 +229,7 @@ $this->registerJs(
                     processData: false,
                     success: function (data) {
                         $.pjax.reload({container: '#file-picker-pjax' + '$name'}).done(function(){
+                            console.log('done2');
                             $('#file-update-modal' + '$name').modal('hide');
                         });
                     },
