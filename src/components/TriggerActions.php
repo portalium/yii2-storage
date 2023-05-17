@@ -6,6 +6,7 @@ use Yii;
 use yii\base\BaseObject;
 use portalium\site\models\Setting;
 use portalium\storage\Module;
+use portalium\workspace\models\WorkspaceUser;
 
 class TriggerActions extends BaseObject
 {
@@ -38,4 +39,55 @@ class TriggerActions extends BaseObject
             }
         }
     }
+
+    //onWorkspaceUserCreateAfter
+    public function onWorkspaceUserCreateAfter($event)
+    {
+        ['id_user' => $id_user, 'id_workspace' => $id_workspace] = $event->payload;
+
+        $default_role = Setting::find()->where(['name' => 'storage::workspace::default_role'])->one();
+        $admin_role = Setting::find()->where(['name' => 'storage::workspace::admin_role'])->one();
+        $auth = Yii::$app->authManager;
+        /* if ($default_role->value == $auth->getRole($default_role->value)->name) {
+            $auth->assign($auth->getRole($default_role->value), $id_user);
+
+            $workspaceUser = WorkspaceUser::findOne(['id_user' => $id_user, 'id_workspace' => $id_workspace, 'role' => $default_role->value, 'id_module' => 'storage']);
+
+            if (!$workspaceUser) {
+                $workspaceUser = new WorkspaceUser();
+                $workspaceUser->id_user = $id_user;
+                $workspaceUser->id_workspace = $id_workspace;
+                $workspaceUser->role = $default_role->value;
+                $workspaceUser->id_module = 'storage';
+                $workspaceUser->save();
+            }
+        } */
+
+        $roles = [
+            $default_role,
+            $admin_role
+        ];
+        $activeWorkspaceId = WorkspaceUser::getActiveWorkspaceId();
+        foreach ($roles as $role) {
+            if (!$role->value)
+                continue;
+            if ($auth->getRole($role->value)) {
+                //$auth->assign($auth->getRole($role->value), $id_user);
+                $workspaceUser = WorkspaceUser::findOne(['id_user' => $id_user, 'id_workspace' => $id_workspace, 'role' => $role->value, 'id_module' => 'storage']);
+
+                if (!$workspaceUser) {
+                    $workspaceUser = new WorkspaceUser();
+                    $workspaceUser->id_user = $id_user;
+                    $workspaceUser->id_workspace = $id_workspace;
+                    $workspaceUser->role = $role->value;
+                    $workspaceUser->id_module = 'storage';
+                    
+                    $workspaceUser->status = $activeWorkspaceId == $id_workspace ? WorkspaceUser::STATUS_ACTIVE : WorkspaceUser::STATUS_INACTIVE;
+                    $workspaceUser->save();
+                }
+            }
+        }
+
+    }
+
 }
