@@ -47,5 +47,7 @@ class Module extends \portalium\base\Module
     public function registerEvents()
     {
         Event::on($this::className(), \portalium\workspace\Module::EVENT_ROLE_UPDATE_AFTER, [new TriggerActions(), 'onWorkspaceAvailableRoleUpdateAfter']);
+
+        Event::on($this::className(), \portalium\workspace\Module::EVENT_USER_CREATE_AFTER, [new TriggerActions(), 'onWorkspaceUserCreateAfter']);
     }
 }
