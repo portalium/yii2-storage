@@ -185,7 +185,7 @@ $this->registerJs(
             //reload pjax
             $('#file-picker-add-spinner' + '$name').show();
             $('#file-picker-add-button' + '$name').hide();
-            $.pjax.reload({container: "#file-update-pjax" + '$name', url: "?id_storage=null"}).done(function(){
+            $.pjax.reload({container: "#file-update-pjax" + '$name', url: "?id=null"}).done(function(){
                 //update-storage change name to create
                 document.getElementById("update-storage" + '$name').innerHTML = "Create";
                 document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
@@ -233,7 +233,7 @@ $this->registerJs(
                 var myFormData = new FormData();
                 myFormData.append('title', $('#storage-title' + '$name').val());
                 myFormData.append('file', document.getElementById('storage-file' + '$name').files[0]);
-                myFormData.append('id_storage', id_storage);
+                myFormData.append('id', id_storage);
                 myFormData.append('" . Yii::$app->request->csrfParam . "', '" . Yii::$app->request->getCsrfToken() . "');
                 $('#update-storage-spinner' + '$name').show();
                 $('#update-storage' + '$name').hide();

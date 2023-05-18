@@ -82,7 +82,7 @@ if (isset($returnAttribute)) {
 
                     
                     //file-update-pjax
-                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '?id_storage=' + data.id_storage, timeout: false}).done(function() {
+                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '?id=' + data.id_storage, timeout: false}).done(function() {
                         $('#file-update-modal' + '$widgetName').modal('show');
                         spinner.remove();
                         e.classList.add("fa-pencil");
@@ -107,7 +107,7 @@ if (isset($returnAttribute)) {
                     //show confirm
                     if(confirm("Are you sure you want to delete this item?")){
                         $.ajax({
-                            url: '/storage/default/delete?id_storage=' + data.id_storage,
+                            url: '/storage/default/delete?id=' + data.id_storage,
                             type: 'post',
                             data: {
                                 '_csrf-web': yii.getCsrfToken()

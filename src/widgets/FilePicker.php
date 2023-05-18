@@ -56,7 +56,7 @@ class FilePicker extends InputWidget
 
         $model = new Storage();
         if (Yii::$app->request->isGet) {
-            $id_storage = Yii::$app->request->get('id_storage');
+            $id_storage = Yii::$app->request->get('id');
             if ($id_storage) {
                 $model = Storage::findOne($id_storage);
             }
