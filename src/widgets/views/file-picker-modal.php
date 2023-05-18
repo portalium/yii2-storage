@@ -1,4 +1,5 @@
 <?php
+use yii\helpers\Url;
 use yii\web\View;
 use portalium\widgets\Pjax;
 use yii\widgets\ListView;
@@ -8,7 +9,7 @@ use portalium\theme\widgets\Modal;
 use portalium\storage\models\Storage;
 
 
-
+$path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
 Modal::begin([
     'id' => 'file-picker-modal' . $name,
     'size' => Modal::SIZE_LARGE,
@@ -81,23 +82,26 @@ echo $this->render('./_formModal', [
     ]);
 Pjax::end();
 Modal::end();
-
+Modal::begin([
+    'id' => 'storage-show-file-modal' . $name,
+    'size' => Modal::SIZE_DEFAULT,
+    'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']),
+    'closeButton' => false,
+]);
+    echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $name]);
+Modal::end();
 echo Html::beginTag('div', ['class' => 'd-flex']);
 echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $name]);
 
 echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none;']);
-echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
+//echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
+echo Html::beginTag('div', ['class' => 'row', 'style' => 'width: 75px;']);
+echo Html::tag('div', '', ['class' => 'col-6 fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
+echo Html::tag('a', Module::t('Show'), ['class' => 'col-6', 'style' => 'margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $name, 'data-bs-toggle' => 'modal', 'data-bs-target' => '#storage-show-file-modal' . $name]);
 echo Html::endTag('div');
 echo Html::endTag('div');
-//show image
-Pjax::begin(['id' => 'file-picker-input-pjax' . $name, 'history' => false, 'timeout' => false]);
-Pjax::end();
-Modal::begin([
-    'id' => 'show-image-modal' . $name,
-    'size' => Modal::SIZE_DEFAULT,
-]);
-echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'show-image' . $name]);
-Modal::end();
+echo Html::endTag('div');
+
 $this->registerJs(
     <<<JS
         selectedValue = [];
@@ -121,12 +125,13 @@ $this->registerJs(
             if(selectedValue.indexOf($(e).attr("data")) == -1){
                     if("$multiple" == "1"){
                         selectedValue.push($(e).attr("data"));
-                        //file-picker-input-check-selected display block
                         document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
+                        document.getElementById("storage-show-file" + name).src = JSON.parse($(e).attr("data")).name ? '$path' + JSON.parse($(e).attr("data")).name : '';
                     }else{
                         selectedValue = [$(e).attr("data")];
-                        //file-picker-input-check-selected display none
                         document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
+                        document.getElementById("storage-show-file" + name).src = JSON.parse($(e).attr("data")).name ? '$path' + JSON.parse($(e).attr("data")).name : '';
+
                     }
                     document.getElementById("file-picker-input-" + name).value = selectedValue;
                     
@@ -139,6 +144,7 @@ $this->registerJs(
                 if(selectedValue.length == 0){
                     
                     document.getElementById("file-picker-input-check-selected" + '$name').style.display = "none";
+                    document.getElementById("storage-show-file" + name).src = '';
                 }
             }
         }
@@ -188,15 +194,9 @@ $this->registerJs(
                 $('#file-update-modal' + '$name').modal('show');
                 $('#file-picker-add-spinner' + '$name').hide();
                 $('#file-picker-add-button' + '$name').show();
-                console.log("done22");
+                
             });
-        });
-
-        showImage = function(e){
-            document.getElementById("show-image" + '$name').src = e.src;
-            $('#show-image-modal').modal('show' + '$name');
-        }
-        
+        });        
         JS, View::POS_END
     ); 
 
@@ -204,11 +204,27 @@ $this->registerJs(
         "
         $(document).ready(function () {
             function checkFilePickerInput() {
-                var input = $('#file-picker-input' + '$name');
-                if (input.val() == undefined || input.val() == '') {
+                var input = $('#file-picker-input-' + '$name');
+                if (input.val() == undefined || input.val() == '' || input.val() == '[]' || input.val() == '0') {
                     document.getElementById(\"file-picker-input-check-selected\" + '$name').style.display = \"none\";
+                    document.getElementById(\"storage-show-file\" + '$name').src = '';
                 }else{
                     document.getElementById(\"file-picker-input-check-selected\" + '$name').style.display = \"block\";
+                    document.getElementById(\"storage-show-file\" + '$name').src = '$path' + JSON.parse(input.val()).name;
+                    //find file-picker-pjaxapp-logo-square in checkedItems[]
+                    document.getElementById(\"file-picker-pjax\" + '$name').querySelectorAll(\"[name='checkedItems[]']\").forEach(function(item){
+                        if(item.getAttribute(\"data\") == input.val()){
+                            item.classList.remove(\"btn-success\");
+                            item.classList.remove(\"fa-check\");
+                            item.classList.add(\"btn-danger\");
+                            item.classList.add(\"fa-times\");
+                        }else{
+                            item.classList.remove(\"btn-danger\");
+                            item.classList.remove(\"fa-times\");
+                            item.classList.add(\"btn-success\");
+                            item.classList.add(\"fa-check\");
+                        }
+                    });
                 }
             }
             checkFilePickerInput();
@@ -229,7 +245,7 @@ $this->registerJs(
                     processData: false,
                     success: function (data) {
                         $.pjax.reload({container: '#file-picker-pjax' + '$name'}).done(function(){
-                            console.log('done2');
+                            
                             $('#file-update-modal' + '$name').modal('hide');
                         });
                     },
