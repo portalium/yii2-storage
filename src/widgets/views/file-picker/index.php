@@ -10,6 +10,8 @@ use portalium\storage\models\Storage;
 
 
 $path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
+
+//file list show modal
 Modal::begin([
     'id' => 'file-picker-modal' . $name,
     'size' => Modal::SIZE_LARGE,
@@ -24,46 +26,18 @@ Modal::begin([
     ]);
 
     Pjax::begin(['id' => 'file-picker-pjax' . $name, 'history' => false, 'timeout' => false]);
-        echo ListView::widget([
-            'dataProvider' => $files,
-            'itemView' => '_file',
-            'viewParams' => [
-                'view' => 1,
-                'returnAttribute' => $returnAttribute,
-                'json' => $json,
-                'widgetName' => $name
-            ],
-            'options' => [
-                'tag' => 'div',
-                'class' => 'row',
-                'style' => 'overflow-y: auto; height:450px;',
-            ],
-            'itemOptions' => 
-            function ($model, $key, $index, $widget) use ($returnAttribute, $json, $name) {
-                if (isset($returnAttribute)) {
-                    if (is_array($returnAttribute)) {
-                        if (in_array('id_storage', $returnAttribute)) {
-                        }else{
-                            $returnAttribute[] = 'id_storage';
-                        }
-                    }
-                }
-                return [
-                    'tag' => 'div',
-                    'class' => 'col-lg-3 col-sm-4 col-md-3',
-                    'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]],
-                    //'onclick' => 'selectItem(this, "' . $name . '")',
-                ];
-            },
-            'summary' => false,
-            'layout' => '{items}<div class="clearfix"></div>',
-            
-        ]);
+        echo $this->renderAjax('_browse', [
+            'dataProvider' => $dataProvider,
+            'attributes' => $attributes,
+            'isJson' => $isJson,
+            'widgetName' => $name,
+        ]); 
     Pjax::end();
 Modal::end();
 
 
-$modals = Modal::begin([
+//file update and create modal
+Modal::begin([
     'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
@@ -73,15 +47,14 @@ $modals = Modal::begin([
                 ', ['id' => 'update-storage-spinner' . $name, 'class' => 'btn btn-primary', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
     'closeButton' => false,
 ]);
-Pjax::begin(['id' => 'file-update-pjax' . $name, 'history' => false, 'timeout' => false]);
-$id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";
-$this->registerJs('id_storage = '.$id_storage.';', View::POS_END);
-echo $this->render('./_formModal', [
-    'model' => ($storageModel != null) ? $storageModel : new Storage(),
-    'widgetName' => $name,
-    ]);
-Pjax::end();
+    Pjax::begin(['id' => 'file-update-pjax' . $name, 'history' => false, 'timeout' => false, 'enablePushState' => true, 'enableReplaceState' => true]);
+        $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";
+        $this->registerJs('id_storage = '.$id_storage.';', View::POS_END);
+
+    Pjax::end();
 Modal::end();
+
+//show image modal
 Modal::begin([
     'id' => 'storage-show-file-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
@@ -90,16 +63,17 @@ Modal::begin([
 ]);
     echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $name]);
 Modal::end();
-echo Html::beginTag('div', ['class' => 'd-flex']);
-echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $name]);
 
-echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none;']);
-//echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
-echo Html::beginTag('div', ['class' => 'row', 'style' => 'width: 75px;']);
-echo Html::tag('div', '', ['class' => 'col-6 fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
-echo Html::tag('a', Module::t('Show'), ['class' => 'col-6', 'style' => 'margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $name, 'data-bs-toggle' => 'modal', 'data-bs-target' => '#storage-show-file-modal' . $name]);
-echo Html::endTag('div');
-echo Html::endTag('div');
+
+echo Html::beginTag('div', ['class' => 'd-flex']);
+    echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $name]);
+    echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none;']);
+    //echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
+        echo Html::beginTag('div', ['class' => 'row', 'style' => 'width: 75px;']);
+            echo Html::tag('div', '', ['class' => 'col-6 fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
+            echo Html::tag('a', Module::t('Show'), ['class' => 'col-6', 'style' => 'margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $name, 'data-bs-toggle' => 'modal', 'data-bs-target' => '#storage-show-file-modal' . $name]);
+        echo Html::endTag('div');
+    echo Html::endTag('div');
 echo Html::endTag('div');
 
 $this->registerJs(
@@ -107,13 +81,11 @@ $this->registerJs(
         selectedValue = [];
         //get all checkedItems[] and search id_storage in data
         try{
-            
             var name = document.getElementById('file-picker-input-image-create' + '$name').getAttribute("src");
             name = name.replace("/data/", "");
             document.getElementsByName("checkedItems[]").forEach(function(item){
             var data = JSON.parse(item.getAttribute("data"));
             if(data.name == name){
-                //click item
                 item.click();
             }
         });
@@ -185,13 +157,14 @@ $this->registerJs(
             //reload pjax
             $('#file-picker-add-spinner' + '$name').show();
             $('#file-picker-add-button' + '$name').hide();
-            $.pjax.reload({container: "#file-update-pjax" + '$name', url: "?id=null"}).done(function(){
+            $.pjax.reload({container: "#file-update-pjax" + '$name', url: "/storage/default/create?id=null"}).done(function(){
                 //update-storage change name to create
                 document.getElementById("update-storage" + '$name').innerHTML = "Create";
                 document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
                 document.getElementById("update-storage" + '$name').classList.add("btn-success");
                 //show modal
                 $('#file-update-modal' + '$name').modal('show');
+                
                 $('#file-picker-add-spinner' + '$name').hide();
                 $('#file-picker-add-button' + '$name').show();
                 
@@ -244,7 +217,7 @@ $this->registerJs(
                     contentType: false,
                     processData: false,
                     success: function (data) {
-                        $.pjax.reload({container: '#file-picker-pjax' + '$name'}).done(function(){
+                        $.pjax.reload({container: '#file-picker-pjax' + '$name', url: '/storage/default/index'}).done(function(){
                             
                             $('#file-update-modal' + '$name').modal('hide');
                         });

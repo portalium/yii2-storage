@@ -126,7 +126,7 @@ class Storage extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title', 'id_workspace'], 'required'],
+            [['title', 'id_workspace', 'name'], 'required'],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             ['file', 'safe'],

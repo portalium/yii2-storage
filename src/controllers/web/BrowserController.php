@@ -17,7 +17,7 @@ use yii\web\HttpException;
 /**
  * StorageController implements the CRUD actions for Storage model.
  */
-class DefaultController extends Controller
+class BrowserController extends Controller
 {
     /**
      * @inheritDoc
@@ -65,13 +65,24 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+        $dataProvider = new \yii\data\ActiveDataProvider([
+            'query' => Storage::find(),
+            'pagination' => false
+        ]);
 
-        $searchModel = new StorageSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        $attributes = ['id_storage'];
+        $isJson = 1;
+        $widgetName =  '';
+        $isPicker = false;
+        $model = new Storage();
 
         return $this->render('index', [
-            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
+            'attributes' => $attributes,
+            'isJson' => $isJson,
+            'widgetName' => $widgetName,
+            'isPicker' => $isPicker,
+            'model' => $model
         ]);
     }
 
@@ -103,59 +114,30 @@ class DefaultController extends Controller
         }
 
         $model = new Storage();
+
         if($this->request->isAjax){
-            if ( $this->request->post('id') != 'null' && $this->request->post('id') != null ) {
-                return $this->updatePjax($this->request->post('id'));
-            }
-            $file = UploadedFile::getInstanceByName('file');
-            if($file){
-                $fileName = md5(rand()) . '.' . $file->extension;
-                if($file->saveAs(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $fileName)){
-                    $model->name = $fileName;
-                    $model->title = $this->request->post('title');
-                    $model->id_user = Yii::$app->user->id;
-                    $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
-                    $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
-                    if($model->save()){
-                        return json_encode(['name' => $fileName]);
-                    }else{
-                        $error = '';
-                        foreach ($model->getErrors() as $key => $value) {
-                            $error .= $value[0] . '</br>';
+            if($file = UploadedFile::getInstance($model, 'file')){
+                if($model->load($this->request->post())){
+                    $fileName = md5(rand()) . '.' . $file->extension;
+                    if($file->saveAs(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $fileName)){
+                        $model->name = $fileName;
+                        $model->id_user = Yii::$app->user->id;
+                        $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
+                        $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
+                        
+                        if($model->save()){
+                            $model = new Storage();
+                            \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
+                        }else{
+                            unlink(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $fileName);
+                            \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
                         }
-                        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-                        throw new HttpException(500, Module::t($error));
                     }
-                }else{
-                    return "error";
-                }
-            }else{
-                return $this->renderAjax('create', [
-                    'model' => $model,
-                ]);
-            }
-
-        }
-        if ($this->request->isPost) {
-            if ($model->load($this->request->post())) {
-                $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
-                $model->file = UploadedFile::getInstance($model, 'file');
-                if ($model->upload()) {
-                    \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
-                    return $this->redirect(['view', 'id' => $model->id_storage]);
-                }else{
-                    \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
-                    \Yii::$app->session->addFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
-                    return $this->render('create', [
-                        'model' => $model,
-                    ]);
                 }
             }
-        } else {
-            $model->loadDefaultValues();
         }
-
-        return $this->render('create', [
+        Yii::warning($model->errors);
+        return $this->renderAjax('create', [
             'model' => $model,
         ]);
     }
@@ -172,26 +154,38 @@ class DefaultController extends Controller
         if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+        
         $model = $this->findModel($id);
-        if ($this->request->isPost && $model->load($this->request->post())) 
-        {
-            $model->file = UploadedFile::getInstance($model, 'file');
-            if ($model->file){
-                $model->deleteFile($model->name);
-            }
-            if ($model->upload()) {
-                \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
-                return $this->redirect(['view', 'id' => $model->id_storage]);
-            }else{
-                \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
-                \Yii::$app->session->addFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
-                return $this->render('update', [
-                    'model' => $model,
-                ]);
-            }
-        }   
 
-        return $this->render('update', [
+        if($this->request->isAjax){
+            if($file = UploadedFile::getInstance($model, 'file['.$id.']')){
+                if($model->load($this->request->post())){
+                    $oldFileName = $model->name;
+                    $fileName = md5(rand()) . '.' . $file->extension;
+                    if($file->saveAs(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $fileName)){
+                        $model->name = $fileName;
+                        $model->id_user = Yii::$app->user->id;
+                        $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
+                        $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
+                        
+                        if($model->save()){
+                            unlink(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $oldFileName);
+                            $model = new Storage();
+                            \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
+                        }else{
+                            unlink(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $fileName);
+                            \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
+                        }
+                    }
+                }
+            }else{
+                if ($model->load($this->request->post()) && $model->save()) {
+
+                }
+            }
+        }
+
+        return $this->renderAjax('update', [
             'model' => $model,
         ]);
     }

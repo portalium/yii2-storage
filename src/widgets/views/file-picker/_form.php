@@ -31,11 +31,12 @@ use portalium\storage\Module;
                 'showPreview' => false,
                 'showCaption' => true,
                 'showRemove' => true,
-                'showUpload' => false
-            ]
+                'showUpload' => false,
+            ],
         ],
         ['class' => 'form-control']
-    ) ?>
+    ) 
+    ?>
         </div>
     </div>
     <?php
@@ -59,7 +60,7 @@ use portalium\storage\Module;
     <?php
         echo Html::beginTag('div', ['id' => 'view-file']);
         if (!$model->isNewRecord) {
-            echo $this->render('_file', ['model' => $model, 'view' => 0, 'returnAttribute' => []]);
+            echo $this->render('_file', ['model' => $model, 'view' => 0, 'attributes' => []]);
         }
         echo Html::endTag('div');
     ?>

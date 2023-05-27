@@ -9,11 +9,11 @@ use portalium\storage\models\Storage;
 $name = $model->name;
 $ext = substr($name, strrpos($name, '.') + 1);
 $path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
-if (isset($returnAttribute)) {
-    if (is_array($returnAttribute)) {
-        if (in_array('id_storage', $returnAttribute)) {
+if (isset($attributes)) {
+    if (is_array($attributes)) {
+        if (in_array('id_storage', $attributes)) {
         }else{
-            $returnAttribute[] = 'id_storage';
+            $attributes[] = 'id_storage';
         }
     }
 }
@@ -23,9 +23,9 @@ if (isset($returnAttribute)) {
     'bodyOptions' => ['style' => 'height: 200px; display: block; overflow: hidden;'],
     'actions' => [
         'header' => ($view == 1) ? [
-            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "updatedItem(this)"]),
-            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]),
-            Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => ($json == 1 ) ? json_encode($model->getAttributes($returnAttribute)) : $model->getAttributes($returnAttribute)[$returnAttribute[0]], 'onclick' => "removeItem(this, '" . $widgetName . "')"]),
+            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "updatedItem(this)"]),
+            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]),
+            Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "removeItem(this, '" . $widgetName . "')"]),
         ] : [],
         'footer' => [
             Html::tag("div",(strlen($model->title) > 25) ? substr(str_replace("’","´",$model->title), 0, 25) . '...' : Html::encode($model->title), ['style' => 'float: left;']),
@@ -82,7 +82,7 @@ if (isset($returnAttribute)) {
 
                     
                     //file-update-pjax
-                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '?id=' + data.id_storage, timeout: false}).done(function() {
+                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '/storage/default/create?id=' + data.id_storage, timeout: false}).done(function() {
                         $('#file-update-modal' + '$widgetName').modal('show');
                         spinner.remove();
                         e.classList.add("fa-pencil");
@@ -113,7 +113,8 @@ if (isset($returnAttribute)) {
                                 '_csrf-web': yii.getCsrfToken()
                             },
                             success: function (data) {
-                                $.pjax.reload({container: '#file-picker-pjax' + widgetName, timeout: false}).done(function() {
+                                $.pjax.reload({container: '#file-picker-pjax' + widgetName, timeout: false, url: '/storage/default/index'
+                                }).done(function() {
                                 spinner.remove();
                                 e.classList.add("fa-trash");
                             });

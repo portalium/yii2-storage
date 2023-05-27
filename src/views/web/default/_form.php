@@ -15,7 +15,11 @@ use portalium\storage\widgets\FilePicker;
 
 <div class="storage-form">
 
-    <?php $form = ActiveForm::begin(); ?>
+    <?php $form = ActiveForm::begin([
+        'options' => [
+            'data-pjax' => true,
+        ],
+    ]); ?>
     <?php Panel::begin([
     'title' => ($model->isNewRecord) ? Module::t('Create Media') : $model->title,
     'actions' => [
