@@ -18,6 +18,8 @@ class FilePicker extends InputWidget
     public $isJson = 1;
     public $name = '';
 
+    public $isPicker = true;
+
     public function init()
     {
         parent::init();
@@ -34,6 +36,9 @@ class FilePicker extends InputWidget
         if (isset($this->options['isJson'])) {
             $this->isJson = $this->options['isJson'];
         }
+        if (isset($this->options['isPicker'])) {
+            $this->isPicker = $this->options['isPicker'];
+        }
     }
 
     public function run()
@@ -44,7 +49,7 @@ class FilePicker extends InputWidget
             'pagination' => false
         ]);
 
-        $isPicker = true;
+
 
 
         
@@ -64,7 +69,7 @@ class FilePicker extends InputWidget
             'attributes' => $this->attributes,
             'isJson' => $this->isJson,
             'widgetName' => $this->name,
-            'isPicker' => $isPicker,
+            'isPicker' => $this->isPicker,
             'inputModel' => $this->model,
             'attribute' => $this->attribute,
             'multiple' => $this->multiple,
