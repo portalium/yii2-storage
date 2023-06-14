@@ -17,23 +17,60 @@ use portalium\storage\widgets\FilePicker;
 
 <div class="storage-form">
 
+    <?php
+        $id = null;
+        $widgetName = null;
+        if ($isPicker){
+            if(isset($model->isNewRecord) && $model->isNewRecord){
+                $id = 'file-form-modal-' . $widgetName;
+            }else{
+                $id = 'file-form-modal-' . $model->id_storage;
+            }
+        }else{
+            
+        }
+    ?>
    
     <?php 
-
-        Modal::begin([
-            'id' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form-modal' : 'file-form-modal-' . $model->id_storage,
-            'size' => Modal::SIZE_DEFAULT,
-            'closeButton' => false,
-            'title' => (isset($model->isNewRecord) && $model->isNewRecord) ? Module::t('Create Media') : $model->title,
-            'footer' => 
-                (isset($model->isNewRecord) && $model->isNewRecord) ?  Html::button(Module::t('Save'), ['class' => 'btn btn-success', 'type' => 'submit', 'form' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form' : 'file-form-' . $model->id_storage]) :
-                Html::button(Module::t('Update'), ['class' => 'btn btn-primary', 'type' => 'submit', 'form' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form' : 'file-form-' . $model->id_storage]) 
-        ]);
+        if ($isPicker)
+        {
+            Modal::begin([
+                'id' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form-modal-' . $widgetName : 'file-form-modal-' . $model->id_storage,
+                'size' => Modal::SIZE_DEFAULT,
+                'closeButton' => false,
+                'title' => (isset($model->isNewRecord) && $model->isNewRecord) ? Module::t('Create Media') : $model->title,
+                'footer' => 
+                    (isset($model->isNewRecord) && $model->isNewRecord) ?  Html::button(Module::t('Save'), ['class' => 'btn btn-success', 'data-bs-dismiss' => 'modal', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $widgetName]) :
+                    Html::button(Module::t('Update'), ['class' => 'btn btn-primary', 'data-bs-dismiss' => 'modal', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $widgetName])
+            ]);
+        }else
+        {
+            Modal::begin([
+                'id' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form-modal-' : 'file-form-modal-' . $model->id_storage,
+                'size' => Modal::SIZE_DEFAULT,
+                'closeButton' => false,
+                'title' => (isset($model->isNewRecord) && $model->isNewRecord) ? Module::t('Create Media') : $model->title,
+                'footer' => 
+                    (isset($model->isNewRecord) && $model->isNewRecord) ?  Html::button(Module::t('Save'), ['class' => 'btn btn-success',  'data-bs-dismiss' => 'modal', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $widgetName]) :
+                    Html::button(Module::t('Update'), ['class' => 'btn btn-primary',  'data-bs-dismiss' => 'modal', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $widgetName])
+            ]);
+        }
+        
     ?>
         <?php 
-            Pjax::begin([
-                'id' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form-pjax' : 'file-form-pjax-' . $model->id_storage,
-            ]);
+            if (!$isPicker)
+            {
+                Pjax::begin([
+                    'id' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form-pjax' : 'file-form-pjax-' . $model->id_storage,
+                ]);
+            }
+            else
+            {
+                Pjax::begin([
+                    'id' => (isset($model->isNewRecord) && $model->isNewRecord) ? 'file-form-pjax'. $widgetName : 'file-form-pjax-' . $model->id_storage,
+                ]);
+            }
+
         ?>
             <?php 
                 $form = ActiveForm::begin([

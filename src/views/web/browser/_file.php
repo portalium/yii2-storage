@@ -7,9 +7,7 @@ use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;
 
 
-echo $this->render('_form', [
-    'model' => $model,
-]);
+
 
 
 $name = $model->name;
@@ -30,7 +28,7 @@ if (isset($attributes)) {
     'bodyOptions' => ['style' => 'height: 200px; display: block; overflow: hidden;'],
     'actions' => [
         'header' => ($view == 1) ? [
-            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-form-modal-' . $model->id_storage]),
+            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-form-modal-' . $model->id_storage, "data-bs-dismiss"=>"modal"]),
             ($isPicker) ? Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : '',
             Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "removeItem(this, '" . $widgetName . "')"]),
         ] : [],
