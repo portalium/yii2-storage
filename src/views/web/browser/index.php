@@ -13,7 +13,22 @@ use yii\widgets\ListView;
 <?php 
     $path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
 ?>
+<?php 
+    echo $this->render('_form', [
+        'model' => $model,
+        'isPicker' => $isPicker,
+        'widgetName' => $widgetName,
+    ]);
+    
 
+    foreach ($dataProvider->getModels() as $modelDataProvider) {
+        echo $this->render('_form', [
+            'model' => $modelDataProvider,
+            'isPicker' => $isPicker,
+            'widgetName' => $widgetName,
+        ]);
+    }
+?>
 <?php 
     if($isPicker)
     {    
@@ -24,19 +39,14 @@ use yii\widgets\ListView;
                         Html::tag('button', '
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         ', ['id' => 'file-picker-add-spinner' . $widgetName, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
-                        
-            'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-                        Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $widgetName, 'style' => 'float:right; margin-right:10px;']),
+            'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-toggle' => 'modal']) .
+                        Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $widgetName, 'style' => 'float:right; margin-right:10px;', "data-bs-toggle"=>"modal", "data-bs-dismiss"=>"modal"]),
             'closeButton' => false
             ]);
     }
 ?>
 
-<?php 
-    echo $this->render('_form', [
-        'model' => $model
-    ]);
-?>
+
 
 <?php 
     if(!$isPicker)
@@ -46,7 +56,7 @@ use yii\widgets\ListView;
             'title' => Module::t('Create'),
             'actions' => [
                 'header' => [
-                    Html::button(Module::t(''), ['class' => 'btn btn-secondary fa fa-plus', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-form-modal']),
+                    Html::button(Module::t(''), ['class' => 'btn btn-secondary fa fa-plus', 'data-bs-toggle' => 'modal', 'href' => '#file-form-modal']),
                 ],
             ]    
         ]);
@@ -93,17 +103,13 @@ use yii\widgets\ListView;
 <?php Pjax::end(); ?>
 
 <?php 
-if(!$isPicker)
-{    
-    Panel::end(); 
-}
+    if(!$isPicker)
+        Panel::end(); 
 ?>
 
 <?php 
     if($isPicker)
-    {    
         Modal::end();
-    }
 ?>
 
 <?php
@@ -112,7 +118,7 @@ if($isPicker)
     Modal::begin([
         'id' => 'storage-show-file-modal' . $widgetName,
         'size' => Modal::SIZE_DEFAULT,
-        'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']),
+        'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-toggle' => 'modal']),
         'closeButton' => false,
     ]);
         echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $widgetName]);
@@ -120,23 +126,27 @@ if($isPicker)
 
 
     echo Html::beginTag('div', ['class' => 'd-flex']);
-        echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $widgetName]);
+        echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'href' => '#file-picker-modal' . $widgetName]);
         echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $widgetName, 'style' => 'display:none;']);
         //echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
             echo Html::beginTag('div', ['class' => 'row', 'style' => 'width: 75px;']);
                 echo Html::tag('div', '', ['class' => 'col-6 fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
-                echo Html::tag('a', Module::t('Show'), ['class' => 'col-6', 'style' => 'margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $widgetName, 'data-bs-toggle' => 'modal', 'data-bs-target' => '#storage-show-file-modal' . $widgetName]);
+                echo Html::tag('a', Module::t('Show'), ['class' => 'col-6', 'style' => 'margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $widgetName, 'data-bs-toggle' => 'modal', 'href' => '#storage-show-file-modal' . $widgetName]);
             echo Html::endTag('div');
         echo Html::endTag('div');
     echo Html::endTag('div');
 
+$this->registerJs(
+    'var storagePath = "' . Yii::$app->setting->getValue('storage::path') . '";',
+    View::POS_HEAD
+);
 $this->registerJs(
     <<<JS
         selectedValue = [];
         //get all checkedItems[] and search id_storage in data
         try{
             var name = document.getElementById('file-picker-input-image-create' + '$widgetName').getAttribute("src");
-            name = name.replace("/data/", "");
+            name = name.replace("/" + storagePath + "/", "");
             document.getElementsByName("checkedItems[]").forEach(function(item){
             var data = JSON.parse(item.getAttribute("data"));
             if(data.name == name){
@@ -206,6 +216,10 @@ $this->registerJs(
                 }
             });
         }
+
+        /* document.getElementById("file-picker-add-button" + '$widgetName').addEventListener("click", function(){
+            $('#file-form-modal' + '$widgetName').modal('show');
+        });  */      
         JS, View::POS_END
     ); 
 

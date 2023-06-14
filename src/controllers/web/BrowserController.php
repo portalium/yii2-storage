@@ -136,7 +136,7 @@ class BrowserController extends Controller
                 }
             }
         }
-        Yii::warning($model->errors);
+
         return $this->renderAjax('create', [
             'model' => $model,
         ]);
