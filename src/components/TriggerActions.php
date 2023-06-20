@@ -67,7 +67,7 @@ class TriggerActions extends BaseObject
             $default_role,
             $admin_role
         ];
-        $activeWorkspaceId = WorkspaceUser::getActiveWorkspaceId();
+        $activeWorkspaceId = Yii::$app->workspace->id;
         foreach ($roles as $role) {
             if (!$role->value)
                 continue;

@@ -42,7 +42,7 @@ class DefaultController extends Controller
      */
     public function beforeAction($action)
     {
-        if (WorkspaceUser::getActiveWorkspaceId() == null) {
+        if (Yii::$app->workspace->id == null) {
             Yii::$app->session->setFlash('error', Module::t('You must select a workspace first.'));
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -114,7 +114,7 @@ class DefaultController extends Controller
                     $model->title = $this->request->post('title');
                     $model->id_user = Yii::$app->user->id;
                     $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
-                    $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
+                    $model->id_workspace = Yii::$app->workspace->id;
                     if($model->save()){
                         return json_encode(['name' => $fileName]);
                     }else{
@@ -132,7 +132,7 @@ class DefaultController extends Controller
         }
         if ($this->request->isPost) {
             if ($model->load($this->request->post())) {
-                $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
+                $model->id_workspace = Yii::$app->workspace->id;
                 $model->file = UploadedFile::getInstance($model, 'file');
                 if ($model->upload()) {
                     \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));

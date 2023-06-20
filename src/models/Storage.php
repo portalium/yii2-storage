@@ -248,7 +248,7 @@ class Storage extends \yii\db\ActiveRecord
 
     public static function find()
     {
-        $activeWorkspaceId = WorkspaceUser::getActiveWorkspaceId();
+        $activeWorkspaceId = Yii::$app->workspace->id;
         $query = parent::find();
         if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
             return $query;
