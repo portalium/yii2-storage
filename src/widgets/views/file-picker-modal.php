@@ -91,7 +91,7 @@ Modal::begin([
     echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $name]);
 Modal::end();
 echo Html::beginTag('div', ['class' => 'd-flex']);
-echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $name]);
+echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;' . 'display: ' . ($visible ? 'block' : 'none'), 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $name]);
 
 echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none;']);
 //echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
