@@ -23,6 +23,9 @@ class FilePicker extends InputWidget
     public $json = 1;
 
     public $name = '';
+
+    public $visible = true;
+
     public function init()
     {
         parent::init();
@@ -37,6 +40,9 @@ class FilePicker extends InputWidget
         }
         if (isset($this->options['json'])) {
             $this->json = $this->options['json'];
+        }
+        if (isset($this->options['visible'])) {
+            $this->visible = $this->options['visible'];
         }
     }
 
@@ -70,7 +76,8 @@ class FilePicker extends InputWidget
             'files' => $this->files,
             'storageModel' => $model,
             'returnAttribute' => $this->returnAttribute,
-            'name' => $this->name
+            'name' => $this->name,
+            'visible' => $this->visible
         ]);
     }
 
