@@ -24,7 +24,7 @@ class FilePicker extends InputWidget
 
     public $name = '';
 
-    public $visible = true;
+    public $callbackName = null;
 
     public function init()
     {
@@ -41,8 +41,8 @@ class FilePicker extends InputWidget
         if (isset($this->options['json'])) {
             $this->json = $this->options['json'];
         }
-        if (isset($this->options['visible'])) {
-            $this->visible = $this->options['visible'];
+        if (isset($this->options['callbackName'])) {
+            $this->callbackName = $this->options['callbackName'];
         }
     }
 
@@ -77,7 +77,7 @@ class FilePicker extends InputWidget
             'storageModel' => $model,
             'returnAttribute' => $this->returnAttribute,
             'name' => $this->name,
-            'visible' => $this->visible
+            'callbackName' => $this->callbackName
         ]);
     }
 
