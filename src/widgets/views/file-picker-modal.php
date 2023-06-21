@@ -91,7 +91,7 @@ Modal::begin([
     echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $name]);
 Modal::end();
 echo Html::beginTag('div', ['class' => 'd-flex']);
-echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;' . 'display: ' . ($visible ? 'block' : 'none'), 'data-bs-toggle' => 'modal', 'data-bs-target' => '#file-picker-modal' . $name]);
+echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary col', 'style'=>'max-width: 130px;', 'id' => 'file-picker-button' . $name]);
 
 echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none;']);
 //echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
@@ -101,6 +101,17 @@ echo Html::tag('a', Module::t('Show'), ['class' => 'col-6', 'style' => 'margin-t
 echo Html::endTag('div');
 echo Html::endTag('div');
 echo Html::endTag('div');
+
+if ($callbackName != null)
+{
+    $this->registerJs(
+        <<<JS
+        document.getElementById("file-picker-select" + '$name').addEventListener("click", function(){
+            $callbackName(selectedValue);
+        });
+        JS, View::POS_END
+    );
+}
 
 $this->registerJs(
     <<<JS
@@ -197,6 +208,11 @@ $this->registerJs(
                 
             });
         });        
+
+        document.getElementById("file-picker-button" + '$name').addEventListener("click", function(){
+            $('#file-picker-modal' + '$name').modal('show');
+            console.log("file-picker-button" + '$name');
+        });
         JS, View::POS_END
     ); 
 
@@ -260,7 +276,6 @@ $this->registerJs(
             });
             $('#file-picker-select' + '$name').click(function () {
                 $('#file-picker-modal' + '$name').modal('hide');
-                
             });
 
             $('#file-picker-modal' + '$name').on('show.bs.modal', function () {
