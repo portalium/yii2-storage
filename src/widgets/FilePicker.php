@@ -3,10 +3,15 @@
 namespace portalium\storage\widgets;
 
 use Yii;
-
+use yii\base\Model;
+use yii\base\Widget;
+use yii\widgets\ListView;
+use kartik\file\FileInput;
+use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\storage\models\Storage;
 use portalium\theme\widgets\InputWidget;
+use portalium\theme\widgets\Modal;
 
 class FilePicker extends InputWidget
 {
@@ -15,18 +20,23 @@ class FilePicker extends InputWidget
     public $selected;
     public $multiple = 0;
     public $attributes = ['id_storage'];
-    public $isJson = 1;
+
     public $name = '';
 
+    public $isJson = 1;
+
     public $isPicker = true;
+
+    public $callbackName = null;
 
     public function init()
     {
         parent::init();
-        
+        Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
         $this->name = $this->generateHtmlId($this->name);
-
         $this->options['id'] = 'file-picker-input-' . $this->name;
+        $this->options['id'] = 'file-picker-input-' . $this->name;
+
         if (isset($this->options['multiple'])) {
             $this->multiple = $this->options['multiple'];
         }
@@ -49,9 +59,6 @@ class FilePicker extends InputWidget
             'pagination' => false
         ]);
 
-
-
-
         
         if ($this->hasModel()) {
             $input = 'activeHiddenInput';
@@ -59,27 +66,34 @@ class FilePicker extends InputWidget
         }
 
         $model = new Storage();
-
-        if($id_storage = Yii::$app->request->get('id'))
-            $model = Storage::findOne($id_storage);
-
+        if (Yii::$app->request->isGet) {
+            $id_storage = Yii::$app->request->get('id_storage');
+            if ($id_storage) {
+                $model = Storage::findOne($id_storage);
+            }
+        }
         
-        echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/browser/index.php', [
-            'dataProvider' => $this->dataProvider,
-            'attributes' => $this->attributes,
-            'isJson' => $this->isJson,
-            'widgetName' => $this->name,
-            'isPicker' => $this->isPicker,
-            'inputModel' => $this->model,
+        
+        echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/file-browser/index.php', [
+            'model' => $this->model,
             'attribute' => $this->attribute,
             'multiple' => $this->multiple,
-            'model' => $model,
+            'dataProvider' => $this->dataProvider,
+            'isJson' => $this->isJson,
+            'storageModel' => $model,
+            'attributes' => $this->attributes,
+            'name' => $this->name,
+            'callbackName' => $this->callbackName,
+            'isPicker' => $this->isPicker,
         ]);
     }
 
     function generateHtmlId($name) {
+
         $name = preg_replace('/[^a-zA-Z0-9]+/', ' ', $name);
+
         $name = str_replace(' ', '-', strtolower(trim($name)));
+    
         return $name;
     }
     

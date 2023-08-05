@@ -17,7 +17,7 @@ use yii\web\HttpException;
 /**
  * StorageController implements the CRUD actions for Storage model.
  */
-class BrowserController extends Controller
+class FileBrowserController extends Controller
 {
     /**
      * @inheritDoc
@@ -60,7 +60,7 @@ class BrowserController extends Controller
      *
      * @return string
      */
-    public function actionIndex()
+    public function actionIndex($name)
     {
         if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
@@ -75,6 +75,12 @@ class BrowserController extends Controller
         $widgetName =  '';
         $isPicker = false;
         $model = new Storage();
+        if (Yii::$app->request->isGet) {
+            $id_storage = Yii::$app->request->get('id_storage');
+            if ($id_storage) {
+                $model = Storage::findOne($id_storage);
+            }
+        }
 
         return $this->render('index', [
             'dataProvider' => $dataProvider,
@@ -82,7 +88,8 @@ class BrowserController extends Controller
             'isJson' => $isJson,
             'widgetName' => $widgetName,
             'isPicker' => $isPicker,
-            'model' => $model
+            'storageModel' => $model,
+            'name' => $name
         ]);
     }
 
@@ -118,6 +125,7 @@ class BrowserController extends Controller
         if($this->request->isAjax){
             if($file = UploadedFile::getInstance($model, 'file')){
                 if($model->load($this->request->post())){
+                    Yii::warning(Yii::$app->request->post());
                     $fileName = md5(rand()) . '.' . $file->extension;
                     if($file->saveAs(Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') .'/' . $fileName)){
                         $model->name = $fileName;
@@ -135,6 +143,9 @@ class BrowserController extends Controller
                     }
                 }
             }
+            //response format json
+            Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+            return ['success' => true];
         }
 
         return $this->renderAjax('create', [
@@ -179,10 +190,21 @@ class BrowserController extends Controller
                     }
                 }
             }else{
-                if ($model->load($this->request->post()) && $model->save()) {
-
+                $model->title = $this->request->post('title');
+                $model->file = UploadedFile::getInstanceByName('file');
+                if ($model->file){
+                    $model->deleteFile($model->name);
+                }
+                if ($model->upload()) {
+                    return json_encode(['name' => $model->name]);
+                }else{
+                   return json_encode(['error' => Module::t('Error uploading file')]);
                 }
             }
+
+            //response format json
+            Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+            return ['success' => true];
         }
 
         return $this->renderAjax('update', [
