@@ -124,19 +124,21 @@ $this->registerJs(
         selectedValue = [];
         //get all checkedItems[] and search id_storage in data
         try{
-            
+            /*
             var name = document.getElementById('file-picker-input-image-create' + '$name').getAttribute("src");
             name = name.replace("/data/", "");
-            console.log('sdasdas');
+
             document.getElementsByName("checkedItems[]").forEach(function(item){
             var data = JSON.parse(item.getAttribute("data"));
+
             if(data.name == name){
                 //click item
                 item.click();
             }
-        });
+        }); */
         }
         catch(err){
+
         }
         
         function selectItem(e, name){
@@ -156,9 +158,8 @@ $this->registerJs(
             }else{
                 selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
                 document.getElementById("file-picker-input-" + name).value = selectedValue;
-                updateItemsStatus();
+                updateItemsStatus(name);
                 if(selectedValue.length == 0){
-                    
                     document.getElementById("file-picker-input-check-selected" + '$name').style.display = "none";
                     document.getElementById("storage-show-file" + name).src = '';
                 }
@@ -180,8 +181,10 @@ $this->registerJs(
                     }
                     return;
                 }
-            var pjax = document.getElementById("file-picker-pjax" + name);
-            pjax.querySelectorAll("[name='checkedItems[]']").forEach(function(item){
+            
+                var pjax = document.getElementById("file-picker-pjax" + name);
+
+                pjax.querySelectorAll("[name='checkedItems[]']").forEach(function(item){
                 if(selectedValue.indexOf(item.getAttribute("data")) != -1){
                     item.classList.remove("btn-success");
                     item.classList.remove("fa-check");
@@ -194,6 +197,7 @@ $this->registerJs(
                     item.classList.add("fa-check");
                 }
             });
+            
         }
 
         document.getElementById("file-picker-add-button" + '$name').addEventListener("click", function(){
@@ -268,7 +272,7 @@ $this->registerJs(
                     contentType: false,
                     processData: false,
                     success: function (data) {
-                        $.pjax.reload({container: '#file-picker-pjax' + '$name', url: '/storage/file-browser/index?name=' + '$name', timeout: false
+                        $.pjax.reload({container: '#file-picker-pjax' + '$name', url: '/storage/file-browser/index?name=' + '$name' + '&isJson=' + '$isJson', timeout: false
                         }).done(function (data) {
                             $('#file-update-modal' + '$name').modal('hide');
                         });

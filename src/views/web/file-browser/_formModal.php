@@ -22,20 +22,10 @@ use portalium\storage\Module;
     <div class="mb-3 row">
         <label class="col-sm-2 col-form-label" for="storage-file<?= $widgetName ?>"><?= Module::t('File') ?></label>
         <div class="col-sm-10">
-            <?= FileInput::widget(
-        [
-            'name' => 'attachment_50',
-            'attribute' => 'file',
-            'id' => 'storage-file' . $widgetName,
-            'pluginOptions' => [
-                'showPreview' => false,
-                'showCaption' => true,
-                'showRemove' => true,
-                'showUpload' => false
-            ],
-        ],
-        ['class' => 'form-control']
-    ) ?>
+            
+            <?php
+            echo Html::fileInput('file', null, ['id' => 'storage-file' . $widgetName, 'class' => 'form-control'])
+            ?>
         </div>
     </div>
     <?php
