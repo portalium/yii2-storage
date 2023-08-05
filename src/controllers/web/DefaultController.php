@@ -42,7 +42,7 @@ class DefaultController extends Controller
      */
     public function beforeAction($action)
     {
-        if (WorkspaceUser::getActiveWorkspaceId() == null) {
+        if (Yii::$app->workspace->id == null) {
             Yii::$app->session->setFlash('error', Module::t('You must select a workspace first.'));
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -65,7 +65,6 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-
         $searchModel = new StorageSearch();
         $dataProvider = $searchModel->search($this->request->queryParams);
 
@@ -77,17 +76,17 @@ class DefaultController extends Controller
 
     /**
      * Displays a single Storage model.
-     * @param int $id Id Storage
+     * @param int $id_storage Id Storage
      * @return string
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionView($id)
+    public function actionView($id_storage)
     {
         if (!Yii::$app->user->can('storageWebDefaultView', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         return $this->render('view', [
-            'model' => $this->findModel($id),
+            'model' => $this->findModel($id_storage),
         ]);
     }
 
@@ -104,8 +103,8 @@ class DefaultController extends Controller
 
         $model = new Storage();
         if($this->request->isAjax){
-            if ( $this->request->post('id') != 'null' && $this->request->post('id') != null ) {
-                return $this->updatePjax($this->request->post('id'));
+            if ( $this->request->post('id_storage') != 'null' ) {
+                return $this->updatePjax($this->request->post('id_storage'));
             }
             $file = UploadedFile::getInstanceByName('file');
             if($file){
@@ -115,7 +114,7 @@ class DefaultController extends Controller
                     $model->title = $this->request->post('title');
                     $model->id_user = Yii::$app->user->id;
                     $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
-                    $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
+                    $model->id_workspace = Yii::$app->workspace->id;
                     if($model->save()){
                         return json_encode(['name' => $fileName]);
                     }else{
@@ -129,20 +128,15 @@ class DefaultController extends Controller
                 }else{
                     return "error";
                 }
-            }else{
-                return $this->renderAjax('create', [
-                    'model' => $model,
-                ]);
             }
-
         }
         if ($this->request->isPost) {
             if ($model->load($this->request->post())) {
-                $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
+                $model->id_workspace = Yii::$app->workspace->id;
                 $model->file = UploadedFile::getInstance($model, 'file');
                 if ($model->upload()) {
                     \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
-                    return $this->redirect(['view', 'id' => $model->id_storage]);
+                    return $this->redirect(['view', 'id_storage' => $model->id_storage]);
                 }else{
                     \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
                     \Yii::$app->session->addFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
@@ -163,7 +157,7 @@ class DefaultController extends Controller
     /**
      * Updates an existing Storage model.
      * If update is successful, the browser will be redirected to the 'view' page.
-     * @param int $id Id Storage
+     * @param int $id_storage Id Storage
      * @return string|\yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
@@ -181,7 +175,7 @@ class DefaultController extends Controller
             }
             if ($model->upload()) {
                 \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
-                return $this->redirect(['view', 'id' => $model->id_storage]);
+                return $this->redirect(['view', 'id_storage' => $model->id_storage]);
             }else{
                 \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
                 \Yii::$app->session->addFlash('error', Module::t('Error uploading file</br>Allowed file types: {types}', ['types' => $model->getAllowedExtensions()]));
@@ -196,10 +190,10 @@ class DefaultController extends Controller
         ]);
     }
     
-    protected function updatePjax($id)
+    protected function updatePjax($id_storage)
     {
-            $model = $this->findModel($id);
-            if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id)])) {
+            $model = $this->findModel($id_storage);
+            if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id_storage)])) {
                 return json_encode(['error' => Module::t('Error uploading file')]);
             }
             $model->title = $this->request->post('title');
@@ -217,16 +211,16 @@ class DefaultController extends Controller
     /**
      * Deletes an existing Storage model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
-     * @param int $id Id Storage
+     * @param int $id_storage Id Storage
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
+    public function actionDelete($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id)])) {
+        if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id_storage)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        $model = $this->findModel($id);
+        $model = $this->findModel($id_storage);
         if(!$model->deleteFile($model->name))
         {
             \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
@@ -246,13 +240,13 @@ class DefaultController extends Controller
     /**
      * Finds the Storage model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param int $id Id Storage
+     * @param int $id_storage Id Storage
      * @return Storage the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
-    protected function findModel($id)
+    protected function findModel($id_storage)
     {
-        if (($model = Storage::findOne(['id_storage' => $id])) !== null) {
+        if (($model = Storage::findOne(['id_storage' => $id_storage])) !== null) {
             return $model;
         }
 

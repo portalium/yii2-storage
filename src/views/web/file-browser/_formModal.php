@@ -31,12 +31,11 @@ use portalium\storage\Module;
                 'showPreview' => false,
                 'showCaption' => true,
                 'showRemove' => true,
-                'showUpload' => false,
+                'showUpload' => false
             ],
         ],
         ['class' => 'form-control']
-    ) 
-    ?>
+    ) ?>
         </div>
     </div>
     <?php

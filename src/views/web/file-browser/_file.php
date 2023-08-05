@@ -24,7 +24,7 @@ if (isset($attributes)) {
     'actions' => [
         'header' => ($view == 1) ? [
             Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "updatedItem(this)"]),
-            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'name' => 'checkedItems[]', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]),
+            Html::tag('i', '', ['class' => 'fa fa-check btn btn-success', 'img-src' => $name, 'name' => 'checkedItems[]', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]),
             Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => ($isJson == 1 ) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "removeItem(this, '" . $widgetName . "')"]),
         ] : [],
         'footer' => [
@@ -65,7 +65,7 @@ if (isset($attributes)) {
                 function updatedItem(e){
                     var data = $(e).attr('data');
                     var data = JSON.parse(data);
-                    document.getElementById('storage-title' + '$widgetName').value = data.title;
+                    document.getElementById('storage-title' + '$widgetName').value = data.title ? data.title : data;
                     $('#file-update-modal' + '$widgetName' + ' .file-caption-name').attr('title', "");
                     document.getElementById("update-storage" + '$widgetName').innerHTML = "Update";
                     document.getElementById("update-storage" + '$widgetName').classList.remove("btn-success");
@@ -80,9 +80,10 @@ if (isset($attributes)) {
                     //remove pencil icon
                     e.classList.remove("fa-pencil");
 
-                    
+                    var id_storage = data.id_storage ? data.id_storage : data;
                     //file-update-pjax
-                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '/storage/default/create?id=' + data.id_storage, timeout: false}).done(function() {
+                    $.pjax.reload({container: '#file-update-pjax' + '$widgetName', url: '/storage/file-browser/index?id_storage='+ id_storage +'&name=' + '$widgetName'
+                        , timeout: false}).done(function() {
                         $('#file-update-modal' + '$widgetName').modal('show');
                         spinner.remove();
                         e.classList.add("fa-pencil");
@@ -107,14 +108,13 @@ if (isset($attributes)) {
                     //show confirm
                     if(confirm("Are you sure you want to delete this item?")){
                         $.ajax({
-                            url: '/storage/default/delete?id=' + data.id_storage,
+                            url: '/storage/default/delete?id_storage=' + data.id_storage,
                             type: 'post',
                             data: {
                                 '_csrf-web': yii.getCsrfToken()
                             },
                             success: function (data) {
-                                $.pjax.reload({container: '#file-picker-pjax' + widgetName, timeout: false, url: '/storage/default/index'
-                                }).done(function() {
+                                $.pjax.reload({container: '#file-picker-pjax' + widgetName, timeout: false}).done(function() {
                                 spinner.remove();
                                 e.classList.add("fa-trash");
                             });
