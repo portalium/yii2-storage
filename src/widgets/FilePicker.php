@@ -16,13 +16,16 @@ use portalium\theme\widgets\Modal;
 class FilePicker extends InputWidget
 {
 
-    public $files;
+    public $dataProvider;
     public $selected;
     public $multiple = 0;
-    public $returnAttribute = ['id_storage'];
-    public $json = 1;
+    public $attributes = ['id_storage'];
 
     public $name = '';
+
+    public $isJson = 1;
+
+    public $isPicker = true;
 
     public $callbackName = null;
 
@@ -32,14 +35,19 @@ class FilePicker extends InputWidget
         Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
         $this->name = $this->generateHtmlId($this->name);
         $this->options['id'] = 'file-picker-input-' . $this->name;
+        $this->options['id'] = 'file-picker-input-' . $this->name;
+
         if (isset($this->options['multiple'])) {
             $this->multiple = $this->options['multiple'];
         }
-        if (isset($this->options['returnAttribute'])) {
-            $this->returnAttribute = $this->options['returnAttribute'];
+        if (isset($this->options['attributes'])) {
+            $this->attributes = $this->options['attributes'];
         }
-        if (isset($this->options['json'])) {
-            $this->json = $this->options['json'];
+        if (isset($this->options['isJson'])) {
+            $this->isJson = $this->options['isJson'];
+        }
+        if (isset($this->options['isPicker'])) {
+            $this->isPicker = $this->options['isPicker'];
         }
         if (isset($this->options['callbackName'])) {
             $this->callbackName = $this->options['callbackName'];
@@ -49,7 +57,7 @@ class FilePicker extends InputWidget
     public function run()
     {
 
-        $this->files = new \yii\data\ActiveDataProvider([
+        $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => Storage::find(),
             'pagination' => false
         ]);
@@ -68,23 +76,24 @@ class FilePicker extends InputWidget
             }
         }
         
-        echo $this->render('./file-picker-modal', [
+        
+        echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/file-browser/index.php', [
             'model' => $this->model,
             'attribute' => $this->attribute,
             'multiple' => $this->multiple,
-            'json' => $this->json,
-            'files' => $this->files,
+            'dataProvider' => $this->dataProvider,
+            'isJson' => $this->isJson,
             'storageModel' => $model,
-            'returnAttribute' => $this->returnAttribute,
+            'attributes' => $this->attributes,
             'name' => $this->name,
-            'callbackName' => $this->callbackName
+            'callbackName' => $this->callbackName,
+            'isPicker' => $this->isPicker,
         ]);
     }
 
     function generateHtmlId($name) {
 
         $name = preg_replace('/[^a-zA-Z0-9]+/', ' ', $name);
-    
 
         $name = str_replace(' ', '-', strtolower(trim($name)));
     
