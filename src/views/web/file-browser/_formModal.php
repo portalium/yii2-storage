@@ -29,12 +29,6 @@ use portalium\storage\Module;
         </div>
     </div>
     <?php
-    
-    ?>
-    <?php
-        //echo error message
-        //echo Html::tag('div', '', ['id' => 'storage-error' . $widgetName, 'class' => 'help-block float-end', 'style' => 'color:red;']);
-        //create error modal
         Modal::begin([
             'id' => 'storage-error-modal' . $widgetName,
             'title' => Module::t('Error'),
@@ -44,12 +38,11 @@ use portalium\storage\Module;
         ]);
         echo Html::tag('div', '', ['id' => 'storage-error' . $widgetName, 'class' => 'help-block float-start', 'style' => 'color:red;']);
         Modal::end();
-
     ?>
     <?php
         echo Html::beginTag('div', ['id' => 'view-file']);
         if (!$model->isNewRecord) {
-            echo $this->render('_file', ['model' => $model, 'view' => 0, 'attributes' => []]);
+            echo $this->render('_file', ['model' => $model, 'view' => 0, 'attributes' => [], 'isPicker' => $isPicker, 'isJson' => $isJson, 'widgetName' => $widgetName]);
         }
         echo Html::endTag('div');
     ?>

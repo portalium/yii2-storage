@@ -59,7 +59,7 @@ class FileBrowserController extends Controller
      *
      * @return string
      */
-    public function actionIndex($name, $isJson = 1)
+    public function actionIndex()
     {
         if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
@@ -69,26 +69,37 @@ class FileBrowserController extends Controller
             'pagination' => false
         ]);
 
-        $attributes = ['id_storage'];
-        $widgetName =  '';
-        $isPicker = false;
-        $model = new Storage();
-        if (Yii::$app->request->isGet) {
-            $id_storage = Yii::$app->request->get('id_storage');
+        if (Yii::$app->request->isAjax) {
+            $model = new Storage();
+            $payload = Yii::$app->request->get('payload');
+            $payload = json_decode($payload, true);
+            $id_storage = $payload['id_storage'] ?? null;
+
             if ($id_storage) {
                 $model = Storage::findOne($id_storage);
             }
-        }
 
-        return $this->render('index', [
-            'dataProvider' => $dataProvider,
-            'attributes' => $attributes,
-            'isJson' => $isJson,
-            'widgetName' => $widgetName,
-            'isPicker' => $isPicker,
-            'storageModel' => $model,
-            'name' => $name
-        ]);
+            return $this->render('index', [
+                'attribute' => $payload['attribute'] ?? null,
+                'multiple' => $payload['multiple'] ?? null,
+                'dataProvider' => $dataProvider,
+                'isJson' => $payload['isJson'] ?? null,
+                'storageModel' => $model,
+                'attributes' => $payload['attributes'] ?? null,
+                'name' => $payload['name'] ?? null,
+                'callbackName' => $payload['callbackName'] ?? null,
+                'isPicker' => $payload['isPicker'] ?? null,
+            ]);
+        } else {
+            $model = new Storage();
+            return $this->render('index', [
+                'dataProvider' => $dataProvider,
+                'isJson' => Yii::$app->request->get('isJson'),
+                'isPicker' => false,
+                'storageModel' => $model,
+                'name' => 'base'
+            ]);
+        }
     }
 
     /**
@@ -120,7 +131,7 @@ class FileBrowserController extends Controller
 
         $model = new Storage();
 
-        if ($this->request->isAjax) {
+        if ($this->request->isAjax && $this->request->isPost) {
             if ($file = UploadedFile::getInstanceByName('file')) {
                 $model->file = $file;
                 $model->title = $this->request->post('title');
@@ -145,9 +156,10 @@ class FileBrowserController extends Controller
             Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
             return ['success' => true];
         }
-
-        return $this->renderAjax('create', [
+        $widgetName = ($this->request->get('name')) ? $this->request->get('name') : '';
+        return $this->renderAjax('_formModal', [
             'model' => $model,
+            'widgetName' => $widgetName
         ]);
     }
 
@@ -165,7 +177,9 @@ class FileBrowserController extends Controller
         }
 
         $model = $this->findModel($id);
-
+        if (!$model) {
+            throw new HttpException(404, Module::t('The requested page does not exist.'));
+        }
         if ($this->request->isAjax) {
             if ($file = UploadedFile::getInstance($model, 'file[' . $id . ']')) {
                 if ($model->load($this->request->post())) {
@@ -235,11 +249,14 @@ class FileBrowserController extends Controller
      * @return \yii\web\Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionDelete($id)
+    public function actionDelete()
     {
+        $id = Yii::$app->request->isPost ? $this->findModel(Yii::$app->request->post('id')) : $this->findModel(Yii::$app->request->get('id'));
+
         if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id)])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
         $model = $this->findModel($id);
         if (!$model->deleteFile($model->name)) {
             \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
@@ -252,7 +269,6 @@ class FileBrowserController extends Controller
             Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
             return ['success' => true];
         }
-        return $this->redirect(['index']);
     }
 
     /**
