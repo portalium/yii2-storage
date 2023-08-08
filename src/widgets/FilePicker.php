@@ -49,6 +49,9 @@ class FilePicker extends InputWidget
         if (isset($this->options['isPicker'])) {
             $this->isPicker = $this->options['isPicker'];
         }
+        if (isset($this->options['callbackName'])) {
+            $this->callbackName = $this->options['callbackName'];
+        }
     }
 
     public function run()
