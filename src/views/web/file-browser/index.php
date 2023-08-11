@@ -128,7 +128,8 @@ echo $this->render('./_formModal', [
     'widgetName' => $name,
     'isPicker' => $isPicker,
     'isJson' => $isJson,
-    'widgetName' => $name,
+    'multiple' => $multiple,
+    'callbackName' => $callbackName,
 ]);
 Pjax::end();
 Modal::end();

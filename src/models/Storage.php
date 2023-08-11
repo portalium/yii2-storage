@@ -246,6 +246,12 @@ class Storage extends \yii\db\ActiveRecord
         return false;
     }
 
+    public function getFilePath()
+    {
+        $path =  Yii::$app->request->baseUrl.'/'. Yii::$app->setting->getValue('storage::path');
+        return $path . '/' . $this->name;
+    }
+
     public static function find()
     {
         $activeWorkspaceId = Yii::$app->workspace->id;
