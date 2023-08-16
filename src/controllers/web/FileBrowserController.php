@@ -66,7 +66,12 @@ class FileBrowserController extends Controller
         }
         $dataProvider = new \yii\data\ActiveDataProvider([
             'query' => Storage::find(),
-            'pagination' => false
+            'pagination' => false,
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
         ]);
 
         if (Yii::$app->request->isAjax) {
