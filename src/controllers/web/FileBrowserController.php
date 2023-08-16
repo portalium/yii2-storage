@@ -73,17 +73,27 @@ class FileBrowserController extends Controller
                 ]
             ],
         ]);
-
-        if (Yii::$app->request->isAjax) {
+        if (Yii::$app->request->isAjax || Yii::$app->request->isPjax || Yii::$app->request->get('payload')) {
             $model = new Storage();
             $payload = Yii::$app->request->get('payload');
             $payload = json_decode($payload, true);
             $id_storage = $payload['id_storage'] ?? null;
-
+            
             if ($id_storage) {
                 $model = Storage::findOne($id_storage);
             }
-
+            Yii::warning($payload, 'payload');
+            Yii::warning($this->render('index', [
+                'attribute' => $payload['attribute'] ?? null,
+                'multiple' => $payload['multiple'] ?? null,
+                'dataProvider' => $dataProvider,
+                'isJson' => $payload['isJson'] ?? null,
+                'storageModel' => $model,
+                'attributes' => $payload['attributes'] ?? null,
+                'name' => $payload['name'] ?? null,
+                'callbackName' => $payload['callbackName'] ?? null,
+                'isPicker' => $payload['isPicker'] ?? null,
+            ]));
             return $this->render('index', [
                 'attribute' => $payload['attribute'] ?? null,
                 'multiple' => $payload['multiple'] ?? null,
@@ -102,7 +112,7 @@ class FileBrowserController extends Controller
                 'isJson' => Yii::$app->request->get('isJson'),
                 'isPicker' => false,
                 'storageModel' => $model,
-                'name' => 'base'
+                'name' => 'base',
             ]);
         }
     }

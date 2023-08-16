@@ -14,6 +14,9 @@ $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
 
 $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
+$variablePrefix = str_replace('-', '_', $name);
+$variablePrefix = str_replace(' ', '_', $variablePrefix);
+$variablePrefix = str_replace('.', '_', $variablePrefix);
 
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
@@ -117,10 +120,10 @@ $modals = Modal::begin([
 ]);
 Pjax::begin(['id' => 'file-update-pjax' . $name, 'history' => false, 'timeout' => false]);
 $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";
-$this->registerJs('id_storage = ' . $id_storage . ';', View::POS_END);
+$this->registerJs('id_storage' . $variablePrefix . ' = ' . $id_storage . ';', View::POS_END);
 $this->registerJs('
-    if (id_storage != null) {
-        document.getElementById("file-picker-input-" + name).value = JSON.stringify({id_storage: id_storage});
+    if (id_storage' . $variablePrefix . ' != null) {
+        document.getElementById("file-picker-input-" + name).value = JSON.stringify({id_storage: id_storage' . $variablePrefix . '});
     }
 ', View::POS_END);
 echo $this->render('./_formModal', [
@@ -229,7 +232,15 @@ if ($isPicker) {
             });   
         }
         document.getElementById("file-picker-button" + '$name').addEventListener("click", function(){
-            $('#file-picker-modal' + '$name').modal('show');
+            document.getElementById("file-picker-button" + '$name').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            $.pjax.reload({container: '#file-picker-pjax' + '$name', url: '/storage/file-browser/index?payload=' + JSON.stringify(payload$variablePrefix)
+                            , timeout: false
+                        }).done(function (data) {
+                            document.getElementById("file-picker-button" + '$name').innerHTML = 'Select File';
+                            $('#file-picker-modal' + '$name').modal('show');
+                            id_storage$variablePrefix = null;
+                        });
+            
         });
         JS,
         View::POS_END
@@ -297,7 +308,7 @@ if ($isPicker) {
 }
 if ($isPicker) {
     $this->registerJs("
-    payload = {
+    payload$variablePrefix = {
         attribute: 'id_storage',
         multiple: '$multiple',
         isJson: '$isJson',
@@ -309,7 +320,7 @@ if ($isPicker) {
 ", View::POS_END);
 } else {
     $this->registerJs("
-        payload = {
+        payload$variablePrefix = {
             isJson: '$isJson',
             name: '$name',
             isPicker: '$isPicker',
@@ -323,21 +334,22 @@ $this->registerJs(
                 var myFormData = new FormData();
                 myFormData.append('title', $('#storage-title' + '$name').val());
                 myFormData.append('file', document.getElementById('storage-file' + '$name').files[0]);
-                myFormData.append('id_storage', id_storage);
+                myFormData.append('id_storage', id_storage$variablePrefix);
                 myFormData.append('$csrfParam', '$csrfToken');
                 $('#update-storage-spinner' + '$name').show();
                 $('#update-storage' + '$name').hide();
                 $.ajax({
-                    url: id_storage ? '/storage/file-browser/update?id=' + id_storage : '/storage/file-browser/create',
+                    url: id_storage$variablePrefix ? '/storage/file-browser/update?id=' + id_storage$variablePrefix : '/storage/file-browser/create',
                     type: 'POST',
                     data: myFormData,
                     contentType: false,
                     processData: false,
                     success: function (data) {
-                        $.pjax.reload({container: '#file-picker-pjax' + '$name', url: '/storage/file-browser/index?payload=' + JSON.stringify(payload)
+                        $.pjax.reload({container: '#file-picker-pjax' + '$name', url: '/storage/file-browser/index?payload=' + JSON.stringify(payload$variablePrefix)
                             , timeout: false
                         }).done(function (data) {
                             $('#file-update-modal' + '$name').modal('hide');
+                            id_storage$variablePrefix = null;
                         });
                     },
                     error: function (data) {
