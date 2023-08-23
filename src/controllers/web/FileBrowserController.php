@@ -82,18 +82,7 @@ class FileBrowserController extends Controller
             if ($id_storage) {
                 $model = Storage::findOne($id_storage);
             }
-            Yii::warning($payload, 'payload');
-            Yii::warning($this->render('index', [
-                'attribute' => $payload['attribute'] ?? null,
-                'multiple' => $payload['multiple'] ?? null,
-                'dataProvider' => $dataProvider,
-                'isJson' => $payload['isJson'] ?? null,
-                'storageModel' => $model,
-                'attributes' => $payload['attributes'] ?? null,
-                'name' => $payload['name'] ?? null,
-                'callbackName' => $payload['callbackName'] ?? null,
-                'isPicker' => $payload['isPicker'] ?? null,
-            ]));
+
             return $this->render('index', [
                 'attribute' => $payload['attribute'] ?? null,
                 'multiple' => $payload['multiple'] ?? null,
