@@ -59,7 +59,12 @@ class FilePicker extends InputWidget
 
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => Storage::find(),
-            'pagination' => false
+            'pagination' => false,
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
         ]);
 
         
