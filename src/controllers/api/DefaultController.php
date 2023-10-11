@@ -63,6 +63,7 @@ class DefaultController extends RestActiveController
         $model->addRule('title', 'string');
         $model->title = Yii::$app->request->post('title');
         $model->file = \yii\web\UploadedFile::getInstanceByName('file');
+        
         if ($model->file && $model->validate()) {
             $path = realpath(Yii::$app->basePath . '/../data');
             $filename = md5(rand()) . "." . $model->file->extension;
@@ -72,6 +73,13 @@ class DefaultController extends RestActiveController
                 $storage = new Storage();
                 $storage->name = $filename;
                 $storage->title = $model->title;
+                $storage->id_workspace = Yii::$app->workspace->id;
+                try {
+                    $storage->mime_type = Storage::MIME_TYPE[$storage->getMIMEType($path . '/' . $filename)];
+                } catch (\Throwable $th) {
+                    $storage->mime_type = Storage::MIME_TYPE['video/mpeg'];
+                }
+                
                 $storage->save();
                 return $storage;
             }
