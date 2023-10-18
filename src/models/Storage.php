@@ -29,10 +29,10 @@ class Storage extends \yii\db\ActiveRecord
         'audio/wav' => '4',
         'audio/webm' => '5',
         'audio/midi audio/x-midi' => '6',
-        'video/x-msvideo' => '7',
+        'video/avi' => '7',
         'video/mpeg' => '8',
         'video/ogg' => '9',
-        'video/mp2t' => '10',
+        'video/mp4' => '10',
         'video/webm' => '11',
         'video/3gpp' => '12',
         'image/bmp' => '13',
@@ -211,7 +211,7 @@ class Storage extends \yii\db\ActiveRecord
         return false;
     }
 
-    protected function getMIMEType($filename)
+    public function getMIMEType($filename)
     {
         $mime_types = self::MIME_TYPE;
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
