@@ -65,13 +65,9 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        $searchModel = new StorageSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        
 
-        return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-        ]);
+        return $this->render('index');
     }
 
     /**

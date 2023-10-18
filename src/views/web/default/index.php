@@ -17,31 +17,10 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="storage-index">
 
-    <?php Panel::begin([
-    'title' => Module::t('Media List'),
-    'actions' => [
-        'header' => [
-            Html::a(Module::t(''), ['create'], ['class' => 'fa fa-plus btn btn-success'])
-        ]
-    ]
-]) ?>
-
-    <?= GridView::widget([
-        'dataProvider' => $dataProvider,
-        'filterModel' => $searchModel,
-        'columns' => [
-            ['class' => 'yii\grid\SerialColumn'],
-            'title',
-            'name',
-            [
-                'class' => ActionColumn::className(),
-                'urlCreator' => function ($action, Storage $model, $key, $index, $column) {
-                    return Url::toRoute([$action, 'id_storage' => $model->id_storage]);
-                 }
-            ],
-        ],
-    ]); ?>
-    <?php Panel::end() ?>
+    <?= FilePicker::widget([
+        'name' => 'file',
+        'isPicker' => false,
+    ]) ?>
 
 
 </div>

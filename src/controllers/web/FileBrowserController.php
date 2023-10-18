@@ -66,15 +66,19 @@ class FileBrowserController extends Controller
         }
         $dataProvider = new \yii\data\ActiveDataProvider([
             'query' => Storage::find(),
-            'pagination' => false
+            'pagination' => false,
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
         ]);
-
-        if (Yii::$app->request->isAjax) {
+        if (Yii::$app->request->isAjax || Yii::$app->request->isPjax || Yii::$app->request->get('payload')) {
             $model = new Storage();
             $payload = Yii::$app->request->get('payload');
             $payload = json_decode($payload, true);
             $id_storage = $payload['id_storage'] ?? null;
-
+            
             if ($id_storage) {
                 $model = Storage::findOne($id_storage);
             }
@@ -97,7 +101,7 @@ class FileBrowserController extends Controller
                 'isJson' => Yii::$app->request->get('isJson'),
                 'isPicker' => false,
                 'storageModel' => $model,
-                'name' => 'base'
+                'name' => 'base',
             ]);
         }
     }

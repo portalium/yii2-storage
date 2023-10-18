@@ -10,6 +10,10 @@ $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
 
 $name = $model->name;
+$variablePrefix = str_replace('-', '_', $widgetName);
+$variablePrefix = str_replace(' ', '_', $variablePrefix);
+$variablePrefix = str_replace('.', '_', $variablePrefix);
+
 $ext = substr($name, strrpos($name, '.') + 1);
 $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
 
@@ -69,7 +73,7 @@ if ($mime == 'image') {
 <?php
 if ($isPicker) {
     $this->registerJs("
-    payload = {
+    payload$variablePrefix = {
         attribute: 'id_storage',
         multiple: '$multiple',
         isJson: '$isJson',
@@ -83,7 +87,7 @@ if ($isPicker) {
 } else {
     
     $this->registerJs("
-        payload = {
+        payload$variablePrefix = {
             isJson: '$isJson',
             name: '$widgetName',
             isPicker: '$isPicker',
@@ -105,8 +109,8 @@ if ($view == 1) {
                     addSpinnerToButton(e);
                     removePencilIcon(e);
                     var idStorage = parsedData.id_storage ? parsedData.id_storage : parsedData;
-                    payload.id_storage = idStorage;
-                    reloadFileUpdatePjax(payload, widgetName, e);
+                    payload$variablePrefix.id_storage = idStorage;
+                    reloadFileUpdatePjax(payload$variablePrefix, widgetName, e);
                 }
 
                 function updateStorageInput(parsedData, widgetName) {
@@ -136,11 +140,11 @@ if ($view == 1) {
                     e.classList.remove("fa-pencil");
                 }
 
-                function reloadFileUpdatePjax(payload, widgetName, e) {
+                function reloadFileUpdatePjax(payload$variablePrefix, widgetName, e) {
                     $.pjax
                         .reload({
                             container: "#file-update-pjax" + widgetName,
-                            url: "/storage/file-browser/index?payload=" + JSON.stringify(payload),
+                            url: "/storage/file-browser/index?payload=" + JSON.stringify(payload$variablePrefix),
                             timeout: false,
                             })
                             .done(function () {
@@ -190,7 +194,7 @@ if ($view == 1) {
                         data: {
                             '_csrf-web': yii.getCsrfToken(),
                             'id': parsedData.id_storage ? parsedData.id_storage : parsedData,
-                            'payload': JSON.stringify(payload),
+                            'payload': JSON.stringify(payload$variablePrefix),
                         },
                         success: function (data) {
                             reloadFilePickerPjax(widgetName, e);
@@ -201,7 +205,7 @@ if ($view == 1) {
                 function reloadFilePickerPjax(widgetName, e) {
                     $.pjax.reload({
                         container: '#file-picker-pjax' + widgetName,
-                        url: '/storage/file-browser/index?payload=' + JSON.stringify(payload),
+                        url: '/storage/file-browser/index?payload=' + JSON.stringify(payload$variablePrefix),
                         timeout: false
                     }).done(function() {
                         removeSpinnerFromButton(e);
