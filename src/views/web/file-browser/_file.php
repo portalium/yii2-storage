@@ -19,6 +19,7 @@ $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
 
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
+    $fileExtensionsJson = json_encode($fileExtensions);
 
     if (isset($attributes)) {
         if (is_array($attributes)) {
@@ -82,6 +83,7 @@ if ($isPicker) {
         callbackName: '$callbackName',
         isPicker: '$isPicker',
         id_storage: 'idStorage',
+        fileExtensions: JSON.parse('$fileExtensionsJson'),
     };
 ", View::POS_END);
 } else {
@@ -92,6 +94,7 @@ if ($isPicker) {
             name: '$widgetName',
             isPicker: '$isPicker',
             id_storage: 'idStorage',
+            fileExtensions: JSON.parse('$fileExtensionsJson'),
         };
     ", View::POS_END);
 }

@@ -29,6 +29,8 @@ class FilePicker extends InputWidget
 
     public $callbackName = null;
 
+    public $fileExtensions = null;
+
     public function init()
     {
         parent::init();
@@ -49,20 +51,34 @@ class FilePicker extends InputWidget
         if (isset($this->options['isPicker'])) {
             $this->isPicker = $this->options['isPicker'];
         }
+
+        if (isset($this->options['fileExtensions'])) {
+            $this->fileExtensions = $this->options['fileExtensions'];
+        }
     }
 
     public function run()
     {
-
+        $query = Storage::find();
+        if ($this->fileExtensions) {
+            foreach ($this->fileExtensions as $fileExtension) {
+                $query->orWhere(['like', 'name', $fileExtension]);
+            }
+            Yii::warning($query->createCommand()->getRawSql());
+        }
         $this->dataProvider = new \yii\data\ActiveDataProvider([
-            'query' => Storage::find(),
-            'pagination' => false,
+            'query' => $query,
+            'pagination' => [
+                'pageSize' => $this->isPicker ? 1 : 12,
+            ],
             'sort' => [
                 'defaultOrder' => [
                     'id_storage' => SORT_DESC,
                 ]
             ],
         ]);
+
+
 
         
         if ($this->hasModel()) {
@@ -90,6 +106,7 @@ class FilePicker extends InputWidget
             'name' => $this->name,
             'callbackName' => $this->callbackName,
             'isPicker' => $this->isPicker,
+            'fileExtensions' => $this->fileExtensions,
         ]);
     }
 

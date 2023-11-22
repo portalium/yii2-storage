@@ -42,7 +42,7 @@ use portalium\storage\Module;
     <?php
         echo Html::beginTag('div', ['id' => 'view-file']);
         if (!$model->isNewRecord) {
-            echo $this->render('_file', ['model' => $model, 'view' => 0, 'attributes' => [], 'isPicker' => $isPicker, 'isJson' => $isJson, 'widgetName' => $widgetName, 'multiple' => $multiple, 'callbackName' => $callbackName]);
+            echo $this->render('_file', ['model' => $model, 'view' => 0, 'attributes' => [], 'isPicker' => $isPicker, 'isJson' => $isJson, 'widgetName' => $widgetName, 'multiple' => $multiple, 'callbackName' => $callbackName, 'fileExtensions' => $fileExtensions]);
         }
         echo Html::endTag('div');
     ?>
