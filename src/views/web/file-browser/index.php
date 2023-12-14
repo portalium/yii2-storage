@@ -152,8 +152,8 @@ echo $this->render('./_formModal', [
     'widgetName' => $name,
     'isPicker' => $isPicker,
     'isJson' => $isJson,
-    'multiple' => $multiple,
-    'callbackName' => $callbackName,
+    'multiple' => isset($multiple) ? $multiple : 0,
+    'callbackName' => isset($callbackName) ? $callbackName : null,
     'fileExtensions' => $fileExtensions,
 ]);
 Pjax::end();
