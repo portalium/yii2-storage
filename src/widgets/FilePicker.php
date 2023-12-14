@@ -20,15 +20,10 @@ class FilePicker extends InputWidget
     public $selected;
     public $multiple = 0;
     public $attributes = ['id_storage'];
-
     public $name = '';
-
     public $isJson = 1;
-
     public $isPicker = true;
-
     public $callbackName = null;
-
     public $fileExtensions = null;
 
     public function init()
@@ -51,9 +46,11 @@ class FilePicker extends InputWidget
         if (isset($this->options['isPicker'])) {
             $this->isPicker = $this->options['isPicker'];
         }
-
         if (isset($this->options['fileExtensions'])) {
             $this->fileExtensions = $this->options['fileExtensions'];
+        }
+        if (isset($this->options['callbackName'])) {
+            $this->callbackName = $this->options['callbackName'];
         }
     }
 
@@ -80,7 +77,7 @@ class FilePicker extends InputWidget
 
 
 
-        
+
         if ($this->hasModel()) {
             $input = 'activeHiddenInput';
             echo Html::$input($this->model, $this->attribute, $this->options);
@@ -93,8 +90,8 @@ class FilePicker extends InputWidget
                 $model = Storage::findOne($id_storage);
             }
         }
-        
-        
+
+
         echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/file-browser/index.php', [
             'model' => $this->model,
             'attribute' => $this->attribute,
@@ -110,13 +107,10 @@ class FilePicker extends InputWidget
         ]);
     }
 
-    function generateHtmlId($name) {
-
+    function generateHtmlId($name)
+    {
         $name = preg_replace('/[^a-zA-Z0-9]+/', ' ', $name);
-
         $name = str_replace(' ', '-', strtolower(trim($name)));
-    
         return $name;
     }
-    
 }
