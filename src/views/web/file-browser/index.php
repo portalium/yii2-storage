@@ -35,10 +35,10 @@ $variablePrefix = str_replace('-', '_', $name);
 $variablePrefix = str_replace(' ', '_', $variablePrefix);
 $variablePrefix = str_replace('.', '_', $variablePrefix);
 
-
+$fileExtensionsJson = $fileExtensions ? json_encode($fileExtensions) : json_encode([]);
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
-    $fileExtensionsJson = $fileExtensions ? json_encode($fileExtensions) : json_encode([]);
+    
     Modal::begin([
         'id' => 'file-picker-modal' . $name,
         'size' => Modal::SIZE_LARGE,

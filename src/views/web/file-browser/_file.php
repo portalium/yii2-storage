@@ -17,9 +17,10 @@ $variablePrefix = str_replace('.', '_', $variablePrefix);
 $ext = substr($name, strrpos($name, '.') + 1);
 $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
 
+$fileExtensionsJson = json_encode($fileExtensions);
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
-    $fileExtensionsJson = json_encode($fileExtensions);
+    
 
     if (isset($attributes)) {
         if (is_array($attributes)) {
@@ -87,7 +88,6 @@ if ($isPicker) {
     };
 ", View::POS_END);
 } else {
-    
     $this->registerJs("
         payload$variablePrefix = {
             isJson: '$isJson',
