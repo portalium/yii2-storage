@@ -17,8 +17,10 @@ $variablePrefix = str_replace('.', '_', $variablePrefix);
 $ext = substr($name, strrpos($name, '.') + 1);
 $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
 
+$fileExtensionsJson = json_encode($fileExtensions);
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
+    
 
     if (isset($attributes)) {
         if (is_array($attributes)) {
@@ -82,16 +84,17 @@ if ($isPicker) {
         callbackName: '$callbackName',
         isPicker: '$isPicker',
         id_storage: 'idStorage',
+        fileExtensions: JSON.parse('$fileExtensionsJson'),
     };
 ", View::POS_END);
 } else {
-    
     $this->registerJs("
         payload$variablePrefix = {
             isJson: '$isJson',
             name: '$widgetName',
             isPicker: '$isPicker',
             id_storage: 'idStorage',
+            fileExtensions: JSON.parse('$fileExtensionsJson'),
         };
     ", View::POS_END);
 }
