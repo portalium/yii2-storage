@@ -103,6 +103,7 @@ if ($view == 1) {
         <<<JS
                 function updatedItem(e) {
                     var data = $(e).attr("data");
+                    console.log(data);
                     var parsedData = JSON.parse(data);
                     var widgetName = "$widgetName";
 
