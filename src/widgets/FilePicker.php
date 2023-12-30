@@ -61,7 +61,6 @@ class FilePicker extends InputWidget
             foreach ($this->fileExtensions as $fileExtension) {
                 $query->orWhere(['like', 'name', $fileExtension]);
             }
-            Yii::warning($query->createCommand()->getRawSql());
         }
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,

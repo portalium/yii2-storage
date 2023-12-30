@@ -144,7 +144,7 @@ $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $stor
 $this->registerJs('id_storage' . $variablePrefix . ' = ' . $id_storage . ';', View::POS_END);
 $this->registerJs('
     if (id_storage' . $variablePrefix . ' != null) {
-        document.getElementById("file-picker-input-" + name).value = JSON.stringify({id_storage: id_storage' . $variablePrefix . '});
+        document.getElementById("file-picker-input-" + "'.$name.'").value = JSON.stringify({id_storage: id_storage' . $variablePrefix . '});
     }
 ', View::POS_END);
 echo $this->render('./_formModal', [
