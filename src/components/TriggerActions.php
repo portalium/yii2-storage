@@ -23,12 +23,12 @@ class TriggerActions extends BaseObject
             return;
         }
 
-        $default_role = Setting::find()->where(['name' => 'storage::workspace::default_role'])->one();
-        $admin_role = Setting::find()->where(['name' => 'storage::workspace::admin_role'])->one();
-        $settingModel = Setting::findOne(['name' => 'workspace::available_roles']);
+        $default_role = Yii::$app->setting->getValue('storage::workspace::default_role');
+        $admin_role = Yii::$app->setting->getValue('storage::workspace::admin_role');
+        $settingModel = Yii::$app->setting->getValue('workspace::available_roles');
         
         foreach ($deletedRoles as $deletedRole) {
-            if ($default_role->value == $deletedRole['role']) {
+            if ($default_role == $deletedRole['role']) {
                 $availableRoles = json_decode($settingModel->value, true);
                 if (!in_array($deletedRole['role'], $availableRoles['storage'])) {
                     $availableRoles['storage'][] = $deletedRole['role'];
@@ -45,23 +45,9 @@ class TriggerActions extends BaseObject
     {
         ['id_user' => $id_user, 'id_workspace' => $id_workspace] = $event->payload;
 
-        $default_role = Setting::find()->where(['name' => 'storage::workspace::default_role'])->one();
-        $admin_role = Setting::find()->where(['name' => 'storage::workspace::admin_role'])->one();
+        $default_role = Yii::$app->setting->getValue('storage::workspace::default_role');
+        $admin_role = Yii::$app->setting->getValue('storage::workspace::admin_role');
         $auth = Yii::$app->authManager;
-        /* if ($default_role->value == $auth->getRole($default_role->value)->name) {
-            $auth->assign($auth->getRole($default_role->value), $id_user);
-
-            $workspaceUser = WorkspaceUser::findOne(['id_user' => $id_user, 'id_workspace' => $id_workspace, 'role' => $default_role->value, 'id_module' => 'storage']);
-
-            if (!$workspaceUser) {
-                $workspaceUser = new WorkspaceUser();
-                $workspaceUser->id_user = $id_user;
-                $workspaceUser->id_workspace = $id_workspace;
-                $workspaceUser->role = $default_role->value;
-                $workspaceUser->id_module = 'storage';
-                $workspaceUser->save();
-            }
-        } */
 
         $roles = [
             $default_role,
@@ -69,17 +55,17 @@ class TriggerActions extends BaseObject
         ];
         $activeWorkspaceId = Yii::$app->workspace->id;
         foreach ($roles as $role) {
-            if (!$role->value)
+            if (!$role)
                 continue;
-            if ($auth->getRole($role->value)) {
+            if ($auth->getRole($role)) {
                 //$auth->assign($auth->getRole($role->value), $id_user);
-                $workspaceUser = WorkspaceUser::findOne(['id_user' => $id_user, 'id_workspace' => $id_workspace, 'role' => $role->value, 'id_module' => 'storage']);
+                $workspaceUser = WorkspaceUser::findOne(['id_user' => $id_user, 'id_workspace' => $id_workspace, 'role' => $role, 'id_module' => 'storage']);
 
                 if (!$workspaceUser) {
                     $workspaceUser = new WorkspaceUser();
                     $workspaceUser->id_user = $id_user;
                     $workspaceUser->id_workspace = $id_workspace;
-                    $workspaceUser->role = $role->value;
+                    $workspaceUser->role = $role;
                     $workspaceUser->id_module = 'storage';
                     
                     $workspaceUser->status = $activeWorkspaceId == $id_workspace ? WorkspaceUser::STATUS_ACTIVE : WorkspaceUser::STATUS_INACTIVE;
