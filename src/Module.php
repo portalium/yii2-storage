@@ -6,6 +6,8 @@ use portalium\storage\components\TriggerActions;
 
 class Module extends \portalium\base\Module
 {
+    const EVENT_BEFORE_DELETE = 'storage-before-delete';
+
     public $apiRules = [
         [
             'class' => 'yii\rest\UrlRule',
