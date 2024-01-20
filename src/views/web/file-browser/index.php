@@ -29,6 +29,8 @@ $this->registerCss(
 
 $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
+$storageModelName = isset($defaultStorageModel) ? $defaultStorageModel->name : null;
+
 
 $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
 $variablePrefix = str_replace('-', '_', $name);
@@ -38,18 +40,19 @@ $variablePrefix = str_replace('.', '_', $variablePrefix);
 $fileExtensionsJson = $fileExtensions ? json_encode($fileExtensions) : json_encode([]);
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
-    
+
     Modal::begin([
         'id' => 'file-picker-modal' . $name,
-        'size' => Modal::SIZE_LARGE,
-        'title' =>  Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]) .
+        'size' => Modal::SIZE_EXTRA_LARGE,
+        'title' =>  Module::t('File Picker') . Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]) .
             Html::tag('button', '
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
+                ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none; float:right; margin-bottom: -2px; font-size: small;']),
 
         'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-            Html::button(Module::t('Select'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
-        'closeButton' => false
+            Html::button(Module::t('Use Selected'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
+        'closeButton' => false,
+        'titleOptions' => ['style' => 'width: 100%;'],
     ]);
 } else {
     Panel::begin([
@@ -144,7 +147,7 @@ $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $stor
 $this->registerJs('id_storage' . $variablePrefix . ' = ' . $id_storage . ';', View::POS_END);
 $this->registerJs('
     if (id_storage' . $variablePrefix . ' != null) {
-        document.getElementById("file-picker-input-" + "'.$name.'").value = JSON.stringify({id_storage: id_storage' . $variablePrefix . '});
+        document.getElementById("file-picker-input-" + "' . $name . '").value = JSON.stringify({id_storage: id_storage' . $variablePrefix . '});
     }
 ', View::POS_END);
 echo $this->render('./_formModal', [
@@ -171,12 +174,11 @@ if ($isPicker) {
     echo Html::beginTag('div', ['class' => 'd-flex']);
     echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'style' => 'max-width: 130px;', 'id' => 'file-picker-button' . $name]);
 
-    echo Html::beginTag('div', ['class' => 'col', 'id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none;']);
-    //echo Html::tag('span', '', ['class' => 'fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
-    echo Html::beginTag('div', ['class' => 'row', 'style' => 'width: 75px;']);
-    echo Html::tag('div', '', ['class' => 'col-6 fa fa-check', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
-    echo Html::tag('a', Module::t('Show'), ['class' => 'col-6', 'style' => 'margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $name/* , 'data-bs-toggle' => 'modal', 'data-bs-target' => '#storage-show-file-modal' . $name */]);
-    echo Html::endTag('div');
+    echo Html::beginTag('div', ['id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none; margin-left: 5px; cursor:pointer;']);
+    //echo Html::tag('span', '', ['class' => 'fa fa-info-circle', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
+    // echo Html::beginTag('div');
+    echo Html::tag('div', '', ['class' => 'col-6 fa fa-info-circle', 'style' => 'color:#28a745; font-size:24px; margin-top:7px;','id' => 'file-picker-input-check-selected-name' . $name]);
+    // echo Html::endTag('div');
     echo Html::endTag('div');
     echo Html::endTag('div');
 }
@@ -195,8 +197,8 @@ $this->registerJs(
     <<<JS
     // on click item in file-picker-pjaxapp-logo-square in storage-item class
     $('#file-picker-pjax' + '$name').on('click', '.storage-item', function(){
-        console.log("storage-item clicked");
-        console.log($(this).attr("data"));
+
+
         $(this).toggleClass("selected-item");
     });
     JS,
@@ -205,17 +207,46 @@ $this->registerJs(
 if ($isPicker) {
     $this->registerJs(
         <<<JS
+            var input = $('#file-picker-input-' + '$name');
+            document.getElementById("storage-show-file" + '$name').src = '$path' + input.attr("data-src");
+        JS,
+        View::POS_END
+    );
+    $this->registerJs(
+        <<<JS
+        function checkFilePickerInput$variablePrefix(name = null) {
+            var input = $('#file-picker-input-' + '$name');
+            
+            if (input.val() == undefined || input.val() == '' || input.val() == '[]' || input.val() == '0' || isJsonString(input.val()) == false) {
+                document.getElementById("file-picker-input-check-selected" + '$name').style.display = "none";
+                document.getElementById("storage-show-file" + '$name').src = '';
+            }else{
+                document.getElementById("file-picker-input-check-selected" + '$name').style.display = "block";
+                document.getElementById("file-picker-pjax" + '$name').querySelectorAll("[name='checkedItems[]']").forEach(function(item){
+                    if(item.getAttribute("data") == input.val()){
+                        $('#file-picker-pjax' + '$name').find("[data='" + input.val() + "']").find("input").prop("checked", true);
+                        // get img-src
+                        document.getElementById("storage-show-file" + '$name').src = '$path' + input.attr("data-src");
+                    }else{
+                        $('#file-picker-pjax' + '$name').find("[data='" + item.getAttribute("data") + "']").find("input").prop("checked", false)
+                    }
+                });
+            }
+
+        }
         // on click item in file-picker-pjaxapp-logo-square in storage-item class
         $('#file-picker-pjax' + '$name').on('click', '.storage-item', function(){
-            console.log("storage-item clicked");
-            console.log($(this).attr("data"));
+
+
         });
+        
 
 
         selectedValue = [];
         
         function selectItem(e, name){
             if(selectedValue.indexOf($(e).attr("data")) == -1){
+
                     if("$multiple" == "1"){
                         selectedValue.push($(e).attr("data"));
                         document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
@@ -229,6 +260,7 @@ if ($isPicker) {
                     
                     updateItemsStatus(name);
             }else{
+
                 selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
                 document.getElementById("file-picker-input-" + name).value = selectedValue;
                 updateItemsStatus(name);
@@ -240,17 +272,16 @@ if ($isPicker) {
         }
 
         function updateItemsStatus(name){
+
+
             if(!Array.isArray(selectedValue)){
+
                     if(selectedValue == item.getAttribute("data")){
-                        item.classList.remove("btn-success");
-                        item.classList.remove("fa-check");
-                        item.classList.add("btn-danger");
-                        item.classList.add("fa-times");
+
+                        // get item with data
+                        $('#file-picker-pjax' + name).find("[data='" + selectedValue + "']").prop("checked", true);
                     }else{
-                        item.classList.remove("btn-danger");
-                        item.classList.remove("fa-times");
-                        item.classList.add("btn-success");
-                        item.classList.add("fa-check");
+                        $('#file-picker-pjax' + name).find("[data='" + selectedValue + "']").prop("checked", false);
                     }
                     return;
                 }
@@ -258,16 +289,12 @@ if ($isPicker) {
                 var pjax = document.getElementById("file-picker-pjax" + name);
 
                 pjax.querySelectorAll("[name='checkedItems[]']").forEach(function(item){
+
                 if(selectedValue.indexOf(item.getAttribute("data")) != -1){
-                    item.classList.remove("btn-success");
-                    item.classList.remove("fa-check");
-                    item.classList.add("btn-danger");
-                    item.classList.add("fa-times");
+                    $('#file-picker-pjax' + name).find("[data='" + item.getAttribute("data") + "']").prop("checked", true);
+
                 }else{
-                    item.classList.remove("btn-danger");
-                    item.classList.remove("fa-times");
-                    item.classList.add("btn-success");
-                    item.classList.add("fa-check");
+                    $('#file-picker-pjax' + name).find("[data='" + item.getAttribute("data") + "']").prop("checked", false);
                 }
             });   
         }
@@ -279,8 +306,8 @@ if ($isPicker) {
                             document.getElementById("file-picker-button" + '$name').innerHTML = 'Select File';
                             $('#file-picker-modal' + '$name').modal('show');
                             id_storage$variablePrefix = null;
+                            checkFilePickerInput$variablePrefix();
                         });
-            
         });
         // 'file-picker-input-check-selected-name' . $name
         document.getElementById("file-picker-input-check-selected-name" + '$name').addEventListener("click", function(){
@@ -316,62 +343,56 @@ $this->registerJs(
 
 
 if ($isPicker) {
+    $this->registerJS(
+        "
+        function isJsonString(str) {
+            try {
+                JSON.parse(str);
+            } catch (e) {
+                return false;
+            }
+            return true;
+        }
+        ",
+        View::POS_BEGIN
+    );
     $this->registerJs(
         <<<JS
-        $(document).ready(function () {
+        
+
             function setName(id) {
                 var name = '';
                 $.ajax({
                     url: '/storage/file-browser/get-name?id=' + id,
                     type: 'GET',
                     success: function (data) {
-                        checkFilePickerInput(data);
+                        checkFilePickerInput$variablePrefix(data);
                     },
                     error: function (data) {
-                        checkFilePickerInput();
+                        checkFilePickerInput$variablePrefix();
                     }
                 });
             }
-            function checkFilePickerInput(name = null) {
-                var input = $('#file-picker-input-' + '$name');
-                if (input.val() == undefined || input.val() == '' || input.val() == '[]' || input.val() == '0') {
-                    document.getElementById("file-picker-input-check-selected" + '$name').style.display = "none";
-                    document.getElementById("storage-show-file" + '$name').src = '';
-                }else{
-                    document.getElementById("file-picker-input-check-selected" + '$name').style.display = "block";
-
-                    document.getElementById("storage-show-file" + '$name').src = name ? '$path' + name : '$path' + JSON.parse(input.val()).name;
-                    //find file-picker-pjaxapp-logo-square in checkedItems[]
-                    document.getElementById("file-picker-pjax" + '$name').querySelectorAll("[name='checkedItems[]']").forEach(function(item){
-                        if(item.getAttribute("data") == input.val()){
-                            item.classList.remove("btn-success");
-                            item.classList.remove("fa-check");
-                            item.classList.add("btn-danger");
-                            item.classList.add("fa-times");
-                            item.click();
-                        }else{
-                            item.classList.remove("btn-danger");
-                            item.classList.remove("fa-times");
-                            item.classList.add("btn-success");
-                            item.classList.add("fa-check");
-                        }
-                    });
-                }
-            }
-
-            if ($('#file-picker-input-' + '$name').val() != undefined && $('#file-picker-input-' + '$name').val() != '' && JSON.parse($('#file-picker-input-' + '$name').val()).name == undefined) {
-                if (JSON.parse($('#file-picker-input-' + '$name').val()).id_storage != undefined) {
-                    setName(JSON.parse($('#file-picker-input-' + '$name').val()).id_storage);
-                }else if(JSON.parse($('#file-picker-input-' + '$name').val()) != undefined) {
-                    setName(JSON.parse($('#file-picker-input-' + '$name').val()));
-                }
-            }else {
-                checkFilePickerInput();
-            }
             
-        });
+            
+            
+            try {
+                
+                if ($('#file-picker-input-' + '$name').val() != undefined && $('#file-picker-input-' + '$name').val() != '' && JSON.parse($('#file-picker-input-' + '$name').val()).name == undefined) {
+                    if (JSON.parse($('#file-picker-input-' + '$name').val()).id_storage != undefined) {
+                        setName(JSON.parse($('#file-picker-input-' + '$name').val()).id_storage);
+                    }else if(JSON.parse($('#file-picker-input-' + '$name').val()) != undefined) {
+                        setName(JSON.parse($('#file-picker-input-' + '$name').val()));
+                    }
+                    checkFilePickerInput$variablePrefix();
+                }else {
+                    checkFilePickerInput$variablePrefix();
+                }
+            } catch (error) {
+
+            }
         JS,
-        View::POS_END
+        View::POS_READY
     );
 }
 if ($isPicker) {
@@ -403,6 +424,7 @@ $this->registerJs(
             $('#update-storage' + '$name').click(function () {
                 var myFormData = new FormData();
                 myFormData.append('title', $('#storage-title' + '$name').val());
+                myFormData.append('access', $('#storage-access' + '$name').val());
                 myFormData.append('file', document.getElementById('storage-file' + '$name').files[0]);
                 myFormData.append('id_storage', id_storage$variablePrefix);
                 myFormData.append('$csrfParam', '$csrfToken');
@@ -429,6 +451,7 @@ $this->registerJs(
                 }).always(function () {
                     $('#update-storage-spinner' + '$name').hide();
                     $('#update-storage' + '$name').show();
+                    checkFilePickerInput$variablePrefix();
                 });
             });
             $('#file-picker-select' + '$name').click(function () {

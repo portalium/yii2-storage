@@ -7,6 +7,8 @@ use Yii;
 use portalium\storage\Module;
 use yii\helpers\ArrayHelper;
 use portalium\user\models\User;
+use yii\web\UploadedFile;
+use portalium\base\Event;
 
 /**
  * This is the model class for table "{{%storage_storage}}".
@@ -20,6 +22,9 @@ use portalium\user\models\User;
 class Storage extends \yii\db\ActiveRecord
 {
     public $file;
+
+    const ACCESS_PUBLIC = 1;
+    const ACCESS_PRIVATE = 0;
 
     const MIME_TYPE = [
         'audio/aac' => '0',
@@ -93,7 +98,7 @@ class Storage extends \yii\db\ActiveRecord
         'application/x-7z-compressed' => '68',
         'other' => '69',
     ];
-        
+
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
     // behaviors id_user is set to current user
     public function behaviors()
@@ -110,7 +115,15 @@ class Storage extends \yii\db\ActiveRecord
             ]
         ];
     }
-        
+
+    public function init()
+    {
+        $this->on(self::EVENT_BEFORE_DELETE, function($event) {
+            \Yii::$app->trigger(Module::EVENT_BEFORE_DELETE, new Event(['payload' => $event->data]));
+            Event::trigger(Yii::$app->getModules(), Module::EVENT_BEFORE_DELETE, new Event(['payload' => $event->data]));
+        }, $this);
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -126,10 +139,10 @@ class Storage extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title', 'id_workspace'], 'required'],
+            [['title', 'id_workspace', 'access'], 'required'],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
-            ['file', 'safe'],
+            [['file', 'access'], 'safe'],
             ['mime_type', 'integer'],
         ];
     }
@@ -156,6 +169,7 @@ class Storage extends \yii\db\ActiveRecord
             'id_user' => Module::t('Id User'),
             'mime_type' => Module::t('Mime Type'),
             'id_workspace' => Module::t('Workspace'),
+            'access' => Module::t('Access'),
         ];
     }
 
@@ -178,19 +192,27 @@ class Storage extends \yii\db\ActiveRecord
     {
         return implode(', ', self::$allowExtensions);
     }
-    
+
+    public static function getAccesses()
+    {
+        return [
+            self::ACCESS_PUBLIC => Module::t('Public'),
+            self::ACCESS_PRIVATE => Module::t('Private'),
+        ];
+    }
+
     /**
      * (@inheritdoc)
      */
     public function upload()
     {
-        
+
         if ($this->validate()) {
             if (!$this->file) {
                 $this->save();
                 return true;
             }
-            
+
             $path = realpath(Yii::$app->basePath . '/../data');
             $filename = md5(rand()) . "." . $this->file->extension;
             // check if file extension is allowed
@@ -198,13 +220,13 @@ class Storage extends \yii\db\ActiveRecord
                 if ($this->file->saveAs($path . '/' . $filename)) {
                     $this->name = $filename;
                     $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
-                    if($this->save()){
+                    if ($this->save()) {
                         return true;
-                    }else{
+                    } else {
                         return false;
                     }
                 }
-            }else{
+            } else {
                 return false;
             }
         }
@@ -239,7 +261,7 @@ class Storage extends \yii\db\ActiveRecord
     {
         $path = realpath(Yii::$app->basePath . '/../data');
         if (file_exists($path . '/' . $filename)) {
-            if(unlink($path . '/' . $filename)){
+            if (unlink($path . '/' . $filename)) {
                 return true;
             }
         }
@@ -248,7 +270,7 @@ class Storage extends \yii\db\ActiveRecord
 
     public function getFilePath()
     {
-        $path =  Yii::$app->request->baseUrl.'/'. Yii::$app->setting->getValue('storage::path');
+        $path =  Yii::$app->request->baseUrl . '/' . Yii::$app->setting->getValue('storage::path');
         return $path . '/' . $this->name;
     }
 
@@ -260,14 +282,47 @@ class Storage extends \yii\db\ActiveRecord
             return $query;
         }
         if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
-            return $query->andWhere('0=1');
+            // get public files
+            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
         }
         if ($activeWorkspaceId) {
-            $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId]);
-        }else{
-            return $query->andWhere('0=1');
+            $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+        } else {
+            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
         }
         return $query;
+    }
+
+    public function cloneStorage()
+    {
+        $newStorage = new Storage();
+        $newStorage->title = $this->title;
+        $newStorage->id_user = Yii::$app->user->id;
+        $newStorage->mime_type = $this->mime_type;
+        $newStorage->id_workspace = Yii::$app->workspace->id;
+        $newStorage->access = self::ACCESS_PUBLIC;
+
+        $path = realpath(Yii::$app->basePath . '/../data');
+        $extension = pathinfo($this->name, PATHINFO_EXTENSION);
+        $filename = md5(rand()) . "." . $extension;
+        try {
+            if (copy($path . '/' . $this->name, $path . '/' . $filename)) {
+                $newStorage->name = $filename;
+                // system("cp -r " . $path . '/' . $this->name . " " . $path . '/' . $filename);
+                if ($newStorage->save()) {
+                    return $newStorage;
+                }
+            }
+        } catch (\Throwable $th) {
+            return false;
+        }
+        
+        return false;
+    }
+
+    public function getExtension()
+    {
+        return pathinfo($this->name, PATHINFO_EXTENSION);
     }
 
 
@@ -279,5 +334,6 @@ class Storage extends \yii\db\ActiveRecord
         }
         return false;
     }
+
 
 }

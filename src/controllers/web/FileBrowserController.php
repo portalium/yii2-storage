@@ -135,7 +135,7 @@ class FileBrowserController extends Controller
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $model = Storage::findOne($id);
         if (!$model) {
-            throw new HttpException(404, Module::t('The requested page does not exist.'));
+            return "None";
         }
         return $model->name;
     }
@@ -178,6 +178,7 @@ class FileBrowserController extends Controller
                 if ($file->saveAs(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName)) {
                     $model->name = $fileName;
                     $model->id_user = Yii::$app->user->id;
+                    $model->access = $this->request->post('access');
                     $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
                     $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
 
@@ -187,6 +188,8 @@ class FileBrowserController extends Controller
                     } else {
                         unlink(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName);
                         \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
+                        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                        return ['success' => false, 'error' => $model->getErrors()];
                     }
                 }
             }
@@ -210,7 +213,7 @@ class FileBrowserController extends Controller
      */
     public function actionUpdate($id)
     {
-        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id)])) {
+        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id), 'id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -226,9 +229,9 @@ class FileBrowserController extends Controller
                     if ($file->saveAs(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName)) {
                         $model->name = $fileName;
                         $model->id_user = Yii::$app->user->id;
+                        $model->access = $this->request->post('access');
                         $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
                         $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
-
                         if ($model->save()) {
                             unlink(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $oldFileName);
                             $model = new Storage();
@@ -242,6 +245,7 @@ class FileBrowserController extends Controller
             } else {
                 $model->title = $this->request->post('title');
                 $model->file = UploadedFile::getInstanceByName('file');
+                $model->access = $this->request->post('access');
                 if ($model->file) {
                     $model->deleteFile($model->name);
                 }

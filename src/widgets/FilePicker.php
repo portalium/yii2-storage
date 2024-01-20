@@ -33,6 +33,37 @@ class FilePicker extends InputWidget
         $this->name = $this->generateHtmlId($this->name);
         $this->options['id'] = 'file-picker-input-' . $this->name;
         $this->options['id'] = 'file-picker-input-' . $this->name;
+        // $this->options['data-src'] = "maliiiii";
+
+        $attribute = $this->attribute;
+        // remove between [ and ]
+        try {
+            if (str_contains($attribute, "[")) {
+                $startPos = strpos($attribute, "[");
+                $endPos = strpos($attribute, "]");
+
+                $attribute = substr($attribute, 0, $startPos) . substr($attribute, $endPos + 1);
+            }
+        } catch (\Exception $e) {
+            // do nothing
+        }
+        if ($attribute) {
+            try {
+                $value = json_decode($this->model[$attribute], true);
+                if (isset($value['id_storage'])) {
+                    $storageModelForName = Storage::findOne($value['id_storage']);
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : null;
+                } else if (isset($value['name'])) {
+                    $storageModelForName = Storage::findOne($value['name']);
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : null;
+                } else {
+                    $storageModelForName = Storage::findOne($this->model[$attribute]);
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : '';
+                }
+            } catch (\Exception $e) {
+                // do nothing
+            }
+        }
 
         if (isset($this->options['multiple'])) {
             $this->multiple = $this->options['multiple'];
@@ -89,6 +120,9 @@ class FilePicker extends InputWidget
                 $model = Storage::findOne($id_storage);
             }
         }
+
+
+
 
 
         echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/file-browser/index.php', [
