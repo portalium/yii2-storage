@@ -1,5 +1,6 @@
 <?php
 
+use portalium\bootstrap5\Tabs as Bootstrap5Tabs;
 use yii\helpers\Url;
 use yii\web\View;
 use portalium\widgets\Pjax;
@@ -86,16 +87,20 @@ $viewParams = $isPicker ? [
     'isPicker' => $isPicker,
     'fileExtensions' => $fileExtensions,
 ];
-echo ListView::widget([
-    'dataProvider' => $dataProvider,
-    'itemView' => '_file',
-    'viewParams' => $viewParams,
-    'options' => [
-        'tag' => 'div',
-        'class' => 'row',
-        'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
-    ],
-    'itemOptions' => $isPicker ?
+echo Bootstrap5Tabs::widget([
+    'items' => [
+        [
+            'label' => 'Private', 
+            'content' => ListView::widget([
+                'dataProvider' => $privateDataProvider, 
+                'itemView' => '_file',
+                'viewParams' => $viewParams,
+                'options' => [
+                    'tag' => 'div',
+                    'class' => 'row',
+                    'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
+                ],
+                'itemOptions' => $isPicker ?
         function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
             if (isset($attributes)) {
                 if (is_array($attributes)) {
@@ -123,7 +128,50 @@ echo ListView::widget([
         },
     'summary' => false,
     'layout' => '{items}<div class="clearfix"></div>',
-
+            ]),
+        ],
+        [
+            'label' => 'Public',
+            'content' => ListView::widget([
+                'dataProvider' => $publicDataProvider,
+                'itemView' => '_file',
+                'viewParams' => $viewParams,
+                'options' => [
+                    'tag' => 'div',
+                    'class' => 'row',
+                    'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
+                ],
+                'itemOptions' => $isPicker ?
+        function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
+            if (isset($attributes)) {
+                if (is_array($attributes)) {
+                    if (in_array('id_storage', $attributes)) {
+                    } else {
+                        $attributes[] = 'id_storage';
+                    }
+                }
+            }
+            return [
+                'tag' => 'div',
+                'class' => 'col-lg-3 col-sm-4 col-md-3',
+                'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
+                //'onclick' => 'selectItem(this, "' . $name . '")',
+            ];
+        } :
+        function ($model, $key, $index, $widget) use ($isJson, $name) {
+            return
+                [
+                    'tag' => 'div',
+                    'class' => 'col-lg-3 col-sm-4 col-md-3',
+                    //'onclick' => 'selectItem(this, "' . $name . '")',
+                    'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
+                ];
+        },
+    'summary' => false,
+    'layout' => '{items}<div class="clearfix"></div>',
+            ]),
+        ],
+    ],
 ]);
 Pjax::end();
 if ($isPicker) {
