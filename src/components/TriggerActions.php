@@ -53,22 +53,22 @@ class TriggerActions extends BaseObject
             $default_role,
             $admin_role
         ];
-        $activeWorkspaceId = Yii::$app->workspace->id;
+        
         foreach ($roles as $role) {
             if (!$role)
                 continue;
             if ($auth->getRole($role)) {
                 //$auth->assign($auth->getRole($role->value), $id_user);
                 $workspaceUser = WorkspaceUser::findOne(['id_user' => $id_user, 'id_workspace' => $id_workspace, 'role' => $role, 'id_module' => 'storage']);
-
+                $activeWorkspaceId = Yii::$app->workspace->id;
+                
                 if (!$workspaceUser) {
                     $workspaceUser = new WorkspaceUser();
                     $workspaceUser->id_user = $id_user;
                     $workspaceUser->id_workspace = $id_workspace;
                     $workspaceUser->role = $role;
                     $workspaceUser->id_module = 'storage';
-                    
-                    $workspaceUser->status = $activeWorkspaceId == $id_workspace ? WorkspaceUser::STATUS_ACTIVE : WorkspaceUser::STATUS_INACTIVE;
+                    $workspaceUser->status = $activeWorkspaceId == null ? WorkspaceUser::STATUS_ACTIVE : WorkspaceUser::STATUS_INACTIVE;
                     $workspaceUser->save();
                 }
             }
