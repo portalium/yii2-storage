@@ -101,113 +101,113 @@ $viewParams = $isPicker ? [
             </ul>
         </div>
     </div>
-    
-    <div class="row d-flex">
- <div id="private-content" class="tab-content col-md-12">
-<?php
-echo \yii\widgets\ListView::widget([
-        'dataProvider' => $privateDataProvider,
-        'itemView' => '_file',
-        'viewParams' => $viewParams,
-        'options' => [
-            'tag' => 'div',
-            'class' => 'row',
-            'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
-        ],
-        'itemOptions' => $isPicker ?
-            function ($model, $key, $index, $widget) use($attributes, $isJson, $name) {
-                if (isset($attributes)) {
-                if (is_array($attributes)) {
-                    if (in_array('id_storage', $attributes)) {
-                    } else {
-                        $attributes[] = 'id_storage';
-                    }
-                }
-            }
-            return [
-                'tag' => 'div',
-                'class' => 'col-lg-3 col-sm-4 col-md-3',
-                'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
-                //'onclick' => 'selectItem(this, "' . $name . '")',
-            ];
-            } :
-            function ($model, $key, $index, $widget) use ($isJson, $name) {
-                 return
-                [
-                    'tag' => 'div',
-                    'class' => 'col-lg-3 col-sm-4 col-md-3',
-                    //'onclick' => 'selectItem(this, "' . $name . '")',
-                    'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
-                ];
-            },
-        'summary' => false,
-        'layout' => '{items}<div class="clearfix"></div>',
-        ]);
-         ?>
 </div>
-
-<div id="public-content" class="tab-content col-md-12" style="display: none;">
-<?php
-echo \yii\widgets\ListView::widget([
-        'dataProvider' => $publicDataProvider,
-        'itemView' => '_file',
-        'viewParams' => $viewParams,
-        'options' => [
-            'tag' => 'div',
-            'class' => 'row',
-            'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
-        ],
-        'itemOptions' => $isPicker ?
-            function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
-                if (isset($attributes)) {
-                if (is_array($attributes)) {
-                    if (in_array('id_storage', $attributes)) {
-                    } else {
-                        $attributes[] = 'id_storage';
-                    }
-                }
-            }
-            return [
+<div class="row d-flex">
+    <div id="private-content" class="tab-content col-md-12">
+        <?php
+        echo \yii\widgets\ListView::widget([
+            'dataProvider' => $privateDataProvider,
+            'itemView' => '_file',
+            'viewParams' => $viewParams,
+            'options' => [
                 'tag' => 'div',
-                'class' => 'col-lg-3 col-sm-4 col-md-3',
-                'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
-                //'onclick' => 'selectItem(this, "' . $name . '")',
-            ];
-            } :
-            function ($model, $key, $index, $widget) use ($isJson, $name) {
-                 return
-                [
-                    'tag' => 'div',
-                    'class' => 'col-lg-3 col-sm-4 col-md-3',
-                    //'onclick' => 'selectItem(this, "' . $name . '")',
-                    'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
-                ];
-            },
-        'summary' => false,
-        'layout' => '{items}<div class="clearfix"></div>',
+                'class' => 'row',
+                'style' => 'overflow-y: auto; height: calc(100vh - 412px);',
+            ],
+            'itemOptions' => $isPicker ?
+                function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
+                    if (isset($attributes)) {
+                        if (is_array($attributes)) {
+                            if (in_array('id_storage', $attributes)) {
+                            } else {
+                                $attributes[] = 'id_storage';
+                            }
+                        }
+                    }
+                    return [
+                        'tag' => 'div',
+                        'class' => 'col-lg-3 col-sm-4 col-md-3',
+                        'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
+                        //'onclick' => 'selectItem(this, "' . $name . '")',
+                    ];
+                } :
+                function ($model, $key, $index, $widget) use ($isJson, $name) {
+                    return
+                        [
+                            'tag' => 'div',
+                            'class' => 'col-lg-3 col-sm-4 col-md-3',
+                            //'onclick' => 'selectItem(this, "' . $name . '")',
+                            'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
+                        ];
+                },
+            'summary' => false,
+            'layout' => '{items}<div class="clearfix"></div>',
         ]);
-         ?>
-</div>
+        ?>
+    </div>
 
+    <div id="public-content" class="tab-content col-md-12" style="display: none;">
+        <?php
+        echo \yii\widgets\ListView::widget([
+            'dataProvider' => $publicDataProvider,
+            'itemView' => '_file',
+            'viewParams' => $viewParams,
+            'options' => [
+                'tag' => 'div',
+                'class' => 'row',
+                'style' => 'overflow-y: auto; height: calc(100vh - 412px);',
+            ],
+            'itemOptions' => $isPicker ?
+                function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
+                    if (isset($attributes)) {
+                        if (is_array($attributes)) {
+                            if (in_array('id_storage', $attributes)) {
+                            } else {
+                                $attributes[] = 'id_storage';
+                            }
+                        }
+                    }
+                    return [
+                        'tag' => 'div',
+                        'class' => 'col-lg-3 col-sm-4 col-md-3',
+                        'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
+                        //'onclick' => 'selectItem(this, "' . $name . '")',
+                    ];
+                } :
+                function ($model, $key, $index, $widget) use ($isJson, $name) {
+                    return
+                        [
+                            'tag' => 'div',
+                            'class' => 'col-lg-3 col-sm-4 col-md-3',
+                            //'onclick' => 'selectItem(this, "' . $name . '")',
+                            'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
+                        ];
+                },
+            'summary' => false,
+            'layout' => '{items}<div class="clearfix"></div>',
+        ]);
+        ?>
+    </div>
+</div>
 <script>
-    $(document).ready(function () {
-       
-        $("#private-tab").click(function () {
+    $(document).ready(function() {
+
+        $("#private-tab").click(function() {
             $("#private-content").show();
-            $("#public-content").hide(); 
+            $("#public-content").hide();
             $(".nav-link").removeClass("active");
             $("#private-tab").addClass("active");
         });
 
-        $("#public-tab").click(function () {
+        $("#public-tab").click(function() {
             $("#private-content").hide();
             $("#public-content").show();
             $(".nav-link").removeClass("active");
             $("#public-tab").addClass("active");
         });
 
-        $(".nav-link").click(function () {
-           
+        $(".nav-link").click(function() {
+
             $(".nav-link").removeClass("active");
             $(this).addClass("active");
         });
@@ -267,7 +267,7 @@ if ($isPicker) {
     echo Html::beginTag('div', ['id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none; margin-left: 5px; cursor:pointer;']);
     //echo Html::tag('span', '', ['class' => 'fa fa-info-circle', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
     // echo Html::beginTag('div');
-    echo Html::tag('div', '', ['class' => 'col-6 fa fa-info-circle', 'style' => 'color:#28a745; font-size:24px; margin-top:7px;','id' => 'file-picker-input-check-selected-name' . $name]);
+    echo Html::tag('div', '', ['class' => 'col-6 fa fa-info-circle', 'style' => 'color:#28a745; font-size:24px; margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $name]);
     // echo Html::endTag('div');
     echo Html::endTag('div');
     echo Html::endTag('div');
