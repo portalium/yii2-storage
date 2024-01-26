@@ -87,22 +87,36 @@ $viewParams = $isPicker ? [
     'isPicker' => $isPicker,
     'fileExtensions' => $fileExtensions,
 ];
-echo Bootstrap5Tabs::widget([
-    'items' => [
-        [
-            'label' => 'Private', 
-            'content' => ListView::widget([
-                'dataProvider' => $privateDataProvider, 
-                'itemView' => '_file',
-                'viewParams' => $viewParams,
-                'options' => [
-                    'tag' => 'div',
-                    'class' => 'row',
-                    'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
-                ],
-                'itemOptions' => $isPicker ?
-        function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
-            if (isset($attributes)) {
+?>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6">
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" id="private-tab" data-toggle="tab" href="#private-content">Private</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="public-tab" data-toggle="tab" href="#public-content">Public</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="row d-flex">
+ <div id="private-content" class="tab-content col-md-12">
+<?php
+echo \yii\widgets\ListView::widget([
+        'dataProvider' => $privateDataProvider,
+        'itemView' => '_file',
+        'viewParams' => $viewParams,
+        'options' => [
+            'tag' => 'div',
+            'class' => 'row',
+            'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
+        ],
+        'itemOptions' => $isPicker ?
+            function ($model, $key, $index, $widget) use($attributes, $isJson, $name) {
+                if (isset($attributes)) {
                 if (is_array($attributes)) {
                     if (in_array('id_storage', $attributes)) {
                     } else {
@@ -116,34 +130,36 @@ echo Bootstrap5Tabs::widget([
                 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
                 //'onclick' => 'selectItem(this, "' . $name . '")',
             ];
-        } :
-        function ($model, $key, $index, $widget) use ($isJson, $name) {
-            return
+            } :
+            function ($model, $key, $index, $widget) use ($isJson, $name) {
+                 return
                 [
                     'tag' => 'div',
                     'class' => 'col-lg-3 col-sm-4 col-md-3',
                     //'onclick' => 'selectItem(this, "' . $name . '")',
                     'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
                 ];
-        },
-    'summary' => false,
-    'layout' => '{items}<div class="clearfix"></div>',
-            ]),
+            },
+        'summary' => false,
+        'layout' => '{items}<div class="clearfix"></div>',
+        ]);
+         ?>
+</div>
+
+<div id="public-content" class="tab-content col-md-12" style="display: none;">
+<?php
+echo \yii\widgets\ListView::widget([
+        'dataProvider' => $publicDataProvider,
+        'itemView' => '_file',
+        'viewParams' => $viewParams,
+        'options' => [
+            'tag' => 'div',
+            'class' => 'row',
+            'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
         ],
-        [
-            'label' => 'Public',
-            'content' => ListView::widget([
-                'dataProvider' => $publicDataProvider,
-                'itemView' => '_file',
-                'viewParams' => $viewParams,
-                'options' => [
-                    'tag' => 'div',
-                    'class' => 'row',
-                    'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
-                ],
-                'itemOptions' => $isPicker ?
-        function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
-            if (isset($attributes)) {
+        'itemOptions' => $isPicker ?
+            function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
+                if (isset($attributes)) {
                 if (is_array($attributes)) {
                     if (in_array('id_storage', $attributes)) {
                     } else {
@@ -157,22 +173,48 @@ echo Bootstrap5Tabs::widget([
                 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
                 //'onclick' => 'selectItem(this, "' . $name . '")',
             ];
-        } :
-        function ($model, $key, $index, $widget) use ($isJson, $name) {
-            return
+            } :
+            function ($model, $key, $index, $widget) use ($isJson, $name) {
+                 return
                 [
                     'tag' => 'div',
                     'class' => 'col-lg-3 col-sm-4 col-md-3',
                     //'onclick' => 'selectItem(this, "' . $name . '")',
                     'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
                 ];
-        },
-    'summary' => false,
-    'layout' => '{items}<div class="clearfix"></div>',
-            ]),
-        ],
-    ],
-]);
+            },
+        'summary' => false,
+        'layout' => '{items}<div class="clearfix"></div>',
+        ]);
+         ?>
+</div>
+
+<script>
+    $(document).ready(function () {
+       
+        $("#private-tab").click(function () {
+            $("#private-content").show();
+            $("#public-content").hide(); 
+            $(".nav-link").removeClass("active");
+            $("#private-tab").addClass("active");
+        });
+
+        $("#public-tab").click(function () {
+            $("#private-content").hide();
+            $("#public-content").show();
+            $(".nav-link").removeClass("active");
+            $("#public-tab").addClass("active");
+        });
+
+        $(".nav-link").click(function () {
+           
+            $(".nav-link").removeClass("active");
+            $(this).addClass("active");
+        });
+    });
+</script>
+<?php
+
 Pjax::end();
 if ($isPicker) {
     Modal::end();
