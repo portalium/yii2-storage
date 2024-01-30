@@ -66,8 +66,8 @@ class FileBrowserController extends Controller
     public function actionIndex()
     {
 
-        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage']) && !\Yii::$app->user->can('storageWebDefaultIndexForWorkspace', ['id_module' => 'storage'])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this pages.'));
         }
 
         $dataProvider = new \yii\data\ActiveDataProvider([

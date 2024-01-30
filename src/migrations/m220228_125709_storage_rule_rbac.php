@@ -18,8 +18,6 @@ class m220228_125709_storage_rule_rbac extends Migration
             'storageApiDefaultCreate' => 'Storage Api Default Create',
             'storageApiDefaultUpdate' => 'Storage Api Default Update',
             'storageApiDefaultDelete' => 'Storage Api Default Delete',
-            'storageApiDefaultIndex' => 'Storage Api Default Index',
-            'storageWebDefaultIndex' => 'Storage Web Default Index',
             'storageWebDefaultView' => 'Storage Web Default View',
             'storageWebDefaultCreate' => 'Storage Web Default Create',
             'storageWebDefaultUpdate' => 'Storage Web Default Update',
@@ -37,6 +35,17 @@ class m220228_125709_storage_rule_rbac extends Migration
             $permission = $auth->getPermission($permissionKey);
             $auth->addChild($permissionForWorkspace, $permission);
 
+        }
+        $permissions = [
+            'storageApiDefaultIndex' => 'Storage Api Default Index',
+            'storageWebDefaultIndex' => 'Storage Web Default Index',
+        ];
+
+        foreach ($permissions as $permissionKey => $permissionDescription) {
+            $permissionForWorkspace = $auth->createPermission($permissionKey . $endPrefix);
+            $permissionForWorkspace->description = ' (' . $endPrefix . ')' . $permissionDescription;
+            $auth->add($permissionForWorkspace);
+            $auth->addChild($admin, $permissionForWorkspace);
         }
     }
 
