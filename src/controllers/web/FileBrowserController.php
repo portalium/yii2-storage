@@ -66,7 +66,7 @@ class FileBrowserController extends Controller
     public function actionIndex()
     {
 
-        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage'])) {
+        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage']) && !\Yii::$app->user->can('storageWebDefaultIndexForWorkspace', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -80,7 +80,7 @@ class FileBrowserController extends Controller
             ],
         ]);
         if (Yii::$app->request->isAjax || Yii::$app->request->isPjax || Yii::$app->request->get('payload')) {
-            
+
             $model = new Storage();
             $payload = Yii::$app->request->get('payload');
 
