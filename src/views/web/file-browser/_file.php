@@ -37,8 +37,8 @@ if ($isPicker) {
     'bodyOptions' => ['style' => 'height: 200px; display: block; overflow: hidden;'],
     'actions' => [
         'header' => ($view == 1) ? [
-            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)"]),
-            Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')"]),
+            Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes"=>json_encode($model->getAttributes())]),
+            Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes"=>json_encode($model->getAttributes())]),
             $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style'=>'margin-right: 0px; width: 30px; height: 30px;', 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null,
         ] : [],
         'footer' => [
@@ -103,8 +103,13 @@ if ($view == 1) {
         <<<JS
                 function updatedItem(e) {
                     var data = $(e).attr("data");
-                    console.log(data);
-                    var parsedData = JSON.parse(data);
+                    var allAttributes = $(e).attr("all-attributes");
+                    var parsedData = '';
+                    try {
+                        parsedData = JSON.parse(data);   
+                    } catch (error) {
+                        parsedData = JSON.parse(allAttributes);
+                    }
                     var widgetName = "$widgetName";
 
                     updateStorageInput(parsedData, widgetName);
@@ -160,7 +165,13 @@ if ($view == 1) {
 
                 function removeItem(e, widgetName) {
                     var data = $(e).attr('data');
-                    var parsedData = JSON.parse(data);
+                    var allAttributes = $(e).attr("all-attributes");
+                    var parsedData = '';
+                    try {
+                        parsedData = JSON.parse(data);   
+                    } catch (error) {
+                        parsedData = JSON.parse(allAttributes);
+                    }
                     document.getElementById('storage-title' + widgetName).value = parsedData.title;
                     $('#file-update-modal .file-caption-name').attr('title', "");
 
@@ -201,6 +212,9 @@ if ($view == 1) {
                             'payload': JSON.stringify(payload$variablePrefix),
                         },
                         success: function (data) {
+                            reloadFilePickerPjax(widgetName, e);
+                        },
+                        error: function (data) {
                             reloadFilePickerPjax(widgetName, e);
                         }
                     });
