@@ -24,6 +24,23 @@ $this->registerCss(
     .storage-item.selected-item {
         background-color: #78D56E;
     }
+    .storage-item-div .card-header {
+        display: none;
+        border-radius: 1;
+    }
+    .storage-item-div .card-footer {
+        display: none;
+        border-radius: 1;
+    }
+    .storage-item-div:hover .card-header {
+        display: block;
+    }
+    .storage-item-div:hover .card-footer {
+        display: block;
+    }
+    .storage-item-div .card-body {
+    padding: 0;
+    }
     CSS
 );
 
@@ -107,7 +124,8 @@ echo ListView::widget([
             }
             return [
                 'tag' => 'div',
-                'class' => 'col-lg-3 col-sm-4 col-md-3',
+                'class' => 'col-lg-2 col-sm-4 col-md-2 storage-item-div',
+                'style' => 'margin-top: 20px; height: fit-content;',
                 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
                 //'onclick' => 'selectItem(this, "' . $name . '")',
             ];
@@ -116,7 +134,8 @@ echo ListView::widget([
             return
                 [
                     'tag' => 'div',
-                    'class' => 'col-lg-3 col-sm-4 col-md-3',
+                    'class' => 'col-lg-2 col-sm-4 col-md-2 storage-item-div',
+                    'style' => 'margin-top: 20px; height: fit-content;',
                     //'onclick' => 'selectItem(this, "' . $name . '")',
                     'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
                 ];
