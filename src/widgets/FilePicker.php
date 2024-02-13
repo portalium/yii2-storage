@@ -89,12 +89,22 @@ class FilePicker extends InputWidget
 
     public function run()
     {
-        $query = Storage::find();
+        // $query = Storage::find();
+        // get this action
+        $searchModel = new \portalium\storage\models\StorageSearch();
+        $query = $searchModel->search(Yii::$app->request->queryParams);
+        $query = $query->query;
         if ($this->fileExtensions) {
             foreach ($this->fileExtensions as $fileExtension) {
                 $query->orWhere(['like', 'name', $fileExtension]);
             }
         }
+
+        if (Yii::$app->controller->action->id == 'manage' && Yii::$app->user->can('storageStorageFindAll')) {
+        } else {
+            $query->orWhere(['or', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PUBLIC]]);
+        }
+        
         $this->dataProvider = new \yii\data\ActiveDataProvider([
             'query' => $query,
             'pagination' => [
@@ -170,6 +180,7 @@ class FilePicker extends InputWidget
             'callbackName' => $this->callbackName,
             'isPicker' => $this->isPicker,
             'fileExtensions' => $this->fileExtensions,
+            'searchModel' => $searchModel,
         ]);
     }
 

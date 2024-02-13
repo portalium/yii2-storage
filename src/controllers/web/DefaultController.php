@@ -67,7 +67,25 @@ class DefaultController extends Controller
         }
         
 
-        return $this->render('index');
+        return $this->render('index', [
+            'manage' => false
+        ]);
+    }
+
+    /**
+     * Lists all Storage models.
+     *
+     * @return string
+     */
+    public function actionManage()
+    {
+        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage']) && !\Yii::$app->user->can('storageStorageFindAll')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
+        return $this->render('index', [
+            'manage' => true
+        ]);
     }
 
     /**

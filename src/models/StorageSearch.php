@@ -18,7 +18,7 @@ class StorageSearch extends Storage
     {
         return [
             [['id_storage'], 'integer'],
-            [['name', 'title'], 'safe'],
+            [['name', 'title', 'access'], 'safe'],
         ];
     }
 
@@ -59,6 +59,7 @@ class StorageSearch extends Storage
         // grid filtering conditions
         $query->andFilterWhere([
             'id_storage' => $this->id_storage,
+            'access' => $this->access,
         ]);
 
         $query->andFilterWhere(['like', 'name', $this->name])

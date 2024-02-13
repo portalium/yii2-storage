@@ -5,6 +5,7 @@ use yii\helpers\Url;
 use yii\helpers\Html;
 use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;
+use portalium\storage\Module;
 
 $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
@@ -20,7 +21,7 @@ $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
 $fileExtensionsJson = json_encode($fileExtensions);
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
-    
+
 
     if (isset($attributes)) {
         if (is_array($attributes)) {
@@ -32,9 +33,9 @@ if ($isPicker) {
     }
 }
 ?>
-<?php ($view == 1) ? Panel::begin([
+<?php /* ($view == 1) ? Panel::begin([
     'title' => '',
-    'bodyOptions' => ['style' => 'height: 200px; display: block; overflow: hidden;'],
+    'bodyOptions' => ['style' => 'height: 286px; display: block; overflow: hidden;'],
     'actions' => [
         'header' => ($view == 1) ? [
             Yii::$app->user->can('storageWebDefaultUpdate',['id_module'=>'storage'])? Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes"=>json_encode($model->getAttributes())]) :null,
@@ -45,32 +46,60 @@ if ($isPicker) {
             Html::tag("div", (strlen($model->title) > 25) ? substr(str_replace("’", "´", $model->title), 0, 25) . '...' : Html::encode($model->title), ['style' => 'float: left;']),
         ]
     ]
-]) : null ?>
+]) : null */
+// convert to card
+?>
+<?php if ($view == 1) { ?>
+    <div id="w2" class="card" style="display: flex; flex-direction: column;">
+        <div class="card-header" style="overflow: auto;position: absolute;width: 100%;background: #fafafa; opacity: 0.8;">
+            <div class="panel-title"><span></span>
+                <div class="actions" style="float:right;margin-top:-2px; display: flex; justify-content: end; width: 118px;">
+                    <?php
+                    echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style'=>'margin-right: 5px;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style'=>'margin-right: 5px;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 0px; width: 30px; height: 30px;', 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;
+                    ?>
+                </div>
+            </div>
+        </div>
+        <div class="card-body" style="height: 167px; border-radius: 4px; display: block;overflow: hidden;padding: 0px;overflow-x: auto;">
+        <?php } ?>
+        <?php
+        if (isset(Storage::getMimeTypeList()[$model->mime_type])) {
+            $mimeType = Storage::getMimeTypeList()[$model->mime_type];
+        } else {
+            $mimeType = "other";
+        }
+        $mime = explode('/', $mimeType)[0];
 
-<?php
-if (isset(Storage::getMimeTypeList()[$model->mime_type])) {
-    $mimeType = Storage::getMimeTypeList()[$model->mime_type];
-} else {
-    $mimeType = "other";
-}
-$mime = explode('/', $mimeType)[0];
-if ($mime == 'image') {
-    echo Html::img(Html::encode($path . $model->name), ['style' => ' 
+        if ($mime == 'image') {
+            echo Html::img(Html::encode($path . $model->name), ['style' => ' 
         object-fit: cover;
         width: 100%;
-        height: 177px;
         object-position: center 40%;
-        padding-top: 20px;
+        padding-top: 0px;
+        height: 100%;
     ']);
-} elseif ($mime == 'video') {
-    echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
-} elseif ($mime == 'audio') {
-    echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
-} else {
-    echo Html::tag('i', '', ['class' => 'fa fa-file-o']);
-}
-?>
-<?php ($view == 1) ? Panel::end() : null ?>
+        } elseif ($mime == 'video') {
+            echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
+        } elseif ($mime == 'audio') {
+            echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
+        } else {
+            echo Html::tag('i', '', ['class' => 'fa fa-file-o', 'style'=>'display: flex; place-content: center; height: 100%; align-items: center; font-size: xxx-large;']);
+        }
+        ?>
+        <?php /* ($view == 1) ? Panel::end() : null */ ?>
+        <?php if ($view == 1) { ?>
+        </div>
+        <div class="card-footer" style="overflow: auto; position:absolute; bottom:0px; background: #fafafa; width: 100%; opacity: 0.8;"><span></span>
+            <div class="actions" style="float:right;margin-top:-2px;">
+                <div style="float: left;">
+                    <?php echo (strlen($model->title) > 25) ? substr(str_replace("’", "´", $model->title), 0, 25) . '...' : Html::encode($model->title); ?>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php } ?>
 
 <?php
 if ($isPicker) {
@@ -99,6 +128,10 @@ if ($isPicker) {
     ", View::POS_END);
 }
 if ($view == 1) {
+    $this->registerJs(
+      'var updateText = "' . Module::t('Update') . '";',
+        View::POS_BEGIN
+    );
     $this->registerJs(
         <<<JS
                 function updatedItem(e) {
@@ -131,7 +164,7 @@ if ($view == 1) {
                 }
 
                 function updateButtonContent(widgetName) {
-                    document.getElementById("update-storage" + widgetName).innerHTML = "Update";
+                    document.getElementById("update-storage" + widgetName).innerHTML = updateText;
                     document.getElementById("update-storage" + widgetName).classList.remove("btn-success");
                     document.getElementById("update-storage" + widgetName).classList.add("btn-primary");
                 }
