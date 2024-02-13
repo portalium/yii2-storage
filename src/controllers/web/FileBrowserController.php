@@ -83,19 +83,26 @@ class FileBrowserController extends Controller
 
             $model = new Storage();
             $payload = Yii::$app->request->get('payload');
-
-            $payload = json_decode($payload, true);
+            Yii::warning($payload, 'payload');
+            if (!$payload)
+                $payload = Yii::$app->session->get('storagePayload');
+            Yii::warning($payload, 'payload');
+            if ($payload && is_string($payload))
+                $payload = json_decode($payload, true);
             $id_storage = $payload['id_storage'] ?? null;
 
             if ($id_storage) {
                 $model = Storage::findOne($id_storage);
             }
-            $query = Storage::find();
+            $searchModel = new \portalium\storage\models\StorageSearch();
+            $query = $searchModel->search(Yii::$app->request->queryParams);
+            $query = $query->query;
             if ($payload['fileExtensions']) {
                 foreach ($payload['fileExtensions'] as $fileExtension) {
                     $query->orWhere(['like', 'name', $fileExtension]);
                 }
             }
+
             $dataProvider = new \yii\data\ActiveDataProvider([
                 'query' => $query,
                 'pagination' => false,
@@ -105,7 +112,7 @@ class FileBrowserController extends Controller
                     ]
                 ],
             ]);
-
+            Yii::$app->session->set('storagePayload', $payload);
             return $this->render('index', [
                 'attribute' => $payload['attribute'] ?? null,
                 'multiple' => $payload['multiple'] ?? null,
@@ -117,15 +124,20 @@ class FileBrowserController extends Controller
                 'callbackName' => $payload['callbackName'] ?? null,
                 'isPicker' => $payload['isPicker'] ?? null,
                 'fileExtensions' => $payload['fileExtensions'] ?? null,
+                'searchModel' => $searchModel,
             ]);
         } else {
             $model = new Storage();
+            $searchModel = new StorageSearch();
+            $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+            
             return $this->render('index', [
                 'dataProvider' => $dataProvider,
                 'isJson' => Yii::$app->request->get('isJson'),
                 'isPicker' => false,
                 'storageModel' => $model,
                 'name' => 'base',
+                'searchModel' => $searchModel,
             ]);
         }
     }
@@ -269,7 +281,7 @@ class FileBrowserController extends Controller
     protected function updatePjax($id)
     {
         $model = $this->findModel($id);
-        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id)])) {
+        if (!Yii::$app->user->can('storageWebDefaultUpdate', ['model' => $this->findModel($id), 'id_module' => 'storage'])) {
             return json_encode(['error' => Module::t('Error uploading file')]);
         }
         $model->title = $this->request->post('title');
@@ -293,20 +305,35 @@ class FileBrowserController extends Controller
      */
     public function actionDelete()
     {
+        if ($this->request->isAjax)
+            Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         $id = Yii::$app->request->isPost ? $this->findModel(Yii::$app->request->post('id')) : $this->findModel(Yii::$app->request->get('id'));
 
-        if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id)])) {
+        if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id), 'id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $model = $this->findModel($id);
-        if (!$model->deleteFile($model->name)) {
+        /* if (!$model->deleteFile($model->name)) {
             \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
+        } else if (!$model->delete()) {
+            \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
+        } */
+        $transaction = Yii::$app->db->beginTransaction();
+        try {
+            if ($model->delete()) {
+                if (!$model->deleteFile($model->name)) {
+                    $transaction->rollBack();
+                    throw new \Exception(Module::t('Error deleting file'));
+                }
+            }
+            $transaction->commit();
+            \Yii::$app->session->addFlash('success', Module::t('File deleted successfully'));
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            \Yii::$app->session->addFlash('error', $e->getMessage());
         }
 
-        if (!$model->delete()) {
-            \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
-        }
         if ($this->request->isAjax) {
             Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
             return ['success' => true];

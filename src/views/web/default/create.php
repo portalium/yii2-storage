@@ -7,7 +7,7 @@ use portalium\storage\Module;
 /* @var $model portalium\storage\models\Storage */
 
 $this->title = Module::t('Create Storage');
-$this->params['breadcrumbs'][] = ['label' => Module::t('Storages'), 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => Module::t('Storage'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="storage-create">

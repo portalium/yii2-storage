@@ -11,7 +11,7 @@ use portalium\storage\Module;
 <div class="storage-search">
 
     <?php $form = ActiveForm::begin([
-        'action' => ['index'],
+        'action' => ['\storage\file-browser\index'],
         'method' => 'get',
     ]); ?>
 
@@ -23,7 +23,6 @@ use portalium\storage\Module;
 
     <div class="form-group">
         <?= Html::submitButton(Module::t('Search'), ['class' => 'btn btn-primary']) ?>
-        <?= Html::resetButton(Module::t('Reset'), ['class' => 'btn btn-outline-secondary']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

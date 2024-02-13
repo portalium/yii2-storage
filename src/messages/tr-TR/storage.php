@@ -18,4 +18,13 @@ return [
     'Delete Storage' => 'Dosya sil',
     'Select' => 'Seçiniz',
     'Select File' => 'Dosya seç',
+    'Title' => 'Başlık',
+    'All' => 'Tümü',
+    'Search' => 'Ara',
+    'Access' => 'Erişim',
+    'File' => 'Dosya',
+    'Close' => 'Kapat',
+    'Update' => 'Güncelle',
+    'Save' => 'Kaydet',
+    'Search for file...' => 'Dosya ara...',
 ];

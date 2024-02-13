@@ -12,7 +12,7 @@ use portalium\storage\widgets\FilePicker;
 /* @var $searchModel portalium\storage\models\StorageSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = Module::t('Storages');
+$this->title = Module::t('Storage');
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="storage-index">

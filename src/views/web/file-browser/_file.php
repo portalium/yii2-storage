@@ -5,6 +5,7 @@ use yii\helpers\Url;
 use yii\helpers\Html;
 use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;
+use portalium\storage\Module;
 
 $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
@@ -70,6 +71,7 @@ if ($isPicker) {
             $mimeType = "other";
         }
         $mime = explode('/', $mimeType)[0];
+
         if ($mime == 'image') {
             echo Html::img(Html::encode($path . $model->name), ['style' => ' 
         object-fit: cover;
@@ -83,7 +85,7 @@ if ($isPicker) {
         } elseif ($mime == 'audio') {
             echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
         } else {
-            echo Html::tag('i', '', ['class' => 'fa fa-file-o']);
+            echo Html::tag('i', '', ['class' => 'fa fa-file-o', 'style'=>'display: flex; place-content: center; height: 100%; align-items: center; font-size: xxx-large;']);
         }
         ?>
         <?php /* ($view == 1) ? Panel::end() : null */ ?>
@@ -127,6 +129,10 @@ if ($isPicker) {
 }
 if ($view == 1) {
     $this->registerJs(
+      'var updateText = "' . Module::t('Update') . '";',
+        View::POS_BEGIN
+    );
+    $this->registerJs(
         <<<JS
                 function updatedItem(e) {
                     var data = $(e).attr("data");
@@ -158,7 +164,7 @@ if ($view == 1) {
                 }
 
                 function updateButtonContent(widgetName) {
-                    document.getElementById("update-storage" + widgetName).innerHTML = "Update";
+                    document.getElementById("update-storage" + widgetName).innerHTML = updateText;
                     document.getElementById("update-storage" + widgetName).classList.remove("btn-success");
                     document.getElementById("update-storage" + widgetName).classList.add("btn-primary");
                 }

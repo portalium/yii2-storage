@@ -35,6 +35,11 @@ class Module extends \portalium\base\Module
                     'menu' => 'web',
                     'type' => 'action',
                     'route' => '/storage/default/index',
+                ],
+                [
+                    'menu' => 'web',
+                    'type' => 'action',
+                    'route' => '/storage/default/manage',
                 ]
             ],
         ];
