@@ -17,6 +17,8 @@ class FilePicker extends InputWidget
 {
 
     public $dataProvider;
+    public $publicDataProvider;
+    public $privateDataProvider;
     public $selected;
     public $multiple = 0;
     public $attributes = ['id_storage'];
@@ -116,6 +118,35 @@ class FilePicker extends InputWidget
         ]);
 
 
+        $privateQuery = clone $query;
+        $privateQuery->andWhere(['access' => Storage::ACCESS_PRIVATE]); 
+        $this->privateDataProvider = new \yii\data\ActiveDataProvider([
+            'query' => $privateQuery,
+            'pagination' => [
+                'pageSize' => $this->isPicker ? 1 : 12,
+            ],
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
+        ]);
+
+
+
+        $publicQuery = clone $query;
+        $publicQuery->andWhere(['access' => Storage::ACCESS_PUBLIC]);
+        $this->publicDataProvider = new \yii\data\ActiveDataProvider([
+            'query' => $publicQuery,
+            'pagination' => [
+                'pageSize' => $this->isPicker ? 1 : 12,
+            ],
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
+        ]);
 
 
         if ($this->hasModel()) {
@@ -140,6 +171,8 @@ class FilePicker extends InputWidget
             'attribute' => $this->attribute,
             'multiple' => $this->multiple,
             'dataProvider' => $this->dataProvider,
+            'publicDataProvider' => $this->publicDataProvider,
+            'privateDataProvider' => $this->privateDataProvider,
             'isJson' => $this->isJson,
             'storageModel' => $model,
             'attributes' => $this->attributes,

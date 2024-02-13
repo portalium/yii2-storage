@@ -79,8 +79,33 @@ class FileBrowserController extends Controller
                 ]
             ],
         ]);
-        if (Yii::$app->request->isAjax || Yii::$app->request->isPjax || Yii::$app->request->get('payload')) {
+        
+        $privateQuery =  Storage::find();
+        $privateQuery->andWhere(['access' => Storage::ACCESS_PRIVATE]); 
+        $privateDataProvider = new \yii\data\ActiveDataProvider([
+            'query' => $privateQuery,
+            'pagination' => false,
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
+        ]);
 
+
+
+        $publicQuery =  Storage::find();
+        $publicQuery->andWhere(['access' => Storage::ACCESS_PUBLIC]);
+        $publicDataProvider = new \yii\data\ActiveDataProvider([
+            'query' => $publicQuery,
+            'pagination' => false,
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
+        ]);
+        if (Yii::$app->request->isAjax || Yii::$app->request->isPjax || Yii::$app->request->get('payload')) {
             $model = new Storage();
             $payload = Yii::$app->request->get('payload');
             Yii::warning($payload, 'payload');
@@ -117,6 +142,8 @@ class FileBrowserController extends Controller
                 'attribute' => $payload['attribute'] ?? null,
                 'multiple' => $payload['multiple'] ?? null,
                 'dataProvider' => $dataProvider,
+                'privateDataProvider' => $privateDataProvider,
+                'publicDataProvider' => $publicDataProvider,
                 'isJson' => $payload['isJson'] ?? null,
                 'storageModel' => $model,
                 'attributes' => $payload['attributes'] ?? null,
@@ -133,6 +160,8 @@ class FileBrowserController extends Controller
             
             return $this->render('index', [
                 'dataProvider' => $dataProvider,
+                'privateDataProvider' => $privateDataProvider,
+                'publicDataProvider' => $publicDataProvider,
                 'isJson' => Yii::$app->request->get('isJson'),
                 'isPicker' => false,
                 'storageModel' => $model,
