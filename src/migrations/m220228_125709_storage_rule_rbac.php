@@ -51,7 +51,6 @@ class m220228_125709_storage_rule_rbac extends Migration
             'storageApiDefaultIndex' => 'Storage Api Default Index',
             'storageWebDefaultIndex' => 'Storage Web Default Index',
         ];
-
         foreach ($permissions as $permissionKey => $permissionDescription) {
             $permissionForWorkspace = $auth->createPermission($permissionKey . $endPrefix);
             $permissionForWorkspace->description = ' (' . $endPrefix . ')' . $permissionDescription;
