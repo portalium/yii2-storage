@@ -70,7 +70,7 @@ class FileBrowserController extends Controller
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
-        $dataProvider = new \yii\data\ActiveDataProvider([
+        $dataProvider = new \portalium\data\ActiveDataProvider([
             'query' => Storage::find(),
             'pagination' => false,
             'sort' => [
@@ -82,7 +82,7 @@ class FileBrowserController extends Controller
         
         $privateQuery =  Storage::find();
         $privateQuery->andWhere(['access' => Storage::ACCESS_PRIVATE]); 
-        $privateDataProvider = new \yii\data\ActiveDataProvider([
+        $privateDataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $privateQuery,
             'pagination' => false,
             'sort' => [
@@ -96,7 +96,7 @@ class FileBrowserController extends Controller
 
         $publicQuery =  Storage::find();
         $publicQuery->andWhere(['access' => Storage::ACCESS_PUBLIC]);
-        $publicDataProvider = new \yii\data\ActiveDataProvider([
+        $publicDataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $publicQuery,
             'pagination' => false,
             'sort' => [
@@ -128,7 +128,7 @@ class FileBrowserController extends Controller
                 }
             }
 
-            $dataProvider = new \yii\data\ActiveDataProvider([
+            $dataProvider = new \portalium\data\ActiveDataProvider([
                 'query' => $query,
                 'pagination' => false,
                 'sort' => [

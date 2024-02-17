@@ -16,8 +16,8 @@ $variablePrefix = str_replace(' ', '_', $variablePrefix);
 $variablePrefix = str_replace('.', '_', $variablePrefix);
 
 $ext = substr($name, strrpos($name, '.') + 1);
-$path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
-
+// $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
+$path = '/storage/default/get-file?id=';
 $fileExtensionsJson = json_encode($fileExtensions);
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
@@ -73,7 +73,7 @@ if ($isPicker) {
         $mime = explode('/', $mimeType)[0];
 
         if ($mime == 'image') {
-            echo Html::img(Html::encode($path . $model->name), ['style' => ' 
+            echo Html::img(Html::encode($path . $model->id_storage), ['style' => ' 
         object-fit: cover;
         width: 100%;
         object-position: center 40%;
@@ -81,9 +81,9 @@ if ($isPicker) {
         height: 100%;
     ']);
         } elseif ($mime == 'video') {
-            echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
+            echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->id_storage, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
         } elseif ($mime == 'audio') {
-            echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
+            echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->id_storage, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
         } else {
             echo Html::tag('i', '', ['class' => 'fa fa-file-o', 'style'=>'display: flex; place-content: center; height: 100%; align-items: center; font-size: xxx-large;']);
         }

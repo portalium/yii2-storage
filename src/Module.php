@@ -13,7 +13,8 @@ class Module extends \portalium\base\Module
             'class' => 'yii\rest\UrlRule',
             'controller' => [
                 'storage/default',
-            ]
+            ],
+            'pluralize' => false
         ],
     ];
     public static $tablePrefix = 'storage_';

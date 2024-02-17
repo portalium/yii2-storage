@@ -54,13 +54,13 @@ class FilePicker extends InputWidget
                 $value = json_decode($this->model[$attribute], true);
                 if (isset($value['id_storage'])) {
                     $storageModelForName = Storage::findOne($value['id_storage']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : null;
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
                 } else if (isset($value['name'])) {
                     $storageModelForName = Storage::findOne($value['name']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : null;
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
                 } else {
                     $storageModelForName = Storage::findOne($this->model[$attribute]);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : '';
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : '';
                 }
             } catch (\Exception $e) {
                 // do nothing
@@ -105,7 +105,7 @@ class FilePicker extends InputWidget
             $query->orWhere(['or', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PUBLIC]]);
         }
         
-        $this->dataProvider = new \yii\data\ActiveDataProvider([
+        $this->dataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $query,
             'pagination' => [
                 'pageSize' => $this->isPicker ? 1 : 12,
@@ -120,7 +120,7 @@ class FilePicker extends InputWidget
 
         $privateQuery = clone $query;
         $privateQuery->andWhere(['access' => Storage::ACCESS_PRIVATE]); 
-        $this->privateDataProvider = new \yii\data\ActiveDataProvider([
+        $this->privateDataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $privateQuery,
             'pagination' => [
                 'pageSize' => $this->isPicker ? 1 : 12,
@@ -136,7 +136,7 @@ class FilePicker extends InputWidget
 
         $publicQuery = clone $query;
         $publicQuery->andWhere(['access' => Storage::ACCESS_PUBLIC]);
-        $this->publicDataProvider = new \yii\data\ActiveDataProvider([
+        $this->publicDataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $publicQuery,
             'pagination' => [
                 'pageSize' => $this->isPicker ? 1 : 12,

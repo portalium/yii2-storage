@@ -11,6 +11,7 @@ use yii\web\NotFoundHttpException;
 use portalium\storage\models\Storage;
 use portalium\storage\models\StorageSearch;
 use portalium\storage\Module;
+use yii\filters\AccessControl;
 use yii\web\ForbiddenHttpException;
 use yii\web\HttpException;
 
@@ -33,6 +34,15 @@ class DefaultController extends Controller
                         'delete' => ['POST'],
                     ],
                 ],
+                'access' => [
+                    'class' => AccessControl::className(),
+                    'only' => ['get-file'],
+                    'rules' => [
+                        [
+                            'allow' => true,
+                        ],
+                    ],
+                ],
             ]
         );
     }
@@ -42,7 +52,7 @@ class DefaultController extends Controller
      */
     public function beforeAction($action)
     {
-        if (Yii::$app->workspace->id == null) {
+        if (Yii::$app->workspace->id == null && $action->id != 'get-file') {
             Yii::$app->session->setFlash('error', Module::t('You must select a workspace first.'));
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
@@ -251,6 +261,31 @@ class DefaultController extends Controller
         return $this->redirect(['index']);
     }
 
+    public function actionGetFile($id, $access_token = null)
+    {
+        $file = $this->findModel($id);
+        
+        /*  if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        } */
+
+        $path = Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+        
+        if (file_exists($path)) {
+            return Yii::$app->response->sendFile($path, $file->title . '.' . pathinfo($path, PATHINFO_EXTENSION));
+            /* // set headers
+            header("Cache-Control: public");
+            header("Content-Description: File Transfer");
+            header("Content-Disposition: attachment; filename=" . $file->title . '.' . pathinfo($path, PATHINFO_EXTENSION));
+            header("Content-Type: " . $file->mime_type);
+            header("Content-Transfer-Encoding: binary");
+            // read the file from disk
+            readfile($path); */
+        } else {
+            throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
+        }
+    }
+
     /**
      * Finds the Storage model based on its primary key value.
      * If the model is not found, a 404 HTTP exception will be thrown.
@@ -260,10 +295,12 @@ class DefaultController extends Controller
      */
     protected function findModel($id_storage)
     {
+        Yii::warning($id_storage);
+        Yii::warning(Yii::$app->user->id);
         if (($model = Storage::findOne(['id_storage' => $id_storage])) !== null) {
             return $model;
         }
-
+        
         throw new NotFoundHttpException(Module::t('The requested page does not exist.'));
     }
 

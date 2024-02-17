@@ -18,6 +18,9 @@ use portalium\base\Event;
  * @property string $title
  * @property string $id_user
  * @property string $mime_type
+ * @property string $id_workspace
+ * @property string $access
+ * @property string $hash_file
  */
 class Storage extends \yii\db\ActiveRecord
 {
@@ -142,7 +145,7 @@ class Storage extends \yii\db\ActiveRecord
             [['title', 'id_workspace', 'access'], 'required'],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
-            [['file', 'access'], 'safe'],
+            [['file', 'access', 'hash_file'], 'safe'],
             ['mime_type', 'integer'],
         ];
     }
@@ -170,6 +173,7 @@ class Storage extends \yii\db\ActiveRecord
             'mime_type' => Module::t('Mime Type'),
             'id_workspace' => Module::t('Workspace'),
             'access' => Module::t('Access'),
+            'hash_file' => Module::t('Hash File'),
         ];
     }
 
@@ -270,27 +274,55 @@ class Storage extends \yii\db\ActiveRecord
 
     public function getFilePath()
     {
-        $path =  Yii::$app->request->baseUrl . '/' . Yii::$app->setting->getValue('storage::path');
-        return $path . '/' . $this->name;
+        // $path =  Yii::$app->request->baseUrl . '/' . Yii::$app->setting->getValue('storage::path');
+        // return $path . '/' . $this->name;
+        return '/storage/default/get-file?id=' . $this->id_storage;
     }
 
     public static function find()
     {
+
         $activeWorkspaceId = Yii::$app->workspace->id;
         $query = parent::find();
         if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
             return $query;
         }
+
         if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
             // get public files
             return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
         }
+        
         if ($activeWorkspaceId) {
             $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
         } else {
             return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
         }
         return $query;
+    }
+
+    public static function findForApi()
+    {
+        
+        $query = parent::find();
+
+        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
+            return $query;
+        }
+
+        if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
+            // get public files
+            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+        }
+        $workspaces = WorkspaceUser::find()->select('id_workspace')->where(['id_user' => Yii::$app->user->id])->asArray()->all();
+        $workspaces = ArrayHelper::getColumn($workspaces, 'id_workspace');
+
+        if ($workspaces) {
+            // $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+            return $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $workspaces])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+        } else {
+            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+        }
     }
 
     public function cloneStorage()
@@ -333,6 +365,27 @@ class Storage extends \yii\db\ActiveRecord
             return parent::beforeSave($insert);
         }
         return false;
+    }
+
+    public function afterSave($insert, $changedAttributes)
+    {
+        if ($insert) {
+            $this->hash_file = md5_file(Yii::$app->basePath . '/../data/' . $this->name);
+            $this->save();
+        }
+        return parent::afterSave($insert, $changedAttributes);
+    }
+
+    public function afterFind()
+    {
+        if (!$this->hash_file) {
+            $file = realpath(Yii::$app->basePath . '/../data') . '/' . $this->name;
+            if (file_exists($file)) {
+                $this->hash_file = md5_file($file);
+                $this->save();
+            }
+        }
+        return parent::afterFind();
     }
 
 

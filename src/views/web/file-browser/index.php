@@ -4,7 +4,7 @@
 use yii\helpers\Url;
 use yii\web\View;
 use portalium\widgets\Pjax;
-use portalium\widgets\ListView;
+use portalium\theme\widgets\ListView;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Modal;
@@ -71,7 +71,8 @@ $csrfToken = Yii::$app->request->csrfToken;
 $storageModelName = isset($defaultStorageModel) ? $defaultStorageModel->name : null;
 
 
-$path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
+// $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
+$path = '/storage/default/get-file?id=';
 $variablePrefix = str_replace('-', '_', $name);
 $variablePrefix = str_replace(' ', '_', $variablePrefix);
 $variablePrefix = str_replace('.', '_', $variablePrefix);
@@ -147,7 +148,7 @@ echo ListView::widget([
     'options' => [
         'tag' => 'div',
         'class' => 'row',
-        'style' => 'overflow-y: auto; height: 100%;',
+        'style' => 'overflow-y: auto; height: 100%;' . ($isPicker ? ' margin-left: 0px; margin-right: 0px;' : ''),
     ],
     'itemOptions' => $isPicker ?
         function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
@@ -177,8 +178,7 @@ echo ListView::widget([
                     'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
                 ];
         },
-    'summary' => false,
-    'layout' => '{items}<div class="clearfix"></div>',
+    'layout' => '{items}{summary}{pagesizer}{pager}',
 
 ]);
 Pjax::end();
