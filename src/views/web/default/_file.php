@@ -12,7 +12,8 @@ use portalium\storage\models\Storage;
 
 $name = $model->name;
 $ext = substr($name, strrpos($name, '.') + 1);
-$path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
+// $path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
+$path = '/storage/default/get-file?id=';
 ?>
 <?php Panel::begin([
     'title' => '',
@@ -33,11 +34,11 @@ $path = Url::base() . '/'. Yii::$app->setting->getValue('storage::path') .'/';
     }
     $mime = explode('/', $mimeType)[0];
     if ($mime == 'image') {
-        echo Html::img(Html::encode($path . $model->name), ['width' => '100%', 'height' => '100%']);
+        echo Html::img(Html::encode($path . $model->id_storage), ['width' => '100%', 'height' => '100%']);
     } elseif ($mime == 'video') {
-        echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
+        echo Html::tag('video', Html::tag('source', '', ['src' => $path . $model->id_storage, 'type' => 'video/mp4']), ['controls' => '', 'width' => '100%']);
     } elseif ($mime == 'audio') {
-        echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->name, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
+        echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->id_storage, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
     } else {
         echo Html::tag('i', '', ['class' => 'fa fa-file-o']);
     }

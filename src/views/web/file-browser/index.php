@@ -1,15 +1,16 @@
 <?php
 
+
 use yii\helpers\Url;
 use yii\web\View;
 use portalium\widgets\Pjax;
-use portalium\widgets\ListView;
+use portalium\theme\widgets\ListView;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Modal;
 use portalium\storage\models\Storage;
+use portalium\theme\bundles\IconAsset;
 use portalium\theme\widgets\Panel;
-
 
 $this->registerCss(
     <<<CSS
@@ -24,6 +25,44 @@ $this->registerCss(
     .storage-item.selected-item {
         background-color: #78D56E;
     }
+    .storage-item-div .card-header {
+        display: none;
+        border-radius: 1;
+    }
+    .storage-item-div .card-footer {
+        display: none;
+        border-radius: 1;
+    }
+    .storage-item-div:hover .card-header {
+        display: block;
+    }
+    .storage-item-div:hover .card-footer {
+        display: block;
+    }
+    .storage-item-div .card-body {
+    padding: 0;
+    }
+    .storage-panel-header .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    .storage-panel-header .col-sm-10 {
+        margin-left: 0;
+    }
+
+    #file-picker-pjax$name > div::-webkit-scrollbar {
+        display: none;
+    }
+    .modal-dialog #file-picker-pjax$name {
+        padding-left: 12px; 
+        padding-right: 12px;
+    }
+    .panel-title .actions .form-group .col-sm-10 {
+        padding-left: 0;
+        padding-right: 0;
+    }
     CSS
 );
 
@@ -32,43 +71,59 @@ $csrfToken = Yii::$app->request->csrfToken;
 $storageModelName = isset($defaultStorageModel) ? $defaultStorageModel->name : null;
 
 
-$path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
+// $path = Url::base() . '/' . Yii::$app->setting->getValue('storage::path') . '/';
+$path = '/storage/default/get-file?id=';
 $variablePrefix = str_replace('-', '_', $name);
 $variablePrefix = str_replace(' ', '_', $variablePrefix);
 $variablePrefix = str_replace('.', '_', $variablePrefix);
 
-$fileExtensionsJson = $fileExtensions ? json_encode($fileExtensions) : json_encode([]);
+$fileExtensionsJson = isset($fileExtensions) ? json_encode($fileExtensions) : json_encode([]);
 if ($isPicker) {
     $attributesJson = json_encode($attributes);
 
     Modal::begin([
         'id' => 'file-picker-modal' . $name,
-        'size' => Modal::SIZE_EXTRA_LARGE,
-        'title' =>  Module::t('File Picker') . Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]) .
-            Html::tag('button', '
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none; float:right; margin-bottom: -2px; font-size: small;']),
+        'size' => 'modal-fullscreen',
+        'title' =>  '<div class="d-flex justify-content-between">' . Module::t('File Picker') . '<div class="d-flex">' . '</div>' .
+            '</div>',
 
         'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
             Html::button(Module::t('Use Selected'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
         'closeButton' => false,
-        'titleOptions' => ['style' => 'width: 100%;'],
+        'titleOptions' => ['style' => 'width: 100%;', 'class' => 'storage-panel-header'],
+        'bodyOptions' => [
+            'style' => 'overflow-y: hidden;',
+        ],
     ]);
+    echo '<div class="d-flex justify-content-between modal-header" style="width: 100%; padding-top: 0px;">';
+    echo $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker]);
+    echo Html::button(Module::t(''), ['class' => 'fa fa-upload btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]) . Html::tag('button', '
+    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none; float:right; margin-bottom: -2px; font-size: small;']);
+    echo '</div>';
+    Pjax::begin(['id' => 'file-picker-pjax' . $name, 'history' => false, 'timeout' => false, 'enablePushState' => false, 'options' => ['style' => 'height:100%']]);
 } else {
     Panel::begin([
         'id' => 'file-picker-panel' . $name,
         'actions' => [
             'header' => [
-                Html::button(Module::t(''), ['class' => 'fa fa-plus btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]) .
+                $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker]),
+                Html::button(
+                    '',
+                    ['class' => 'fa fa-upload btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]
+                ) .
                     Html::tag('button', '
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
             ]
-        ]
-    ]);
-}
+        ],
+        'headerOptions' => [
+            'class' => 'storage-panel-header',
+        ],
 
-Pjax::begin(['id' => 'file-picker-pjax' . $name, 'history' => false, 'timeout' => false]);
+    ]);
+    Pjax::begin(['id' => 'file-picker-pjax' . $name, 'history' => false, 'timeout' => false, 'enablePushState' => false]);
+}
 
 $viewParams = $isPicker ? [
     'view' => 1,
@@ -78,13 +133,13 @@ $viewParams = $isPicker ? [
     'multiple' => $multiple,
     'callbackName' => $callbackName,
     'isPicker' => $isPicker,
-    'fileExtensions' => $fileExtensions,
+    'fileExtensions' => isset($fileExtensions) ? $fileExtensions : [],
 ] : [
     'view' => 1,
     'isJson' => $isJson,
     'widgetName' => $name,
     'isPicker' => $isPicker,
-    'fileExtensions' => $fileExtensions,
+    'fileExtensions' => isset($fileExtensions) ? $fileExtensions : []
 ];
 echo ListView::widget([
     'dataProvider' => $dataProvider,
@@ -93,7 +148,7 @@ echo ListView::widget([
     'options' => [
         'tag' => 'div',
         'class' => 'row',
-        'style' => 'overflow-y: auto; height: calc(100vh - 370px);',
+        'style' => 'overflow-y: auto; height: 100%;' . ($isPicker ? ' margin-left: 0px; margin-right: 0px;' : ''),
     ],
     'itemOptions' => $isPicker ?
         function ($model, $key, $index, $widget) use ($attributes, $isJson, $name) {
@@ -107,7 +162,8 @@ echo ListView::widget([
             }
             return [
                 'tag' => 'div',
-                'class' => 'col-lg-3 col-sm-4 col-md-3',
+                'class' => 'col-lg-2 col-sm-4 col-md-2 storage-item-div',
+                'style' => 'margin-top: 10px; margin-bottom: 10px; height: fit-content;',
                 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
                 //'onclick' => 'selectItem(this, "' . $name . '")',
             ];
@@ -116,13 +172,13 @@ echo ListView::widget([
             return
                 [
                     'tag' => 'div',
-                    'class' => 'col-lg-3 col-sm-4 col-md-3',
+                    'class' => 'col-lg-2 col-sm-4 col-md-2 storage-item-div',
+                    'style' => 'margin-top: 10px; margin-bottom: 10px; height: fit-content;',
                     //'onclick' => 'selectItem(this, "' . $name . '")',
                     'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],
                 ];
         },
-    'summary' => false,
-    'layout' => '{items}<div class="clearfix"></div>',
+    'layout' => '{items}{summary}{pagesizer}{pager}',
 
 ]);
 Pjax::end();
@@ -157,7 +213,7 @@ echo $this->render('./_formModal', [
     'isJson' => $isJson,
     'multiple' => isset($multiple) ? $multiple : 0,
     'callbackName' => isset($callbackName) ? $callbackName : null,
-    'fileExtensions' => $fileExtensions,
+    'fileExtensions' => isset($fileExtensions) ? $fileExtensions : [],
 ]);
 Pjax::end();
 Modal::end();
@@ -177,7 +233,7 @@ if ($isPicker) {
     echo Html::beginTag('div', ['id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none; margin-left: 5px; cursor:pointer;']);
     //echo Html::tag('span', '', ['class' => 'fa fa-info-circle', 'style' => 'color:green; font-size:24px; margin-top:7px;']);
     // echo Html::beginTag('div');
-    echo Html::tag('div', '', ['class' => 'col-6 fa fa-info-circle', 'style' => 'color:#28a745; font-size:24px; margin-top:7px;','id' => 'file-picker-input-check-selected-name' . $name]);
+    echo Html::tag('div', '', ['class' => 'col-6 fa fa-info-circle', 'style' => 'color:#28a745; font-size:24px; margin-top:7px;', 'id' => 'file-picker-input-check-selected-name' . $name]);
     // echo Html::endTag('div');
     echo Html::endTag('div');
     echo Html::endTag('div');

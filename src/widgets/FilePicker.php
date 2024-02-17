@@ -17,6 +17,8 @@ class FilePicker extends InputWidget
 {
 
     public $dataProvider;
+    public $publicDataProvider;
+    public $privateDataProvider;
     public $selected;
     public $multiple = 0;
     public $attributes = ['id_storage'];
@@ -52,13 +54,13 @@ class FilePicker extends InputWidget
                 $value = json_decode($this->model[$attribute], true);
                 if (isset($value['id_storage'])) {
                     $storageModelForName = Storage::findOne($value['id_storage']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : null;
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
                 } else if (isset($value['name'])) {
                     $storageModelForName = Storage::findOne($value['name']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : null;
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
                 } else {
                     $storageModelForName = Storage::findOne($this->model[$attribute]);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->name : '';
+                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : '';
                 }
             } catch (\Exception $e) {
                 // do nothing
@@ -87,13 +89,23 @@ class FilePicker extends InputWidget
 
     public function run()
     {
-        $query = Storage::find();
+        // $query = Storage::find();
+        // get this action
+        $searchModel = new \portalium\storage\models\StorageSearch();
+        $query = $searchModel->search(Yii::$app->request->queryParams);
+        $query = $query->query;
         if ($this->fileExtensions) {
             foreach ($this->fileExtensions as $fileExtension) {
                 $query->orWhere(['like', 'name', $fileExtension]);
             }
         }
-        $this->dataProvider = new \yii\data\ActiveDataProvider([
+
+        if (Yii::$app->controller->action->id == 'manage' && Yii::$app->user->can('storageStorageFindAll')) {
+        } else {
+            $query->orWhere(['or', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PUBLIC]]);
+        }
+        
+        $this->dataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $query,
             'pagination' => [
                 'pageSize' => $this->isPicker ? 1 : 12,
@@ -106,6 +118,35 @@ class FilePicker extends InputWidget
         ]);
 
 
+        $privateQuery = clone $query;
+        $privateQuery->andWhere(['access' => Storage::ACCESS_PRIVATE]); 
+        $this->privateDataProvider = new \portalium\data\ActiveDataProvider([
+            'query' => $privateQuery,
+            'pagination' => [
+                'pageSize' => $this->isPicker ? 1 : 12,
+            ],
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
+        ]);
+
+
+
+        $publicQuery = clone $query;
+        $publicQuery->andWhere(['access' => Storage::ACCESS_PUBLIC]);
+        $this->publicDataProvider = new \portalium\data\ActiveDataProvider([
+            'query' => $publicQuery,
+            'pagination' => [
+                'pageSize' => $this->isPicker ? 1 : 12,
+            ],
+            'sort' => [
+                'defaultOrder' => [
+                    'id_storage' => SORT_DESC,
+                ]
+            ],
+        ]);
 
 
         if ($this->hasModel()) {
@@ -130,6 +171,8 @@ class FilePicker extends InputWidget
             'attribute' => $this->attribute,
             'multiple' => $this->multiple,
             'dataProvider' => $this->dataProvider,
+            'publicDataProvider' => $this->publicDataProvider,
+            'privateDataProvider' => $this->privateDataProvider,
             'isJson' => $this->isJson,
             'storageModel' => $model,
             'attributes' => $this->attributes,
@@ -137,6 +180,7 @@ class FilePicker extends InputWidget
             'callbackName' => $this->callbackName,
             'isPicker' => $this->isPicker,
             'fileExtensions' => $this->fileExtensions,
+            'searchModel' => $searchModel,
         ]);
     }
 

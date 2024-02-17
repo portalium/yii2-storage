@@ -8,7 +8,7 @@ use portalium\theme\widgets\Panel;
 /* @var $model portalium\storage\models\Storage */
 
 $this->title = $model->title;
-$this->params['breadcrumbs'][] = ['label' => Module::t('Storages'), 'url' => ['index']];
+$this->params['breadcrumbs'][] = ['label' => Module::t('Storage'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 \yii\web\YiiAsset::register($this);
 ?>

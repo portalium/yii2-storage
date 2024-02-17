@@ -7,6 +7,7 @@ use portalium\storage\Module;
 use portalium\storage\models\Storage;
 use portalium\storage\models\StorageSearch;
 use portalium\rest\ActiveController as RestActiveController;
+use yii\web\NotFoundHttpException;
 
 class DefaultController extends RestActiveController
 {
@@ -30,7 +31,7 @@ class DefaultController extends RestActiveController
         }
         switch ($action->id) {
             case 'view':
-                if (!Yii::$app->user->can('storageApiDefaultViewOwn', ['id_module' => 'storage']))
+                if (!Yii::$app->user->can('storageApiDefaultView', ['id_module' => 'storage']))
                     throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
                 break;
             case 'create':
@@ -87,5 +88,24 @@ class DefaultController extends RestActiveController
         }
 
         return ['status' => 'FAIL'];
+    }
+
+    public function actionGetFile($id)
+    {
+        $files = Storage::findForApi()->andWhere(['id_storage' => $id])->all();
+        if (empty($files)) {
+            throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
+        }
+        /*  if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        } */
+        
+        $path = Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') . '/' . $files[0]->name;
+        
+        if (file_exists($path)) {
+            return Yii::$app->response->sendFile($path, $files[0]->title . '.' . pathinfo($path, PATHINFO_EXTENSION));
+        } else {
+            throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
+        }
     }
 }
