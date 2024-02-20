@@ -89,8 +89,6 @@ class FilePicker extends InputWidget
 
     public function run()
     {
-        // $query = Storage::find();
-        // get this action
         $searchModel = new \portalium\storage\models\StorageSearch();
         $query = $searchModel->search(Yii::$app->request->queryParams);
         $query = $query->query;

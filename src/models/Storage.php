@@ -279,7 +279,7 @@ class Storage extends \yii\db\ActiveRecord
         return '/storage/default/get-file?id=' . $this->id_storage;
     }
 
-    public static function find()
+    /* public static function find()
     {
 
         $activeWorkspaceId = Yii::$app->workspace->id;
@@ -299,7 +299,7 @@ class Storage extends \yii\db\ActiveRecord
             return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
         }
         return $query;
-    }
+    } */
 
     public static function findForApi()
     {
