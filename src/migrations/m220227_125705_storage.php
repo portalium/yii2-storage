@@ -23,7 +23,7 @@ class m220227_125705_storage extends Migration
             'title'=> $this->string(255)->notNull(),
             'id_user'=> $this->integer(11)->notNull(),
             'mime_type'=> $this->integer(11)->notNull(),
-            'file_hash'=> $this->string(255)->null(),
+            'hash_file'=> $this->string(255)->null(),
         ], $tableOptions);
 
         // creates index for column `id_user`
