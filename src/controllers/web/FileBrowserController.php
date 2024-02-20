@@ -79,39 +79,14 @@ class FileBrowserController extends Controller
                 ]
             ],
         ]);
-        
-        $privateQuery =  Storage::find();
-        $privateQuery->andWhere(['access' => Storage::ACCESS_PRIVATE]); 
-        $privateDataProvider = new \portalium\data\ActiveDataProvider([
-            'query' => $privateQuery,
-            'pagination' => false,
-            'sort' => [
-                'defaultOrder' => [
-                    'id_storage' => SORT_DESC,
-                ]
-            ],
-        ]);
 
-
-
-        $publicQuery =  Storage::find();
-        $publicQuery->andWhere(['access' => Storage::ACCESS_PUBLIC]);
-        $publicDataProvider = new \portalium\data\ActiveDataProvider([
-            'query' => $publicQuery,
-            'pagination' => false,
-            'sort' => [
-                'defaultOrder' => [
-                    'id_storage' => SORT_DESC,
-                ]
-            ],
-        ]);
         if (Yii::$app->request->isAjax || Yii::$app->request->isPjax || Yii::$app->request->get('payload')) {
             $model = new Storage();
             $payload = Yii::$app->request->get('payload');
-            Yii::warning($payload, 'payload');
+
             if (!$payload)
                 $payload = Yii::$app->session->get('storagePayload');
-            Yii::warning($payload, 'payload');
+
             if ($payload && is_string($payload))
                 $payload = json_decode($payload, true);
             $id_storage = $payload['id_storage'] ?? null;
@@ -122,12 +97,25 @@ class FileBrowserController extends Controller
             $searchModel = new \portalium\storage\models\StorageSearch();
             $query = $searchModel->search(Yii::$app->request->queryParams);
             $query = $query->query;
+
+            if (isset(Yii::$app->request->queryParams['StorageSearch']['access'])) {
+                if (Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
+                    $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
+                }
+            }
             if ($payload['fileExtensions']) {
                 foreach ($payload['fileExtensions'] as $fileExtension) {
                     $query->orWhere(['like', 'name', $fileExtension]);
                 }
             }
-
+            if (isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
+                if ((!isset(Yii::$app->request->queryParams['StorageSearch']['title']) || Yii::$app->request->queryParams['StorageSearch']['title'] == ''))
+                    $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE]]);
+                else
+                    $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE], ['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]]);
+            } else {
+                $query->andWhere(['or', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PUBLIC]]);
+            }
             $dataProvider = new \portalium\data\ActiveDataProvider([
                 'query' => $query,
                 'pagination' => false,
@@ -138,12 +126,11 @@ class FileBrowserController extends Controller
                 ],
             ]);
             Yii::$app->session->set('storagePayload', $payload);
+            Yii::warning($dataProvider->query->createCommand()->getRawSql());
             return $this->render('index', [
                 'attribute' => $payload['attribute'] ?? null,
                 'multiple' => $payload['multiple'] ?? null,
                 'dataProvider' => $dataProvider,
-                'privateDataProvider' => $privateDataProvider,
-                'publicDataProvider' => $publicDataProvider,
                 'isJson' => $payload['isJson'] ?? null,
                 'storageModel' => $model,
                 'attributes' => $payload['attributes'] ?? null,
@@ -152,21 +139,21 @@ class FileBrowserController extends Controller
                 'isPicker' => $payload['isPicker'] ?? null,
                 'fileExtensions' => $payload['fileExtensions'] ?? null,
                 'searchModel' => $searchModel,
+                'manage' => false
             ]);
         } else {
             $model = new Storage();
             $searchModel = new StorageSearch();
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-            
+
             return $this->render('index', [
                 'dataProvider' => $dataProvider,
-                'privateDataProvider' => $privateDataProvider,
-                'publicDataProvider' => $publicDataProvider,
                 'isJson' => Yii::$app->request->get('isJson'),
                 'isPicker' => false,
                 'storageModel' => $model,
                 'name' => 'base',
                 'searchModel' => $searchModel,
+                'manage' => false
             ]);
         }
     }

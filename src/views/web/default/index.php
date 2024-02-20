@@ -20,6 +20,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= FilePicker::widget([
         'name' => 'file',
         'isPicker' => false,
+        'manage' => $manage
     ]) ?>
 
 

@@ -17,8 +17,6 @@ class FilePicker extends InputWidget
 {
 
     public $dataProvider;
-    public $publicDataProvider;
-    public $privateDataProvider;
     public $selected;
     public $multiple = 0;
     public $attributes = ['id_storage'];
@@ -27,9 +25,11 @@ class FilePicker extends InputWidget
     public $isPicker = true;
     public $callbackName = null;
     public $fileExtensions = null;
+    public $manage = false;
 
     public function init()
     {
+
         parent::init();
         Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
         $this->name = $this->generateHtmlId($this->name);
@@ -94,15 +94,27 @@ class FilePicker extends InputWidget
         $searchModel = new \portalium\storage\models\StorageSearch();
         $query = $searchModel->search(Yii::$app->request->queryParams);
         $query = $query->query;
+        if (isset(Yii::$app->request->queryParams['StorageSearch']['access'])) {
+            if (Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
+                $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
+            }
+        }
         if ($this->fileExtensions) {
             foreach ($this->fileExtensions as $fileExtension) {
                 $query->orWhere(['like', 'name', $fileExtension]);
             }
         }
 
-        if (Yii::$app->controller->action->id == 'manage' && Yii::$app->user->can('storageStorageFindAll')) {
+        if (Yii::$app->controller->action->id == 'manage' && Yii::$app->user->can('storageStorageFindAll') && $this->manage) {
+            $query = $searchModel->search(Yii::$app->request->queryParams);
+            $query = $query->query;
+        } else if (isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
+            if ((!isset(Yii::$app->request->queryParams['StorageSearch']['title']) || Yii::$app->request->queryParams['StorageSearch']['title'] == ''))
+                $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE]]);
+            else
+                $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE], ['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]]);
         } else {
-            $query->orWhere(['or', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PUBLIC]]);
+            $query->andWhere(['or', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PUBLIC]]);
         }
         
         $this->dataProvider = new \portalium\data\ActiveDataProvider([
@@ -117,38 +129,6 @@ class FilePicker extends InputWidget
             ],
         ]);
 
-
-        $privateQuery = clone $query;
-        $privateQuery->andWhere(['access' => Storage::ACCESS_PRIVATE]); 
-        $this->privateDataProvider = new \portalium\data\ActiveDataProvider([
-            'query' => $privateQuery,
-            'pagination' => [
-                'pageSize' => $this->isPicker ? 1 : 12,
-            ],
-            'sort' => [
-                'defaultOrder' => [
-                    'id_storage' => SORT_DESC,
-                ]
-            ],
-        ]);
-
-
-
-        $publicQuery = clone $query;
-        $publicQuery->andWhere(['access' => Storage::ACCESS_PUBLIC]);
-        $this->publicDataProvider = new \portalium\data\ActiveDataProvider([
-            'query' => $publicQuery,
-            'pagination' => [
-                'pageSize' => $this->isPicker ? 1 : 12,
-            ],
-            'sort' => [
-                'defaultOrder' => [
-                    'id_storage' => SORT_DESC,
-                ]
-            ],
-        ]);
-
-
         if ($this->hasModel()) {
             $input = 'activeHiddenInput';
             echo Html::$input($this->model, $this->attribute, $this->options);
@@ -162,17 +142,11 @@ class FilePicker extends InputWidget
             }
         }
 
-
-
-
-
         echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/file-browser/index.php', [
             'model' => $this->model,
             'attribute' => $this->attribute,
             'multiple' => $this->multiple,
             'dataProvider' => $this->dataProvider,
-            'publicDataProvider' => $this->publicDataProvider,
-            'privateDataProvider' => $this->privateDataProvider,
             'isJson' => $this->isJson,
             'storageModel' => $model,
             'attributes' => $this->attributes,
@@ -181,6 +155,7 @@ class FilePicker extends InputWidget
             'isPicker' => $this->isPicker,
             'fileExtensions' => $this->fileExtensions,
             'searchModel' => $searchModel,
+            'manage' => $this->manage,
         ]);
     }
 

@@ -96,18 +96,21 @@ if ($isPicker) {
         ],
     ]);
     echo '<div class="d-flex justify-content-between modal-header" style="width: 100%; padding-top: 0px;">';
-    echo $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker]);
+    echo $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker, 'manage'=>$manage]);
     echo Html::button(Module::t(''), ['class' => 'fa fa-upload btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]) . Html::tag('button', '
     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
     ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none; float:right; margin-bottom: -2px; font-size: small;']);
     echo '</div>';
+    echo Html::beginTag('div', ['name' => 'file-picker-spinner' . $name, 'style' => 'display:none; width: 100%;height: 100%;align-items: center;justify-content: center;']);
+    echo Html::tag('span', '', ['class' => 'spinner-border spinner-border-sm', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'width: 60px; height: 60px;']);
+    echo Html::endTag('div');
     Pjax::begin(['id' => 'file-picker-pjax' . $name, 'history' => false, 'timeout' => false, 'enablePushState' => false, 'options' => ['style' => 'height:100%']]);
 } else {
     Panel::begin([
         'id' => 'file-picker-panel' . $name,
         'actions' => [
             'header' => [
-                $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker]),
+                $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker, 'manage'=>$manage]),
                 Html::button(
                     '',
                     ['class' => 'fa fa-upload btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]
@@ -122,6 +125,9 @@ if ($isPicker) {
         ],
 
     ]);
+    echo Html::beginTag('div', ['name' => 'file-picker-spinner' . $name, 'style' => 'display:none;']);
+    echo Html::tag('span', '', ['class' => 'spinner-border spinner-border-sm', 'role' => 'status', 'aria-hidden' => 'true']);
+    echo Html::endTag('div');
     Pjax::begin(['id' => 'file-picker-pjax' . $name, 'history' => false, 'timeout' => false, 'enablePushState' => false]);
 }
 
@@ -141,11 +147,14 @@ $viewParams = $isPicker ? [
     'isPicker' => $isPicker,
     'fileExtensions' => isset($fileExtensions) ? $fileExtensions : []
 ];
+
+
 echo ListView::widget([
     'dataProvider' => $dataProvider,
     'itemView' => '_file',
     'viewParams' => $viewParams,
     'options' => [
+        'name' => 'file-picker-list' . $name,
         'tag' => 'div',
         'class' => 'row',
         'style' => 'overflow-y: auto; height: 100%;' . ($isPicker ? ' margin-left: 0px; margin-right: 0px;' : ''),
