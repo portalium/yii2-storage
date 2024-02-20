@@ -17,7 +17,8 @@
 	"require": {
 		"kartik-v/yii2-widget-fileinput": "@dev",
 		"portalium/yii2-user": "*",
-		"portalium/yii2-workspace": "*"
+		"portalium/yii2-workspace": "*",
+		"kartik-v/yii2-widget-select2": "@dev"
 	},
 	"autoload" : {
 		"psr-4" : {

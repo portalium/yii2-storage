@@ -295,8 +295,6 @@ class DefaultController extends Controller
      */
     protected function findModel($id_storage)
     {
-        Yii::warning($id_storage);
-        Yii::warning(Yii::$app->user->id);
         if (($model = Storage::findOne(['id_storage' => $id_storage])) !== null) {
             return $model;
         }
