@@ -89,8 +89,53 @@ class FilePicker extends InputWidget
 
     public function run()
     {
+        $query = Storage::find();
+        if ($this->fileExtensions) {
+            foreach ($this->fileExtensions as $fileExtension) {
+                $query->orWhere(['like', 'name', $fileExtension]);
+            }
+        }
+        if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['id_workspace']) && Yii::$app->request->queryParams['StorageSearch']['id_workspace'] != '' && Yii::$app->request->queryParams['StorageSearch']['id_workspace'] != null) {
+            $query->andWhere(['id_workspace' => Yii::$app->request->queryParams['StorageSearch']['id_workspace']]);
+        }
+        if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
+            $query->andWhere(['access' => Storage::ACCESS_PRIVATE]);
+            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
+        } else if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PUBLIC) {
+            $query->andWhere(['access' => Storage::ACCESS_PUBLIC]);
+            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
+        } else if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == ''){
+            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
+        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
+            $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
+            $query->andWhere(['access' => Storage::ACCESS_PRIVATE]);
+            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
+        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PUBLIC) {
+            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
+            $query->andWhere(['access' => Storage::ACCESS_PUBLIC])->andWhere(['id_workspace' => Yii::$app->workspace->id]);
+        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == '') {
+            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
+            $query->andWhere([
+                'OR',
+                ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
+                ['access' => Storage::ACCESS_PUBLIC, 'id_workspace' => Yii::$app->workspace->id]
+            ]);
+        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && (!isset(Yii::$app->request->queryParams['StorageSearch']['access']) || !isset(Yii::$app->request->queryParams['StorageSearch']['title']))) {
+            $query->andWhere([
+                'OR',
+                ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
+                ['access' => Storage::ACCESS_PUBLIC,'id_workspace' => Yii::$app->workspace->id]
+            ]);
+        } else if ((isset($this->manage) && $this->manage) && (!isset(Yii::$app->request->queryParams['StorageSearch']['access']) || !isset(Yii::$app->request->queryParams['StorageSearch']['title']))) {
+            
+        } else {
+            $query->andWhere([
+                1 => 0
+            ]);
+        }
+        
         $searchModel = new \portalium\storage\models\StorageSearch();
-        $query = $searchModel->search(Yii::$app->request->queryParams);
+        /* $query = $searchModel->search(Yii::$app->request->queryParams);
         $query = $query->query;
         if (isset(Yii::$app->request->queryParams['StorageSearch']['access'])) {
             if (Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
@@ -113,12 +158,12 @@ class FilePicker extends InputWidget
                 $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE], ['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]]);
         } else {
             $query->andWhere(['or', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PUBLIC]]);
-        }
-        
+        } */
+        Yii::warning($query->createCommand()->getRawSql());
         $this->dataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $query,
             'pagination' => [
-                'pageSize' => $this->isPicker ? 1 : 12,
+                'pageSize' => $this->isPicker ? 1 : (Yii::$app->session->get('theme::page_size') ? Yii::$app->session->get('theme::page_size') : 10),
             ],
             'sort' => [
                 'defaultOrder' => [

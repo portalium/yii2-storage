@@ -63,6 +63,34 @@ $this->registerCss(
         padding-left: 0;
         padding-right: 0;
     }
+    .storage-item-div {
+        width: 20%;
+    }
+    @media (max-width: 1200px) {
+        .storage-item-div {
+            width: 20%;
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .storage-item-div {
+            width: 33%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .storage-item-div {
+            width: 50%;
+        }
+    }
+
+    @media (max-width: 400px) {
+        .storage-item-div {
+            width: 100%;
+        }
+    }
+    
+    
     CSS
 );
 
@@ -89,7 +117,9 @@ if ($isPicker) {
 
         'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
             Html::button(Module::t('Use Selected'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
-        'closeButton' => false,
+        'closeButton' => [
+            'style' => 'margin-right: 10px;',
+        ],
         'titleOptions' => ['style' => 'width: 100%;', 'class' => 'storage-panel-header'],
         'bodyOptions' => [
             'style' => 'overflow-y: hidden;',
@@ -171,7 +201,7 @@ echo ListView::widget([
             }
             return [
                 'tag' => 'div',
-                'class' => 'col-lg-2 col-sm-4 col-md-2 storage-item-div',
+                'class' => 'col-lg-5 col-sm-5 col-md-4 storage-item-div',
                 'style' => 'margin-top: 10px; margin-bottom: 10px; height: fit-content;',
                 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]],
                 //'onclick' => 'selectItem(this, "' . $name . '")',
@@ -181,7 +211,7 @@ echo ListView::widget([
             return
                 [
                     'tag' => 'div',
-                    'class' => 'col-lg-2 col-sm-4 col-md-2 storage-item-div',
+                    'class' => 'storage-item-div',
                     'style' => 'margin-top: 10px; margin-bottom: 10px; height: fit-content;',
                     //'onclick' => 'selectItem(this, "' . $name . '")',
                     'data' => ($isJson == 1) ? json_encode($model->getAttributes(['id_storage'])) : $model->getAttributes(['id_storage'])['id_storage'],

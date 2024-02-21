@@ -9,6 +9,7 @@ use yii\helpers\ArrayHelper;
 use portalium\user\models\User;
 use yii\web\UploadedFile;
 use portalium\base\Event;
+use portalium\workspace\models\Workspace;
 
 /**
  * This is the model class for table "{{%storage_storage}}".
@@ -355,6 +356,16 @@ class Storage extends \yii\db\ActiveRecord
     public function getExtension()
     {
         return pathinfo($this->name, PATHINFO_EXTENSION);
+    }
+
+    public static function getWorkspaces()
+    {
+        $workspaces = Workspace::find()->all();
+        $array = [];
+        foreach ($workspaces as $workspace) {
+            $array[$workspace->id_workspace] = $workspace->name . ' (' . $workspace->user->username . ')';
+        }
+        return $array;
     }
 
 
