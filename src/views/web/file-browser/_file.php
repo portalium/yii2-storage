@@ -55,9 +55,10 @@ if ($isPicker) {
             <div class="panel-title"><span></span>
                 <div class="actions" style="float:right;margin-top:-2px; display: flex; justify-content: end; width: 118px;">
                     <?php
-                    echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style'=>'margin-right: 5px;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
-                    echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style'=>'margin-right: 5px;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
-                    echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 0px; width: 24px; height: 24px;', 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;
+                    echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style' => 'margin-right: 5px;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style' => 'margin-right: 5px;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo Html::tag('i', '', ['class' => 'fa fa-download btn btn-primary', 'style' => 'margin-right: 5px;', 'download-url' => $path . $model->id_storage, 'onclick' => "downloadItem(this)"]);
+                    echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 0px; width: 24px; height: 24px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;
                     ?>
                 </div>
             </div>
@@ -85,7 +86,7 @@ if ($isPicker) {
         } elseif ($mime == 'audio') {
             echo Html::tag('audio', Html::tag('source', '', ['src' => $path . $model->id_storage, 'type' => 'audio/mpeg']), ['controls' => '', 'preload' => 'auto', 'width' => '100%']);
         } else {
-            echo Html::tag('i', '', ['class' => 'fa fa-file-o', 'style'=>'display: flex; place-content: center; height: 100%; align-items: center; font-size: xxx-large;']);
+            echo Html::tag('i', '', ['class' => 'fa fa-file-o', 'style' => 'display: flex; place-content: center; height: 100%; align-items: center; font-size: xxx-large;']);
         }
         ?>
         <?php /* ($view == 1) ? Panel::end() : null */ ?>
@@ -102,8 +103,25 @@ if ($isPicker) {
 <?php } ?>
 
 <?php
+$this->registerJs("
+    
+if (typeof downloadItem === 'undefined') {
+    function downloadItem(e) {
+        var downloadUrl = e.getAttribute('download-url');
+        var a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = downloadUrl.split('/').pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+", View::POS_END);
 if ($isPicker) {
+    
     $this->registerJs("
+    
     payload$variablePrefix = {
         attribute: 'id_storage',
         multiple: '$multiple',
@@ -129,7 +147,7 @@ if ($isPicker) {
 }
 if ($view == 1) {
     $this->registerJs(
-      'var updateText = "' . Module::t('Update') . '";',
+        'var updateText = "' . Module::t('Update') . '";',
         View::POS_BEGIN
     );
     $this->registerJs(

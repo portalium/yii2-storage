@@ -345,11 +345,11 @@ if ($isPicker) {
                     if("$multiple" == "1"){
                         selectedValue.push($(e).attr("data"));
                         document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
-                        document.getElementById("storage-show-file" + name).src = '$path' + $(e).attr("img-src");
+                        document.getElementById("storage-show-file" + name).src = '$path' + $(e).attr("id-src");
                     }else{
                         selectedValue = [$(e).attr("data")];
                         document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
-                        document.getElementById("storage-show-file" + name).src = '$path' + $(e).attr("img-src");
+                        document.getElementById("storage-show-file" + name).src = '$path' + $(e).attr("id-src");
                     }
                     document.getElementById("file-picker-input-" + name).value = selectedValue;
                     
