@@ -122,7 +122,7 @@ class Storage extends \yii\db\ActiveRecord
 
     public function init()
     {
-        $this->on(self::EVENT_BEFORE_DELETE, function($event) {
+        $this->on(self::EVENT_BEFORE_DELETE, function ($event) {
             \Yii::$app->trigger(Module::EVENT_BEFORE_DELETE, new Event(['payload' => $event->data]));
             Event::trigger(Yii::$app->getModules(), Module::EVENT_BEFORE_DELETE, new Event(['payload' => $event->data]));
         }, $this);
@@ -305,7 +305,6 @@ class Storage extends \yii\db\ActiveRecord
 
     public static function findForApi()
     {
-        
         $query = parent::find();
 
         if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
@@ -350,7 +349,6 @@ class Storage extends \yii\db\ActiveRecord
         } catch (\Throwable $th) {
             return false;
         }
-        
         return false;
     }
 
@@ -364,7 +362,7 @@ class Storage extends \yii\db\ActiveRecord
         $workspaces = Workspace::find()->all();
         $array = [];
         foreach ($workspaces as $workspace) {
-            $array[$workspace->id_workspace] = $workspace->name . ' (' . $workspace->user->username . ')';
+            $array[$workspace->id_workspace] = $workspace->name . ' (' . (isset($workspace->user) ? $workspace->user->username : '') . ')';
         }
         return $array;
     }
@@ -399,6 +397,4 @@ class Storage extends \yii\db\ActiveRecord
         }
         return parent::afterFind();
     }
-
-
 }
