@@ -268,7 +268,7 @@ class DefaultController extends Controller
         /*  if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         } */
-        
+
         $path = Yii::$app->basePath . '/../'. Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
         
         if (file_exists($path)) {

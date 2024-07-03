@@ -66,7 +66,7 @@ class FileBrowserController extends Controller
     public function actionIndex()
     {
 
-        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage']) && !\Yii::$app->user->can('storageWebDefaultIndexForWorkspace', ['id_module' => 'storage'] )) {
+        if (!\Yii::$app->user->can('storageWebDefaultIndex', ['id_module' => 'storage']) && !\Yii::$app->user->can('storageWebDefaultIndexForWorkspace', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -96,50 +96,25 @@ class FileBrowserController extends Controller
             }
             $searchModel = new \portalium\storage\models\StorageSearch();
             $query = $searchModel->search(Yii::$app->request->queryParams);
+            $query = $query->query;
 
-            $query = Storage::find();
+            if (isset(Yii::$app->request->queryParams['StorageSearch']['access'])) {
+                if (Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
+                    $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
+                }
+            }
             if ($payload['fileExtensions']) {
                 foreach ($payload['fileExtensions'] as $fileExtension) {
                     $query->orWhere(['like', 'name', $fileExtension]);
                 }
             }
-
             if (isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-                if (\Yii::$app->user->can('storageWebDefaultIndexForWorkspace', ['id_module' => 'storage'])) {
-                    $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-                    $query->andWhere(['access' => Storage::ACCESS_PRIVATE]);
-                    $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-                } else {
-                    $query->andWhere([0 => 1]);
-                }
-            } else if (isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PUBLIC) {
-                $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-                $query->andWhere(['access' => Storage::ACCESS_PUBLIC])->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-            } else if (isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == '') {
-                $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-                if (\Yii::$app->user->can('storageWebDefaultIndexForWorkspace', ['id_module' => 'storage'])) {
-                    $query->andWhere([
-                        'OR',
-                        ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
-                        ['access' => Storage::ACCESS_PUBLIC, 'id_workspace' => Yii::$app->workspace->id]
-                    ]);
-                } else {
-                    $query->andWhere(['access' => Storage::ACCESS_PUBLIC])->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-                }
-            } else if ((!isset(Yii::$app->request->queryParams['StorageSearch']['access']) || !isset(Yii::$app->request->queryParams['StorageSearch']['title']))) {
-                if (\Yii::$app->user->can('storageWebDefaultIndexForWorkspace', ['id_module' => 'storage'])) {
-                $query->andWhere([
-                    'OR',
-                    ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
-                    ['access' => Storage::ACCESS_PUBLIC, 'id_workspace' => Yii::$app->workspace->id]
-                ]);
-                } else {
-                    $query->andWhere(['access' => Storage::ACCESS_PUBLIC])->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-                }
+                if ((!isset(Yii::$app->request->queryParams['StorageSearch']['title']) || Yii::$app->request->queryParams['StorageSearch']['title'] == ''))
+                    $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE]]);
+                else
+                    $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE], ['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]]);
             } else {
-                $query->andWhere([
-                    1 => 0
-                ]);
+                $query->andWhere(['or', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PUBLIC]]);
             }
             $dataProvider = new \portalium\data\ActiveDataProvider([
                 'query' => $query,
@@ -151,6 +126,7 @@ class FileBrowserController extends Controller
                 ],
             ]);
             Yii::$app->session->set('storagePayload', $payload);
+            Yii::warning($dataProvider->query->createCommand()->getRawSql());
             return $this->render('index', [
                 'attribute' => $payload['attribute'] ?? null,
                 'multiple' => $payload['multiple'] ?? null,
