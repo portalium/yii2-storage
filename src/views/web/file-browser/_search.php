@@ -27,7 +27,20 @@ use portalium\storage\Module;
     <?= $form->field($model, 'title', ['options' => ['style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;', 'class' => '']])->label(false)->textInput(['placeholder' => Module::t('Search for file...'), 'style'=>'width: 150px;', 'id'=>'storage-search-title-'.$name]) ?>
     <?= Html::button(Module::t(''), ['class' => 'fa fa-search btn btn-success', 'id' => 'storage-search-button-' . $name]) ?>
     <?= Html::endTag('div'); ?>
+    <?php 
+    
+    if(isset($manage) && $manage == true){
+        echo '<div style="display: flex;justify-content: space-between;">';
+        echo $form->field($model, 'id_workspace', ['options' => ['style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;', 'id' => 'storage-search-form-workspace-' . $name, 'class' => '']])->dropDownList(Storage::getWorkspaces(), ['prompt' => Module::t('All Workspace'), 'style'=>'width: 150px;', 'id'=>'storage-search-workspace-'.$name])->label(false);
+    }
+    ?>
     <?= $form->field($model, 'access', ['options' => ['style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;', 'id' => 'storage-search-form-access-' . $name, 'class' => '']])->dropDownList(Storage::getAccesses(), ['prompt' => Module::t('All'), 'style'=>'width: 150px;', 'id'=>'storage-search-access-'.$name])->label(false) ?>
+    <?php 
+    
+    if(isset($manage) && $manage == true){
+        echo '</div>';
+    }
+    ?>
 </div>
 
 <?php ActiveForm::end(); ?>
@@ -47,6 +60,7 @@ $this->registerJs(
         let data = {
             'StorageSearch[title]': $('#storage-search-title-$name').val(),
             'StorageSearch[access]': $('#storage-search-access-$name').val(),
+            'StorageSearch[id_workspace]': $('#storage-search-workspace-$name').val(),
         };
         $.pjax.reload({container: '#file-picker-pjax$name', data: data, url: '" . ($isPicker ? '/storage/file-browser/index' : ((isset($manage) && $manage == false ) ? '/storage/default/index':'/storage/default/manage' )). "'}).done(function() {
             // $('#file-picker-spinner$name').hide();
@@ -61,11 +75,37 @@ $this->registerJs(
         let data = {
             'StorageSearch[title]': $('#storage-search-title-$name').val(),
             'StorageSearch[access]': $('#storage-search-access-$name').val(),
+            'StorageSearch[id_workspace]': $('#storage-search-workspace-$name').val(),
         };
         $.pjax.reload({container: '#file-picker-pjax$name', data: data, url: '" . ($isPicker ? '/storage/file-browser/index' : ((isset($manage) && $manage == false ) ? '/storage/default/index':'/storage/default/manage')) . "'}).done(function() {
             // $('#file-picker-spinner$name').hide();
             document.getElementsByName('file-picker-spinner$name')[0].style.display = 'none';
         });
+    });
+
+    $('#storage-search-form-workspace-$name').change(function(){
+        // $('#file-picker-list$name').hide();
+        document.getElementsByName('file-picker-list$name')[0].style.display = 'none';
+        // $('#file-picker-spinner$name').
+        document.getElementsByName('file-picker-spinner$name')[0].style.display = 'flex';
+        let data = {
+            'StorageSearch[title]': $('#storage-search-title-$name').val(),
+            'StorageSearch[access]': $('#storage-search-access-$name').val(),
+            'StorageSearch[id_workspace]': $('#storage-search-workspace-$name').val(),
+        };
+        $.pjax.reload({container: '#file-picker-pjax$name', data: data, url: '" . ($isPicker ? '/storage/file-browser/index' : ((isset($manage) && $manage == false ) ? '/storage/default/index':'/storage/default/manage')) . "'}).done(function() {
+            // $('#file-picker-spinner$name').hide();
+            document.getElementsByName('file-picker-spinner$name')[0].style.display = 'none';
+        });
+    });
+
+    // disable enter key form submit
+    $('#storage-search-form-$name').on('keypress', function(e) {
+        // trigger click on search button
+        if (e.which === 13) {
+            $('#storage-search-button-$name').trigger('click');
+            return false;
+        }
     });
 "
 );
