@@ -66,6 +66,11 @@ $this->registerCss(
     .storage-item-div {
         width: 20%;
     }
+    
+    .storage-item-div .card-header {
+        z-index: 999;
+    }
+    
     @media (max-width: 1200px) {
         .storage-item-div {
             width: 20%;
@@ -266,7 +271,7 @@ if ($isPicker) {
     ]);
     echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $name]);
     Modal::end();
-    echo Html::beginTag('div', ['class' => 'd-flex']);
+    echo Html::beginTag('div', ['class' => 'd-flex', 'id' => 'file-picker-button-div-' . $name]);
     echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'style' => 'max-width: 130px;', 'id' => 'file-picker-button' . $name]);
 
     echo Html::beginTag('div', ['id' => 'file-picker-input-check-selected' . $name, 'style' => 'display:none; margin-left: 5px; cursor:pointer;']);
@@ -351,13 +356,21 @@ if ($isPicker) {
                         document.getElementById("file-picker-input-check-selected" + name).style.display = "block";
                         document.getElementById("storage-show-file" + name).src = '$path' + $(e).attr("id-src");
                     }
-                    document.getElementById("file-picker-input-" + name).value = selectedValue;
+                    try {
+                        document.getElementById("file-picker-input-" + name).value = selectedValue;
+                    } catch (error) {
+                        
+                    }
                     
                     updateItemsStatus(name);
             }else{
-
-                selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
-                document.getElementById("file-picker-input-" + name).value = selectedValue;
+                try {
+                    
+                    selectedValue.splice(selectedValue.indexOf($(e).attr("data")), 1);
+                    document.getElementById("file-picker-input-" + name).value = selectedValue;
+                } catch (error) {
+                    
+                }
                 updateItemsStatus(name);
                 if(selectedValue.length == 0){
                     document.getElementById("file-picker-input-check-selected" + '$name').style.display = "none";

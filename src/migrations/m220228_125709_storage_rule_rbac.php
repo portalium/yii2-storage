@@ -22,6 +22,7 @@ class m220228_125709_storage_rule_rbac extends Migration
             'storageWebDefaultCreate' => 'Storage Web Default Create',
             'storageWebDefaultUpdate' => 'Storage Web Default Update',
             'storageWebDefaultDelete' => 'Storage Web Default Delete',
+            'storageWebDefaultGetFile' => 'Storage Web Default Get File',
 
         ];
 
@@ -64,6 +65,7 @@ class m220228_125709_storage_rule_rbac extends Migration
             'storageWebDefaultCreate',
             'storageWebDefaultUpdate',
             'storageWebDefaultDelete',
+            'storageWebDefaultGetFile',
         ];
 
         foreach ($permissions as $permission) {
