@@ -140,6 +140,7 @@ class DefaultController extends Controller
                     $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
                     $model->id_workspace = Yii::$app->workspace->id;
                     if($model->save()){
+                        Yii::$app->session->setFlash('success', Module::t('File uploaded successfully'));
                         return json_encode(['name' => $fileName]);
                     }else{
                         $error = '';
@@ -150,6 +151,7 @@ class DefaultController extends Controller
                         throw new HttpException(500, Module::t($error));
                     }
                 }else{
+                    Yii::$app->session->setFlash('error', Module::t('Error saving file'));
                     return "error";
                 }
             }
@@ -159,7 +161,7 @@ class DefaultController extends Controller
                 $model->id_workspace = Yii::$app->workspace->id;
                 $model->file = UploadedFile::getInstance($model, 'file');
                 if ($model->upload()) {
-                    \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
+                    Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
                     return $this->redirect(['view', 'id_storage' => $model->id_storage]);
                 }else{
                     \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
@@ -198,7 +200,7 @@ class DefaultController extends Controller
                 $model->deleteFile($model->name);
             }
             if ($model->upload()) {
-                \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
+                \Yii::$app->session->setFlash('success', Module::t('File uploaded successfully'));
                 return $this->redirect(['view', 'id_storage' => $model->id_storage]);
             }else{
                 \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
@@ -226,9 +228,10 @@ class DefaultController extends Controller
                 $model->deleteFile($model->name);
             }
             if ($model->upload()) {
+                Yii::$app->session->setFlash('success', Module::t('File updated successfully'));
                 return json_encode(['name' => $model->name]);
             }else{
-               return json_encode(['error' => Module::t('Error uploading file')]);
+                return json_encode(['error' => Module::t('Error uploading file')]);
             }
     }
 
@@ -241,23 +244,17 @@ class DefaultController extends Controller
      */
     public function actionDelete($id_storage)
     {
-        if (!Yii::$app->user->can('storageWebDefaultDelete', ['model' => $this->findModel($id_storage)])) {
+        if (!Yii::$app->user->can('storageWebDefaultDelete', ['id_module' => 'storage'])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
         $model = $this->findModel($id_storage);
-        if(!$model->deleteFile($model->name))
-        {
-            \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
+        if ($model->delete()) {
+            Yii::$app->session->setFlash('success', Module::t('File deleted successfully'));
+        } else {
+            Yii::$app->session->setFlash('error', Module::t('Error deleting file'));
         }
 
-        if(!$model->delete())
-        {
-            \Yii::$app->session->addFlash('error', Module::t('Error deleting file'));
-        }
-        if ($this->request->isAjax) {
-            Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-            return ['success' => true];
-        }
         return $this->redirect(['index']);
     }
 

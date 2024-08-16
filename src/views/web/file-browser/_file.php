@@ -55,10 +55,10 @@ if ($isPicker) {
             <div class="panel-title"><span></span>
                 <div class="actions" style="float:right;margin-top:-2px; display: flex; justify-content: end; width: 118px;">
                     <?php
-                    echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
-                    echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
-                    echo Html::tag('i', '', ['class' => 'fa fa-download btn btn-primary', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'download-url' => $path . $model->id_storage, 'onclick' => "downloadItem(this)"]);
-                    echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 0px; width: 20px; height: 20px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;
+                    echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style' => 'margin-right: 5px;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style' => 'margin-right: 5px;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo Html::tag('i', '', ['class' => 'fa fa-download btn btn-primary', 'style' => 'margin-right: 5px;', 'download-url' => $path . $model->id_storage, 'onclick' => "downloadItem(this)"]);
+                    echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 0px; width: 24px; height: 24px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;
                     ?>
                 </div>
             </div>
@@ -215,6 +215,7 @@ if ($view == 1) {
                 }
 
                 function removeItem(e, widgetName) {
+                    console.log('aaaaaa');
                     var data = $(e).attr('data');
                     var allAttributes = $(e).attr("all-attributes");
                     var parsedData = '';
@@ -277,6 +278,7 @@ if ($view == 1) {
                         url: '/storage/file-browser/index?payload=' + JSON.stringify(payload$variablePrefix),
                         timeout: false
                     }).done(function() {
+                        $.pjax.reload({container: "#pjax-flash-message"});
                         removeSpinnerFromButton(e);
                         addTrashIcon(e);
                     });

@@ -401,6 +401,7 @@ if ($isPicker) {
                             document.getElementById("file-picker-button" + '$name').innerHTML = 'Select File';
                             $('#file-picker-modal' + '$name').modal('show');
                             id_storage$variablePrefix = null;
+                            $.pjax.reload({container: "#pjax-flash-message"});
                             checkFilePickerInput$variablePrefix();
                         });
         });
@@ -537,6 +538,7 @@ $this->registerJs(
                         }).done(function (data) {
                             $('#file-update-modal' + '$name').modal('hide');
                             id_storage$variablePrefix = null;
+                            $.pjax.reload({container: "#pjax-flash-message"});
                         });
                     },
                     error: function (data) {

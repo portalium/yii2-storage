@@ -236,7 +236,9 @@ class FileBrowserController extends Controller
 
                     if ($model->save()) {
                         $model = new Storage();
-                        \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
+                        //CREATE MESAJI
+                        
+                        \Yii::$app->session->addFlash('success', Module::t('File created successfully'));
                     } else {
                         unlink(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName);
                         \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
@@ -302,6 +304,7 @@ class FileBrowserController extends Controller
                     $model->deleteFile($model->name);
                 }
                 if ($model->upload()) {
+                    \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
                     return json_encode(['name' => $model->name]);
                 } else {
                     return json_encode(['error' => Module::t('Error uploading file')]);
@@ -312,7 +315,6 @@ class FileBrowserController extends Controller
             Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
             return ['success' => true];
         }
-
         return $this->renderAjax('update', [
             'model' => $model,
         ]);
