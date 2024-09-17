@@ -131,34 +131,10 @@ class FilePicker extends InputWidget
             ]);
         }
         $searchModel = new \portalium\storage\models\StorageSearch();
-        /* $query = $searchModel->search(Yii::$app->request->queryParams);
-        $query = $query->query;
-        if (isset(Yii::$app->request->queryParams['StorageSearch']['access'])) {
-            if (Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-                $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-            }
-        }
-        if ($this->fileExtensions) {
-            foreach ($this->fileExtensions as $fileExtension) {
-                $query->orWhere(['like', 'name', $fileExtension]);
-            }
-        }
-
-        if (Yii::$app->controller->action->id == 'manage' && Yii::$app->user->can('storageStorageFindAll') && $this->manage) {
-            $query = $searchModel->search(Yii::$app->request->queryParams);
-            $query = $query->query;
-        } else if (isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-            if ((!isset(Yii::$app->request->queryParams['StorageSearch']['title']) || Yii::$app->request->queryParams['StorageSearch']['title'] == ''))
-                $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE]]);
-            else
-                $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE], ['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]]);
-        } else {
-            $query->andWhere(['or', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PUBLIC]]);
-        } */
         $this->dataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $query,
             'pagination' => [
-                'pageSize' => $this->isPicker ? 1 : (Yii::$app->session->get('theme::page_size') ? Yii::$app->session->get('theme::page_size') : 10),
+                'pageSize' => $this->isPicker ? 1 : (Yii::$app->session->get('theme::page_size') ? Yii::$app->session->get('theme::page_size') : 12),
             ],
             'sort' => [
                 'defaultOrder' => [
