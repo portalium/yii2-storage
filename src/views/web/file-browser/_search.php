@@ -23,7 +23,7 @@ use portalium\storage\Module;
 ]); ?>
 
 <div class="form-group" style="display: flex; justify-content: flex-end;">
-    <?= Html::beginTag('div', ['class' => 'd-flex', 'style' => 'gap: 10px;']); ?> <!-- gap ekliyoruz -->
+    <?= Html::beginTag('div', ['class' => 'd-flex', 'style' => 'gap: 10px;']); ?> 
     <?= $form->field($model, 'title', [
         'options' => [
             'style' => 'margin-bottom:0px !important; width: 150px; margin-right: 5px;',
@@ -37,7 +37,7 @@ use portalium\storage\Module;
     <?= Html::button(Module::t(''), [
         'class' => 'fa fa-search btn btn-success',
         'id' => 'storage-search-button-' . $name,
-        'style' => 'margin-right: 10px;' // Arama butonuna boşluk ekliyoruz
+        'style' => 'margin-right: 10px;' 
     ]) ?>
     <?= Html::endTag('div'); ?>
     <?php 
