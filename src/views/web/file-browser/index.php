@@ -119,9 +119,9 @@ if ($isPicker) {
         'size' => 'modal-fullscreen',
         'title' =>  '<div class="d-flex justify-content-between">' . Module::t('File Picker') . '<div class="d-flex">' . '</div>' .
             '</div>',
-
+    
         'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-            Html::button(Module::t('Use Selected'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
+                   Html::button(Module::t('Use Selected'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
         'closeButton' => [
             'style' => 'margin-right: 10px;',
         ],
@@ -267,12 +267,14 @@ if ($isPicker) {
 $modals = Modal::begin([
     'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
+    'title' => Module::t('Upload'),  
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-        Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]) .
-        Html::tag('button', '
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                ', ['id' => 'update-storage-spinner' . $name, 'class' => 'btn btn-primary', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
+               Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]) .
+               Html::tag('button', '
+                   <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+               ', ['id' => 'update-storage-spinner' . $name, 'class' => 'btn btn-primary', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
     'closeButton' => false,
+    'titleOptions' => ['style' => 'width: 100%; text-align: left;'], 
 ]);
 Pjax::begin(['id' => 'file-update-pjax' . $name, 'history' => false, 'timeout' => false]);
 $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";

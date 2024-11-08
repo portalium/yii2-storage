@@ -47,7 +47,7 @@ use portalium\storage\Module;
         echo $form->field($model, 'id_workspace', ['options' => ['style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;', 'id' => 'storage-search-form-workspace-' . $name, 'class' => '']])->dropDownList(Storage::getWorkspaces(), ['prompt' => Module::t('All Workspace'), 'style'=>'width: 150px;', 'id'=>'storage-search-workspace-'.$name])->label(false);
     }
     ?>
-    <?= $form->field($model, 'access', ['options' => ['style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;', 'id' => 'storage-search-form-access-' . $name, 'class' => '']])->dropDownList(Storage::getAccesses(), ['prompt' => Module::t('All'), 'style'=>'width: 150px;', 'id'=>'storage-search-access-'.$name])->label(false) ?>
+<?= $form->field($model, 'access', ['options' => ['style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;', 'id' => 'storage-search-form-access-' . $name, 'class' => '']])->dropDownList(Storage::getAccesses(), ['prompt' => Module::t('All'), 'style'=>'width: 150px;', 'id'=>'storage-search-access-'.$name])->label(false) ?>
     <?php 
     
     if(isset($manage) && $manage == true){
