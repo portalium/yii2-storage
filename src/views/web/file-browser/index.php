@@ -267,7 +267,7 @@ if ($isPicker) {
 $modals = Modal::begin([
     'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
-    'title' => '<div class="text-start">' . Module::t('Upload') . '</div>',  
+    'title' => Module::t('Upload'),  
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
                Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]) .
                Html::tag('button', '
