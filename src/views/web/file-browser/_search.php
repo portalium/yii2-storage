@@ -22,10 +22,23 @@ use portalium\storage\Module;
 
 ]); ?>
 
-<div class="form-group" style="display: flex;justify-content: space-between;">
-    <?= Html::beginTag('div', ['class' => 'd-flex']); ?>
-    <?= $form->field($model, 'title', ['options' => ['style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;', 'class' => '']])->label(false)->textInput(['placeholder' => Module::t('Search for file...'), 'style'=>'width: 150px;', 'id'=>'storage-search-title-'.$name]) ?>
-    <?= Html::button(Module::t(''), ['class' => 'fa fa-search btn btn-success', 'id' => 'storage-search-button-' . $name]) ?>
+<div class="form-group" style="display: flex; justify-content: flex-end;">
+    <?= Html::beginTag('div', ['class' => 'd-flex', 'style' => 'gap: 10px;']); ?> <!-- gap ekliyoruz -->
+    <?= $form->field($model, 'title', [
+        'options' => [
+            'style' => 'margin-bottom:0px !important; width: 150px; margin-right: 5px;',
+            'class' => '',
+        ]
+    ])->label(false)->textInput([
+        'placeholder' => Module::t('Search for file...'),
+        'style' => 'width: 150px;',
+        'id' => 'storage-search-title-' . $name
+    ]) ?>
+    <?= Html::button(Module::t(''), [
+        'class' => 'fa fa-search btn btn-success',
+        'id' => 'storage-search-button-' . $name,
+        'style' => 'margin-right: 10px;' // Arama butonuna boşluk ekliyoruz
+    ]) ?>
     <?= Html::endTag('div'); ?>
     <?php 
     

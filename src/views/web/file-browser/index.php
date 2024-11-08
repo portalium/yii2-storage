@@ -147,19 +147,34 @@ if ($isPicker) {
             'header' => [
                 $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker, 'manage'=>$manage]),
                 Html::button(
-                    '',
-                    ['class' => 'fa fa-upload btn btn-success', 'style' => 'float:right;', 'id' => 'file-picker-add-button' . $name]
+                    '<span style="display: inline-flex; align-items: center;">
+                        <i class="fa fa-upload" style="font-size: 18px; margin-right: 5px;"></i>
+                        <span style="font-size: 12px; color: #555555; font-family: Arial, sans-serif;">' . Module::t('Upload') . '</span>
+                    </span>',
+                    [
+                        'class' => 'btn btn-success',
+                        'style' => 'float:right;',
+                        'id' => 'file-picker-add-button' . $name
+                    ]
                 ) .
-                    Html::tag('button', '
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                ', ['id' => 'file-picker-add-spinner' . $name, 'class' => 'btn btn-success', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
+                Html::tag('button', '
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                ', [
+                    'id' => 'file-picker-add-spinner' . $name,
+                    'class' => 'btn btn-success',
+                    'role' => 'status',
+                    'aria-hidden' => 'true',
+                    'style' => 'display:none;'
+                ]),
             ]
         ],
         'headerOptions' => [
             'class' => 'storage-panel-header',
         ],
-
     ]);
+    
+    
+
     echo Html::beginTag('div', ['name' => 'file-picker-spinner' . $name, 'style' => 'display:none;']);
     echo Html::tag('span', '', ['class' => 'spinner-border spinner-border-sm', 'role' => 'status', 'aria-hidden' => 'true']);
     echo Html::endTag('div');
