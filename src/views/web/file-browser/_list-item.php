@@ -25,7 +25,7 @@ $this->registerCss(
     CSS
 );
 $viewParams = $isPicker ? [
-    'view' => 1,
+    'isModal' => Storage::IS_MODAL_TRUE,
     'attributes' => $attributes,
     'isJson' => $isJson,
     'widgetName' => $name,
@@ -34,7 +34,7 @@ $viewParams = $isPicker ? [
     'isPicker' => $isPicker,
     'fileExtensions' => $fileExtensions,
 ] : [
-    'view' => 1,
+    'isModal' => Storage::IS_MODAL_TRUE,
     'isJson' => $isJson,
     'widgetName' => $name,
     'isPicker' => $isPicker,

@@ -188,10 +188,8 @@ if ($isPicker) {
         'headerOptions' => [
             'class' => 'storage-panel-header',
         ],
-    ]);
-    
-    
 
+    ]);
     echo Html::beginTag('div', ['name' => 'file-picker-spinner' . $name, 'style' => 'display:none;']);
     echo Html::tag('span', '', ['class' => 'spinner-border spinner-border-sm', 'role' => 'status', 'aria-hidden' => 'true']);
     echo Html::endTag('div');
@@ -199,7 +197,7 @@ if ($isPicker) {
 }
 
 $viewParams = $isPicker ? [
-    'view' => 1,
+    'isModal' => Storage::IS_MODAL_TRUE,
     'attributes' => $attributes,
     'isJson' => $isJson,
     'widgetName' => $name,
@@ -208,7 +206,7 @@ $viewParams = $isPicker ? [
     'isPicker' => $isPicker,
     'fileExtensions' => isset($fileExtensions) ? $fileExtensions : [],
 ] : [
-    'view' => 1,
+    'isModal' => Storage::IS_MODAL_TRUE,
     'isJson' => $isJson,
     'widgetName' => $name,
     'isPicker' => $isPicker,
@@ -267,14 +265,14 @@ if ($isPicker) {
 $modals = Modal::begin([
     'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
-    'title' => Module::t('Upload'),  
+    'title' => Module::t('Upload'),
     'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
-               Html::button(Module::t('Create'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]) .
-               Html::tag('button', '
+        Html::button(Module::t('Upload'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]) .
+        Html::tag('button', '
                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                ', ['id' => 'update-storage-spinner' . $name, 'class' => 'btn btn-primary', 'role' => 'status', 'aria-hidden' => 'true', 'style' => 'display:none;']),
     'closeButton' => false,
-    'titleOptions' => ['style' => 'width: 100%; text-align: left;'], 
+    'titleOptions' => ['style' => 'width: 100%; text-align: left;'],
 ]);
 Pjax::begin(['id' => 'file-update-pjax' . $name, 'history' => false, 'timeout' => false]);
 $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";

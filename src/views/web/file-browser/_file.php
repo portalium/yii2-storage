@@ -33,11 +33,11 @@ if ($isPicker) {
     }
 }
 ?>
-<?php /* ($view == 1) ? Panel::begin([
+<?php /* ($isModal == 1) ? Panel::begin([
     'title' => '',
     'bodyOptions' => ['style' => 'height: 286px; display: block; overflow: hidden;'],
     'actions' => [
-        'header' => ($view == 1) ? [
+        'header' => ($isModal == 1) ? [
             Yii::$app->user->can('storageWebDefaultUpdate',['id_module'=>'storage'])? Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes"=>json_encode($model->getAttributes())]) :null,
             Yii::$app->user->can('storageWebDefaultDelete',['id_module'=>'storage']) ? Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes"=>json_encode($model->getAttributes())]) :null,
             $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style'=>'margin-right: 0px; width: 30px; height: 30px;', 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null,
@@ -49,11 +49,11 @@ if ($isPicker) {
 ]) : null */
 // convert to card
 ?>
-<?php if ($view == 1) { ?>
+<?php if ($isModal == 1) { ?>
     <div id="w2" class="card" style="display: flex; flex-direction: column;">
         <div class="card-header" style="overflow: auto;position: absolute;width: 100%;background: #fafafa; opacity: 0.8;">
             <div class="panel-title"><span></span>
-                <div class="actions" style="float:right;margin-top:-2px; display: flex; justify-content: end; width: 118px;">
+                <div class="actions" style="float:right;margin-top:-2px; display: flex; justify-content: end; width: 138px;">
                     <?php
                     echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
                     echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
@@ -89,8 +89,8 @@ if ($isPicker) {
             echo Html::tag('i', '', ['class' => 'fa fa-file-o', 'style' => 'display: flex; place-content: center; height: 100%; align-items: center; font-size: xxx-large;']);
         }
         ?>
-        <?php /* ($view == 1) ? Panel::end() : null */ ?>
-        <?php if ($view == 1) { ?>
+        <?php /* ($isModal == 1) ? Panel::end() : null */ ?>
+        <?php if ($isModal == 1) { ?>
         </div>
         <div class="card-footer" style="overflow: auto; position:absolute; bottom:0px; background: #fafafa; width: 100%; opacity: 0.8;"><span></span>
             <div class="actions" style="float:right;margin-top:-2px;">
@@ -145,7 +145,7 @@ if ($isPicker) {
         };
     ", View::POS_END);
 }
-if ($view == 1) {
+if ($isModal == 1) {
     $this->registerJs(
         'var updateText = "' . Module::t('Update') . '";',
         View::POS_BEGIN

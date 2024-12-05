@@ -29,6 +29,8 @@ class Storage extends \yii\db\ActiveRecord
 
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
+    const IS_MODAL_TRUE = 1;
+    const IS_MODAL_FALSE = 0;
 
     const MIME_TYPE = [
         'audio/aac' => '0',
@@ -271,7 +273,7 @@ class Storage extends \yii\db\ActiveRecord
                 return true;
             }
         }
-        return false;
+        return true;
     }
 
     public function getFilePath()
@@ -281,35 +283,13 @@ class Storage extends \yii\db\ActiveRecord
         return '/storage/default/get-file?id=' . $this->id_storage;
     }
 
-    /* public static function find()
-    {
-
-        $activeWorkspaceId = Yii::$app->workspace->id;
-        $query = parent::find();
-        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
-            return $query;
-        }
-
-        if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
-            // get public files
-            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        }
-        
-        if ($activeWorkspaceId) {
-            $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        } else {
-            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        }
-        return $query;
-    } */
-
     public static function findForApi()
     {
         $query = parent::find();
 
-        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
+//        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
             return $query;
-        }
+//        }
 
         if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
             // get public files
@@ -365,6 +345,18 @@ class Storage extends \yii\db\ActiveRecord
             $array[$workspace->id_workspace] = $workspace->name . ' (' . (isset($workspace->user) ? $workspace->user->username : '') . ')';
         }
         return $array;
+    }
+
+    public function fileExists()
+    {
+        $path = realpath(Yii::$app->basePath . '/../data');
+        return file_exists($path . '/' . $this->name);
+    }
+
+    public function afterDelete()
+    {
+        $this->deleteFile($this->name);
+        return parent::afterDelete();
     }
 
 
