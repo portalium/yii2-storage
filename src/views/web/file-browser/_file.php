@@ -6,6 +6,10 @@ use yii\helpers\Html;
 use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;
 use portalium\storage\Module;
+use portalium\storage\bundles\FilePickerAsset;
+
+FilePickerAsset::register($this);
+
 
 $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
@@ -48,6 +52,8 @@ if ($isPicker) {
     ]
 ]) : null */
 // convert to card
+
+
 ?>
 <?php if ($isModal == 1) { ?>
    <div id="w2" class="card file-picker-card " onclick="selectCheckbox(event)" style="display: flex; flex-direction: column;">
