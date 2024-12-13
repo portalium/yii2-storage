@@ -583,6 +583,7 @@ $this->registerJs(
                         }).done(function (data) {
                             $('#file-update-modal' + '$name').modal('hide');
                             id_storage$variablePrefix = null;
+                            $.pjax.reload({container: "#pjax-flash-message"});
                         });
                     },
                     error: function (data) {
