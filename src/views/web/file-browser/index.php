@@ -460,6 +460,7 @@ if ($isPicker) {
 $this->registerJs(
     <<<JS
     document.getElementById("file-picker-add-button" + '$name').addEventListener("click", function(){
+        id_storage$variablePrefix = null;
         //reload pjax
         $('#file-picker-add-spinner' + '$name').show();
         $('#file-picker-add-button' + '$name').hide();
@@ -467,7 +468,7 @@ $this->registerJs(
 
         $.pjax.reload({container: "#file-update-pjax" + '$name', url: "/storage/file-browser/create?id_storage=null"+'&name=' + '$name'}).done(function(){
             //update-storage change name to create
-            document.getElementById("update-storage" + '$name').innerHTML = "Create";
+            document.getElementById("update-storage" + '$name').innerHTML = "Upload";
             document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
             document.getElementById("update-storage" + '$name').classList.add("btn-success");
             //show modal
