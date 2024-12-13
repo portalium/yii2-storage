@@ -6,6 +6,10 @@ use yii\helpers\Html;
 use portalium\theme\widgets\Panel;
 use portalium\storage\models\Storage;
 use portalium\storage\Module;
+use portalium\storage\bundles\FilePickerAsset;
+
+ FilePickerAsset::register($this);
+
 
 $csrfParam = Yii::$app->request->csrfParam;
 $csrfToken = Yii::$app->request->csrfToken;
@@ -48,17 +52,23 @@ if ($isPicker) {
     ]
 ]) : null */
 // convert to card
+
+
 ?>
 <?php if ($isModal == 1) { ?>
-    <div id="w2" class="card" style="display: flex; flex-direction: column;">
-        <div class="card-header" style="overflow: auto;position: absolute;width: 100%;background: #fafafa; opacity: 0.8;">
-            <div class="panel-title"><span></span>
-                <div class="actions" style="float:right;margin-top:-2px; display: flex; justify-content: end; width: 138px;">
+   <div id="w2" class="card file-picker-card " onclick="selectCheckbox(event)" style="display: flex; flex-direction: column; position: relative;">
+        <div class="card-header" style="align-items:center; overflow: auto; position: absolute; width: 100%;  background: #fafafa; justify-content:space-between; width: 100%; padding-left:6px; padding-right:1px; ">
+            <div class="panel-title w-100">
+                <div style="display:flex;align-items:center" >
+                    <?php 
+                        echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 10px; width: 20px; height: 20px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;          
+                    ?>
+                </div>
+                <div class="actions" style="float:right; display: flex; justify-content: end; width: 138px;">
                     <?php
                     echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
                     echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
                     echo Html::tag('i', '', ['class' => 'fa fa-download btn btn-primary', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'download-url' => $path . $model->id_storage, 'onclick' => "downloadItem(this)"]);
-                    echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 0px; width: 20px; height: 20px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;
                     ?>
                 </div>
             </div>
@@ -172,6 +182,21 @@ if ($isModal == 1) {
                     payload$variablePrefix.id_storage = idStorage;
                     reloadFileUpdatePjax(payload$variablePrefix, widgetName, e);
                 }
+
+                function selectCheckbox(event){
+                    const targetDiv = event.currentTarget;
+                    const checkbox = targetDiv.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked; 
+                        if (checkbox.checked) {
+                            targetDiv.classList.add('file-picker-selected'); 
+                        } else {
+                            targetDiv.classList.remove('file-picker-selected'); 
+                        }
+                    }
+                }
+
+                
 
                 function updateStorageInput(parsedData, widgetName) {
                     document.getElementById("storage-title" + widgetName).value = parsedData.title ? parsedData.title : parsedData;
