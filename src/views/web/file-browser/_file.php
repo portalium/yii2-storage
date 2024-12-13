@@ -8,7 +8,7 @@ use portalium\storage\models\Storage;
 use portalium\storage\Module;
 use portalium\storage\bundles\FilePickerAsset;
 
-FilePickerAsset::register($this);
+ FilePickerAsset::register($this);
 
 
 $csrfParam = Yii::$app->request->csrfParam;
@@ -56,8 +56,8 @@ if ($isPicker) {
 
 ?>
 <?php if ($isModal == 1) { ?>
-   <div id="w2" class="card file-picker-card " onclick="selectCheckbox(event)" style="display: flex; flex-direction: column;">
-        <div class="card-header" style="align-items:center; overflow: auto;position: absolute;width: 100%;background: #fafafa; opacity: 0.8; display:flex; justify-content:space-between; width: 100%; padding-left:6px; padding-right:1px ">
+   <div id="w2" class="card file-picker-card " onclick="selectCheckbox(event)" style="display: flex; flex-direction: column; position: relative;">
+        <div class="card-header" style="align-items:center; overflow: auto; position: absolute; width: 100%;  background: #fafafa; justify-content:space-between; width: 100%; padding-left:6px; padding-right:1px; ">
             <div class="panel-title w-100">
                 <div style="display:flex;align-items:center" >
                     <?php 
@@ -195,6 +195,8 @@ if ($isModal == 1) {
                         }
                     }
                 }
+
+                
 
                 function updateStorageInput(parsedData, widgetName) {
                     document.getElementById("storage-title" + widgetName).value = parsedData.title ? parsedData.title : parsedData;

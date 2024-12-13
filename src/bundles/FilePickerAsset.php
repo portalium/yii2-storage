@@ -9,10 +9,10 @@ class FilePickerAsset extends AssetBundle
     public $css = [
         'file-picker.css',  
     ];
-    public $js = [
-        'file-picker.js',  
-    ];
     public $depends = [
         'yii\web\JqueryAsset',  
+    ];
+    public $cssOptions = [
+        'appendTimestamp' => true,
     ];
 }
