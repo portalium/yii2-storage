@@ -24,6 +24,14 @@ class DefaultController extends RestActiveController
         return $actions;
     }
 
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+
+        $behaviors['authenticator']['except'] = ['get-file', 'view'];
+        return $behaviors;
+    }
+
     public function beforeAction($action)
     {
         if (!parent::beforeAction($action)) {
@@ -31,8 +39,8 @@ class DefaultController extends RestActiveController
         }
         switch ($action->id) {
             case 'view':
-                if (!Yii::$app->user->can('storageApiDefaultView', ['id_module' => 'storage']))
-                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
+                //                if (!Yii::$app->user->can('storageApiDefaultView', ['id_module' => 'storage']))
+                //                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
                 break;
             case 'create':
                 if (!Yii::$app->user->can('storageApiDefaultCreate'))
@@ -45,6 +53,10 @@ class DefaultController extends RestActiveController
             case 'delete':
                 if (!Yii::$app->user->can('storageApiDefaultDelete', ['id_module' => 'storage']))
                     throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to delete this storage.'));
+                break;
+            case 'get-file':
+                //                if (!Yii::$app->user->can('storageApiDefaultGetFile', ['id_module' => 'storage']))
+                //                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
                 break;
             default:
                 if (!Yii::$app->user->can('storageApiDefaultIndex', ['id_module' => 'storage']) && !Yii::$app->user->can('storageApiDefaultIndexOwn', ['id_module' => 'storage']))
@@ -65,29 +77,35 @@ class DefaultController extends RestActiveController
         $model->addRule('title', 'string');
         $model->title = Yii::$app->request->post('title');
         $model->file = \yii\web\UploadedFile::getInstanceByName('file');
+        try {
+            if ($model->file && $model->validate()) {
+                $path = realpath(Yii::$app->basePath . '/../data');
+                $filename = md5(rand()) . "." . $model->file->extension;
 
-        if ($model->file && $model->validate()) {
-            $path = realpath(Yii::$app->basePath . '/../data');
-            $filename = md5(rand()) . "." . $model->file->extension;
 
+                if ($model->file->saveAs($path . '/' . $filename)) {
+                    $storage = new Storage();
+                    $storage->name = $filename;
+                    $storage->title = $model->title;
+                    $storage->id_workspace = Yii::$app->workspace->id;
+                    try {
+                        $storage->mime_type = Storage::MIME_TYPE[$storage->getMIMEType($path . '/' . $filename)];
+                    } catch (\Throwable $th) {
+                        $storage->mime_type = Storage::MIME_TYPE['video/mpeg'];
+                    }
 
-            if ($model->file->saveAs($path . '/' . $filename)) {
-                $storage = new Storage();
-                $storage->name = $filename;
-                $storage->title = $model->title;
-                $storage->id_workspace = Yii::$app->workspace->id;
-                try {
-                    $storage->mime_type = Storage::MIME_TYPE[$storage->getMIMEType($path . '/' . $filename)];
-                } catch (\Throwable $th) {
-                    $storage->mime_type = Storage::MIME_TYPE['video/mpeg'];
+                    $storage->save();
+                    return $storage;
                 }
-
-                $storage->save();
-                return $storage;
             }
+        } catch (\Throwable $th) {
         }
 
-        return ['status' => 'FAIL'];
+
+        return [
+            'status' => 'FAIL',
+            'message' => 'File upload failed.'
+        ];
     }
 
     public function actionGetFile($id)
