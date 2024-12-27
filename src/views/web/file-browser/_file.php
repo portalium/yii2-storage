@@ -216,6 +216,17 @@ if ($isModal == 1) {
                             }
                         }
 
+                        if ("$multiple" !== "1") {
+                            const allCards = document.querySelectorAll('.file-picker-card');
+                            allCards.forEach(c => {
+                                if (c !== card) {
+                                    c.classList.remove('selected');
+                                    const cb = c.querySelector('input[type="checkbox"]');
+                                    if (cb) cb.checked = false;
+                                }
+                            });
+                        }
+
                         selectItem(checkbox, name);
                     }
                 }
