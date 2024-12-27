@@ -177,6 +177,28 @@ if ($isModal == 1) {
     );
     $this->registerJs(
         <<<JS
+
+                $('#file-picker-buttonapp-logo-wide').on('click', function () {
+                    restoreCardSelections(); 
+                });
+
+                $(document).on('shown.bs.modal', '#file-picker-modalapp-logo-wide', function () {
+                    restoreCardSelections();
+                });
+
+                function restoreCardSelections() {
+                    const allCards = document.querySelectorAll('.file-picker-card');
+                    allCards.forEach(card => {
+                        const checkbox = card.querySelector('input[type="checkbox"]');
+                        if (checkbox && checkbox.checked) {
+                            card.classList.add('selected'); 
+                        } else {
+                            card.classList.remove('selected'); 
+                        }
+                    });
+                }
+
+
                 function updatedItem(e) {
                     var data = $(e).attr("data");
                     var allAttributes = $(e).attr("all-attributes");
@@ -197,6 +219,8 @@ if ($isModal == 1) {
                     payload$variablePrefix.id_storage = idStorage;
                     reloadFileUpdatePjax(payload$variablePrefix, widgetName, e);
                 }
+
+                
 
                 function selectItemFromCard(event, card, name) {
                     const checkbox = card.querySelector('input[type="checkbox"]');
@@ -230,6 +254,8 @@ if ($isModal == 1) {
                         selectItem(checkbox, name);
                     }
                 }
+
+                
 
 
                 function updateStorageInput(parsedData, widgetName) {
