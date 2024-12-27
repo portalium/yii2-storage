@@ -69,6 +69,19 @@ if ($isPicker) {
     }
     </style>
 
+    <style>
+        #file-picker-selectapp-logo-wide:disabled {
+            background-color: #dcdcdc; 
+            cursor: not-allowed; 
+            color: #999; 
+        }
+
+        #file-picker-selectapp-logo-wide {
+            transition: background-color 0.3s ease, color 0.3s ease; 
+        }
+    </style>
+
+
 
     <div id="w2" class="card file-picker-card" onclick="selectItemFromCard(event, this, '<?php echo $widgetName; ?>')" style="display: flex; flex-direction: column; position: relative; ">
     <div class="overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1;"></div>
@@ -255,9 +268,32 @@ if ($isModal == 1) {
                     }
                 }
 
+                function updateUseSelectedButtonState(name) {
+                    const button = document.getElementById('file-picker-select' + name); 
+                    const selectedCards = document.querySelectorAll('.file-picker-card.selected'); 
+
+                    if (selectedCards.length > 0) {
+                        button.disabled = false; 
+                    } else {
+                        button.disabled = true; 
+                    }
+                }
+
+                document.addEventListener('click', (event) => {
+                    if (event.target.closest('.file-picker-card') || event.target.type === 'checkbox') {
+                        const modalId = event.target.closest('.modal')?.id;
+                        const name = modalId?.replace('file-picker-modal', '') || '';
+                        updateUseSelectedButtonState(name);
+                    }
+                });
+
+                $(document).on('shown.bs.modal', '[id^="file-picker-modal"]', function () {
+                    const name = this.id.replace('file-picker-modal', '');
+                    updateUseSelectedButtonState(name);
+                });
+
+
                 
-
-
                 function updateStorageInput(parsedData, widgetName) {
                     document.getElementById("storage-title" + widgetName).value = parsedData.title ? parsedData.title : parsedData;
                 }
