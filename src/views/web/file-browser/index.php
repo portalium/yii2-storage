@@ -570,8 +570,11 @@ $this->registerJs(
                 myFormData.append('file', document.getElementById('storage-file' + '$name').files[0]);
                 myFormData.append('id_storage', id_storage$variablePrefix);
                 myFormData.append('$csrfParam', '$csrfToken');
+
+                $('#update-storage' + '$name').prop('disabled', true);
                 $('#update-storage-spinner' + '$name').show();
                 $('#update-storage' + '$name').hide();
+
                 $.ajax({
                     url: id_storage$variablePrefix ? '/storage/file-browser/update?id=' + id_storage$variablePrefix : '/storage/file-browser/create',
                     type: 'POST',
@@ -579,6 +582,7 @@ $this->registerJs(
                     contentType: false,
                     processData: false,
                     success: function (data) {
+                
                         $.pjax.reload({container: '#file-picker-pjax' + '$name', url: '/storage/file-browser/index?payload=' + JSON.stringify(payload$variablePrefix)
                             , timeout: false
                         }).done(function (data) {
@@ -590,11 +594,16 @@ $this->registerJs(
                     error: function (data) {
                         $('#storage-error' + '$name').html(data.responseJSON.message);
                         $('#storage-error-modal' + '$name').modal('show');
+                        $('#update-storage' + '$name').prop('disabled', false).show();
+                        $('#update-storage-spinner' + '$name').hide();
                     }
                 }).always(function () {
                     $('#update-storage-spinner' + '$name').hide();
                     $('#update-storage' + '$name').show();
                     checkFilePickerInput$variablePrefix();
+                });
+                $('#file-update-modal' + '$name').on('hidden.bs.modal', function () {
+                $('#update-storage' + '$name').prop('disabled', false).show();
                 });
             });
             $('#file-picker-select' + '$name').click(function () {
