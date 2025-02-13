@@ -39,7 +39,7 @@ use portalium\storage\Module;
         Modal::begin([
             'id' => 'storage-error-modal' . $widgetName,
             'title' => Module::t('Error'),
-            'footer' => '<a href="#" class="btn btn-primary" data-bs-dismiss="modal">' . Module::t('Close') . '</a>',
+            'footer' => '<a href="#" class="btn btn-danger" data-bs-dismiss="modal">' . Module::t('Cancel') . '</a>',
             'size' => 'modal-sm',
             'clientOptions' => ['backdrop' => 'static', 'keyboard' => false]
         ]);

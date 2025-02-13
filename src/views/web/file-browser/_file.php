@@ -8,7 +8,7 @@ use portalium\storage\models\Storage;
 use portalium\storage\Module;
 use portalium\storage\bundles\FilePickerAsset;
 
- FilePickerAsset::register($this);
+FilePickerAsset::register($this);
 
 
 $csrfParam = Yii::$app->request->csrfParam;
@@ -56,12 +56,40 @@ if ($isPicker) {
 
 ?>
 <?php if ($isModal == 1) { ?>
-   <div id="w2" class="card file-picker-card " onclick="selectCheckbox(event)" style="display: flex; flex-direction: column; position: relative;">
+    <style>
+        .file-picker-card.selected {
+            border: 2px solid #6cbc2d;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .file-picker-card.selected:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+
+    <style>
+        #file-picker-selectapp-logo-wide:disabled {
+            background-color: #dcdcdc;
+            cursor: not-allowed;
+            color: #999;
+        }
+
+        #file-picker-selectapp-logo-wide {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+    </style>
+
+
+
+    <div id="w2" class="card file-picker-card" onclick="selectItemFromCard(event, this, '<?php echo $widgetName; ?>')" style="display: flex; flex-direction: column; position: relative; ">
+        <div class="overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1;"></div>
         <div class="card-header" style="align-items:center; overflow: auto; position: absolute; width: 100%;  background: #fafafa; justify-content:space-between; width: 100%; padding-left:6px; padding-right:1px; ">
             <div class="panel-title w-100">
-                <div style="display:flex;align-items:center" >
-                    <?php 
-                        echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 10px; width: 20px; height: 20px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]], 'onclick' => "selectItem(this, '" . $widgetName . "')"]) : null;          
+                <div style="display:flex;align-items:center">
+                    <?php
+                    echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 10px; width: 20px; height: 20px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]]]) : null;
                     ?>
                 </div>
                 <div class="actions" style="float:right; display: flex; justify-content: end; width: 138px;">
@@ -129,7 +157,7 @@ if (typeof downloadItem === 'undefined') {
 
 ", View::POS_END);
 if ($isPicker) {
-    
+
     $this->registerJs("
     
     payload$variablePrefix = {
@@ -162,6 +190,27 @@ if ($isModal == 1) {
     );
     $this->registerJs(
         <<<JS
+
+                $('#file-picker-buttonapp-logo-wide').on('click', function () {
+                    restoreCardSelections(); 
+                });
+
+                $(document).on('shown.bs.modal', '#file-picker-modalapp-logo-wide', function () {
+                    restoreCardSelections();
+                });
+
+                function restoreCardSelections() {
+                    const allCards = document.querySelectorAll('.file-picker-card');
+                    allCards.forEach(card => {
+                        const checkbox = card.querySelector('input[type="checkbox"]');
+                        if (checkbox && checkbox.checked) {
+                            card.classList.add('selected'); 
+                        } else {
+                            card.classList.remove('selected'); 
+                        }
+                    });
+                }
+
                 function updatedItem(e) {
                     var data = $(e).attr("data");
                     var allAttributes = $(e).attr("all-attributes");
@@ -183,20 +232,61 @@ if ($isModal == 1) {
                     reloadFileUpdatePjax(payload$variablePrefix, widgetName, e);
                 }
 
-                function selectCheckbox(event){
-                    const targetDiv = event.currentTarget;
-                    const checkbox = targetDiv.querySelector('input[type="checkbox"]');
+                function selectItemFromCard(event, card, name) {
+                    const checkbox = card.querySelector('input[type="checkbox"]');
                     if (checkbox) {
-                        checkbox.checked = !checkbox.checked; 
-                        if (checkbox.checked) {
-                            targetDiv.classList.add('file-picker-selected'); 
+                        if (event.target === checkbox) {
+                            if (checkbox.checked) {
+                                card.classList.add('selected'); 
+                            } else {
+                                card.classList.remove('selected'); 
+                            }
                         } else {
-                            targetDiv.classList.remove('file-picker-selected'); 
+                            checkbox.checked = !checkbox.checked; 
+                            if (checkbox.checked) {
+                                card.classList.add('selected');
+                            } else {
+                                card.classList.remove('selected');
+                            }
                         }
+
+                        if ("$multiple" !== "1") {
+                            const allCards = document.querySelectorAll('.file-picker-card');
+                            allCards.forEach(c => {
+                                if (c !== card) {
+                                    c.classList.remove('selected');
+                                    const cb = c.querySelector('input[type="checkbox"]');
+                                    if (cb) cb.checked = false;
+                                }
+                            });
+                        }
+                        selectItem(checkbox, name);
                     }
                 }
 
-                
+                function updateUseSelectedButtonState(name) {
+                    const button = document.getElementById('file-picker-select' + name); 
+                    const selectedCards = document.querySelectorAll('.file-picker-card.selected'); 
+
+                    if (selectedCards.length > 0) {
+                        button.disabled = false; 
+                    } else {
+                        button.disabled = true; 
+                    }
+                }
+
+                document.addEventListener('click', (event) => {
+                    if (event.target.closest('.file-picker-card') || event.target.type === 'checkbox') {
+                        const modalId = event.target.closest('.modal')?.id;
+                        const name = modalId?.replace('file-picker-modal', '') || '';
+                        updateUseSelectedButtonState(name);
+                    }
+                });
+
+                $(document).on('shown.bs.modal', '[id^="file-picker-modal"]', function () {
+                    const name = this.id.replace('file-picker-modal', '');
+                    updateUseSelectedButtonState(name);
+                });
 
                 function updateStorageInput(parsedData, widgetName) {
                     document.getElementById("storage-title" + widgetName).value = parsedData.title ? parsedData.title : parsedData;

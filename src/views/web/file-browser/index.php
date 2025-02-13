@@ -120,7 +120,7 @@ if ($isPicker) {
         'title' =>  '<div class="d-flex justify-content-between">' . Module::t('File Picker') . '<div class="d-flex">' . '</div>' .
             '</div>',
     
-        'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
+        'footer' => Html::button(Module::t('Cancel'), ['class' => 'btn btn-danger', 'data-bs-dismiss' => 'modal']) .
                    Html::button(Module::t('Use Selected'), ['class' => 'btn btn-success', 'id' => 'file-picker-select' . $name, 'style' => 'float:right; margin-right:10px;']),
         'closeButton' => [
             'style' => 'margin-right: 10px;',
@@ -210,6 +210,7 @@ $viewParams = $isPicker ? [
     'isJson' => $isJson,
     'widgetName' => $name,
     'isPicker' => $isPicker,
+    'multiple' => $multiple,
     'fileExtensions' => isset($fileExtensions) ? $fileExtensions : []
 ];
 
@@ -266,7 +267,7 @@ $modals = Modal::begin([
     'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
     'title' => Module::t('Upload'),
-    'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']) .
+    'footer' => Html::button(Module::t('Cancel'), ['class' => 'btn btn-danger', 'data-bs-dismiss' => 'modal']) .
         Html::button(Module::t('Upload'), ['class' => 'btn btn-success', 'id' => 'update-storage' . $name]) .
         Html::tag('button', '
                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -301,7 +302,7 @@ if ($isPicker) {
         'footer' => Html::button(Module::t('Close'), ['class' => 'btn btn-warning', 'data-bs-dismiss' => 'modal']),
         'closeButton' => false,
     ]);
-    echo Html::img('', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $name]);
+    echo Html::img('data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=', ['class' => 'img-thumbnail', 'style' => 'width:100%;', 'id' => 'storage-show-file' . $name]);
     Modal::end();
     echo Html::beginTag('div', ['class' => 'd-flex', 'id' => 'file-picker-button-div-' . $name]);
     echo Html::button(Module::t('Select File'), ['class' => 'btn btn-primary', 'style' => 'max-width: 130px;', 'id' => 'file-picker-button' . $name]);

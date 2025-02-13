@@ -356,6 +356,7 @@ class Storage extends \yii\db\ActiveRecord
     public function afterDelete()
     {
         $this->deleteFile($this->name);
+//        Yii::warning('Storage file deleted: ' . $this->name);
         return parent::afterDelete();
     }
 
