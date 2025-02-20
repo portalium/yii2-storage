@@ -209,6 +209,7 @@ $viewParams = $isPicker ? [
     'isModal' => Storage::IS_MODAL_TRUE,
     'isJson' => $isJson,
     'widgetName' => $name,
+    'multiple' => $multiple,
     'isPicker' => $isPicker,
     'fileExtensions' => isset($fileExtensions) ? $fileExtensions : []
 ];
