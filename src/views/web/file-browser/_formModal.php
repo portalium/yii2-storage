@@ -2,7 +2,6 @@
 
 use portalium\bootstrap5\Modal;
 use yii\helpers\Html;
-use kartik\file\FileInput;
 use portalium\storage\models\Storage;
 use portalium\storage\Module;
 
@@ -27,14 +26,23 @@ use portalium\storage\Module;
         </div>
     </div>
     <div class="mb-3 row">
-        <label class="col-sm-2 col-form-label" for="storage-file<?= $widgetName ?>"><?= Module::t('File') ?></label>
+        <label class="col-sm-2 col-form-label" for="storage-file<?= $widgetName ?>">
+            <?= Module::t('File') ?>
+        </label>
         <div class="col-sm-10">
-            
-            <?php
-            echo Html::fileInput('file', null, ['id' => 'storage-file' . $widgetName, 'class' => 'form-control'])
-            ?>
+            <div class="input-group">
+                <label class="input-group-text" for="storage-file<?= $widgetName ?>">
+                    <?= Module::t('Select File') ?>
+                </label>
+                <input type="file" id="storage-file<?= $widgetName ?>" class="form-control d-none"
+                    onchange="document.getElementById('file-name-<?= $widgetName ?>').textContent = this.files.length ? this.files[0].name : '<?= Module::t('No file selected') ?>'">
+                <span id="file-name-<?= $widgetName ?>" class="form-control">
+                    <?= Module::t('No file selected') ?>
+                </span>
+            </div>
         </div>
     </div>
+
     <?php
         Modal::begin([
             'id' => 'storage-error-modal' . $widgetName,
