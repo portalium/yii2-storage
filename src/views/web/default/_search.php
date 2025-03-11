@@ -22,7 +22,7 @@ use portalium\storage\Module;
     <?= $form->field($model, 'title') ?>
 
     <div class="form-group">
-        <?= Html::submitButton(Module::t('Search'), ['class' => 'btn btn-primary']) ?>
+        <?= Html::submitButton(Module::t('Search'), ['class' => 'btn btn-primary',]) ?>
     </div>
 
     <?php ActiveForm::end(); ?>

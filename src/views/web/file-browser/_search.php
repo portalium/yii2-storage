@@ -23,7 +23,7 @@ use portalium\storage\Module;
 ]); ?>
 
 <div class="form-group" style="display: flex; justify-content: flex-end;">
-    <?= Html::beginTag('div', ['class' => 'd-flex', 'style' => 'gap: 10px;']); ?> 
+    <?= Html::beginTag('div', ['class' => 'd-flex', 'style' => 'gap: 10px;']); ?>
     <?= $form->field($model, 'title', [
         'options' => [
             'style' => 'margin-bottom:0px !important; width: 150px; margin-right: 5px;',
@@ -35,9 +35,11 @@ use portalium\storage\Module;
         'id' => 'storage-search-title-' . $name
     ]) ?>
     <?= Html::button(Module::t(''), [
-        'class' => 'fa fa-search btn btn-success',
+        'title' => Module::t('Search'),
+        'class' => 'fa fa-search btn btn-success', 
         'id' => 'storage-search-button-' . $name,
-        'style' => 'margin-right: 10px;' 
+        'style' => 'margin-right: 10px;',
+         
     ]) ?>
     <?= Html::endTag('div'); ?>
     <?php 
@@ -48,15 +50,16 @@ use portalium\storage\Module;
     }
     ?>
 
-        <?php
+    <?php
         $accesses = Storage::getAccesses();
 
         foreach ($accesses as $key => $value) {
-            if ($value === 'Private') {
-                $accesses[$key] = 'Restricted';
+            if ($value === Module::t('Private')) {
+                $accesses[$key] = Module::t('Restricted');
+                
             }
-            if ($value === 'Public') {
-                $accesses[$key] = 'Anyone with link';
+            if ($value === Module::t('Public')) {
+                $accesses[$key] = Module::t('Anyone with link');
             }
         }
 
@@ -64,7 +67,8 @@ use portalium\storage\Module;
             'options' => [
                 'style' => 'margin-bottom:0px !important;width: 150px; margin-right: 10px;',
                 'id' => 'storage-search-form-access-' . $name,
-                'class' => ''
+                'class' => '',
+                
             ]
         ])->dropDownList($accesses, [
             'prompt' => Module::t('All'),

@@ -134,13 +134,14 @@ if ($isPicker) {
     echo $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker, 'manage'=>$manage]);
     echo Html::button(
         '<span style="display: inline-flex; align-items: center;">
-            <i class="fa fa-upload" style="font-size: 18px; margin-right: 5px;"></i>
-            <span style="font-size: 12px; color: #555555; font-family: Arial, sans-serif;">' . Module::t('Upload') . '</span>
+            <i class="fa fa-upload" , style="font-size: 18px; margin-right: 5px;"></i>
+            <span style="font-size: 12px; color: #555555; font-family: Arial, sans-serif;">' .  Module::t('Upload') . '</span>
         </span>',
         [
             'class' => 'btn btn-success',
             'style' => 'float:right;',
             'id' => 'file-picker-add-button' . $name
+            
         ]
     ) . Html::tag('button', '
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -172,6 +173,7 @@ if ($isPicker) {
                         'class' => 'btn btn-success',
                         'style' => 'float:right;',
                         'id' => 'file-picker-add-button' . $name
+                        
                     ]
                 ) .
                 Html::tag('button', '
@@ -182,11 +184,12 @@ if ($isPicker) {
                     'role' => 'status',
                     'aria-hidden' => 'true',
                     'style' => 'display:none;'
+                    
                 ]),
             ]
         ],
         'headerOptions' => [
-            'class' => 'storage-panel-header',
+            'class' => 'storage-panel-header', 
         ],
 
     ]);
@@ -458,6 +461,9 @@ if ($isPicker) {
         View::POS_END
     );
 }
+
+$uploadText = Module::t('Upload');
+
 $this->registerJs(
     <<<JS
     document.getElementById("file-picker-add-button" + '$name').addEventListener("click", function(){
@@ -469,7 +475,7 @@ $this->registerJs(
 
         $.pjax.reload({container: "#file-update-pjax" + '$name', url: "/storage/file-browser/create?id_storage=null"+'&name=' + '$name'}).done(function(){
             //update-storage change name to create
-            document.getElementById("update-storage" + '$name').innerHTML = "Upload";
+            document.getElementById("update-storage" + '$name').innerHTML = "$uploadText";
             document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
             document.getElementById("update-storage" + '$name').classList.add("btn-success");
             //show modal
