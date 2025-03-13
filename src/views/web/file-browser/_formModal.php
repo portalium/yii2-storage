@@ -2,7 +2,6 @@
 
 use portalium\bootstrap5\Modal;
 use yii\helpers\Html;
-use kartik\file\FileInput;
 use portalium\storage\models\Storage;
 use portalium\storage\Module;
 
@@ -27,14 +26,23 @@ use portalium\storage\Module;
         </div>
     </div>
     <div class="mb-3 row">
-        <label class="col-sm-2 col-form-label" for="storage-file<?= $widgetName ?>"><?= Module::t('File') ?></label>
+        <label class="col-sm-2 col-form-label" for="storage-file<?= $widgetName ?>">
+            <?= Module::t('File') ?>
+        </label>
         <div class="col-sm-10">
-            
-            <?php
-            echo Html::fileInput('file', null, ['id' => 'storage-file' . $widgetName, 'class' => 'form-control'])
-            ?>
+            <div class="input-group">
+                <label class="input-group-text" for="storage-file<?= $widgetName ?>">
+                    <?= Module::t('Select File') ?>
+                </label>
+                <input type="file" id="storage-file<?= $widgetName ?>" class="form-control d-none"
+                    onchange="document.getElementById('file-name-<?= $widgetName ?>').textContent = this.files.length ? this.files[0].name : '<?= Module::t('No file selected') ?>'">
+                <span id="file-name-<?= $widgetName ?>" class="form-control">
+                    <?= Module::t('No file selected') ?>
+                </span>
+            </div>
         </div>
     </div>
+
     <?php
         Modal::begin([
             'id' => 'storage-error-modal' . $widgetName,
@@ -53,4 +61,32 @@ use portalium\storage\Module;
         }
         echo Html::endTag('div');
     ?>
+
+
+
+    <?php
+    Modal::begin([
+        'id' => 'rename-modal',
+        'title' => Module::t('Rename'),
+        'footer' => '
+            <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="save-rename">Save</button>',
+        'size' => 'modal-md',
+        'clientOptions' => ['backdrop' => 'static', 'keyboard' => false]
+    ]); 
+    ?>
+
+    <div class="modal-body">
+        <form id="rename-form">
+            <div class="mb-3">
+                <label for="rename-input" class="col-form-label"><?= Module::t('New Title') ?></label>
+                <input type="text" class="form-control" id="rename-input">
+                <input type="hidden" id="rename-id"> <!-- ID'yi saklamak için -->
+            </div>
+        </form>
+    </div>
+
+    <?php Modal::end(); ?>
+
+
 </div>

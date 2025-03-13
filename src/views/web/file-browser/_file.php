@@ -56,52 +56,68 @@ if ($isPicker) {
 
 ?>
 <?php if ($isModal == 1) { ?>
-    <style>
-    .file-picker-card.selected {
-        border: 2px solid #6cbc2d; 
-        border-radius: 4px; 
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
-        transition: box-shadow 0.3s ease, border-color 0.3s ease; 
-    }
+<style>
+.file-picker-card.selected {
+    border: 2px solid #6cbc2d;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
 
-    .file-picker-card.selected:hover {
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); 
-    }
-    </style>
+.file-picker-card.selected:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+</style>
 
-    <style>
-        #file-picker-selectapp-logo-wide:disabled {
-            background-color: #dcdcdc; 
-            cursor: not-allowed; 
-            color: #999; 
-        }
+<style>
+#file-picker-selectapp-logo-wide:disabled {
+    background-color: #dcdcdc;
+    cursor: not-allowed;
+    color: #999;
+}
 
-        #file-picker-selectapp-logo-wide {
-            transition: background-color 0.3s ease, color 0.3s ease; 
-        }
-    </style>
+#file-picker-selectapp-logo-wide {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+</style>
 
 
 
-    <div id="w2" class="card file-picker-card" onclick="selectItemFromCard(event, this, '<?php echo $widgetName; ?>')" style="display: flex; flex-direction: column; position: relative; ">
-    <div class="overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1;"></div>
-        <div class="card-header" style="align-items:center; overflow: auto; position: absolute; width: 100%;  background: #fafafa; justify-content:space-between; width: 100%; padding-left:6px; padding-right:1px; ">
-            <div class="panel-title w-100">
-                <div style="display:flex;align-items:center">
-                    <?php 
-                         echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 10px; width: 20px; height: 20px;', 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]] ]) : null;          
+<div id="w2" class="card file-picker-card" onclick="selectItemFromCard(event, this, '<?php echo $widgetName; ?>')"
+    style="display: flex; flex-direction: column; position: relative; ">
+    <div class="overlay"
+        style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1;">
+    </div>
+    <div class="card-header"
+        style="align-items:center; overflow: auto; position: absolute; width: 100%;  background: #fafafa; justify-content:space-between; width: 100%; padding-left:6px; padding-right:1px; ">
+        <div class="panel-title w-100">
+            <div style="display:flex;align-items:center">
+                <?php 
+                         echo $isPicker ? Html::checkbox('checkedItems[]', false, ['class' => 'btn btn-success', 'style' => 'margin-right: 10px; width: 20px; height: 20px;','header' => Module::t('Upload'), 'id-src' => $model->id_storage, 'img-src' => $name, 'data' => ($isJson == 1) ? json_encode($model->getAttributes($attributes)) : $model->getAttributes($attributes)[$attributes[0]] ]) : null;          
                     ?>
-                </div>
-                <div class="actions" style="float:right; display: flex; justify-content: end; width: 138px;">
-                    <?php
-                    echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
-                    echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
-                    echo Html::tag('i', '', ['class' => 'fa fa-download btn btn-primary', 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'download-url' => $path . $model->id_storage, 'onclick' => "downloadItem(this)"]);
+            </div>
+            <div class="actions" style="float:right; display: flex; justify-content: end; width: 138px;">
+                <?php
+                    echo Html::tag('a', '', ['class' => 'fa fa-pencil btn btn-primary','title' => Module::t('Update'),'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'updateItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "updatedItem(this)", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo Html::tag('i', '', ['class' => 'fa fa-trash btn btn-danger','title' => Module::t('Delete'), 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'name' => 'removeItem', 'data' => (($isJson == 1 && $isPicker) ? json_encode($model->getAttributes($attributes)) : ($isPicker)) ? $model->getAttributes($attributes)[$attributes[0]] : $model->getAttributes(['id_storage'])['id_storage'], 'onclick' => "removeItem(this, '" . $widgetName . "')", "all-attributes" => json_encode($model->getAttributes())]);
+                    echo Html::tag('i', '', ['class' => 'fa fa-download btn btn-primary','title' => Module::t('Download'), 'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;', 'download-url' => $path . $model->id_storage, 'onclick' => "downloadItem(this)"]);
+                    echo Html::tag('i', '', [
+                        'class' => 'fa fa-edit btn btn-warning rename-btn',
+                        'title' => Module::t('Rename'),
+                        'style' => 'margin-right: 5px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;',
+                        'name' => 'renameItem',
+                        'data-title' => $model->title, 
+                        'data-id' => $model->id_storage,
+                        'data-bs-toggle' => 'modal',  // Eğer Bootstrap 5 kullanıyorsan bunu ekle
+                        'data-bs-target' => '#rename-modal' // Modal ID doğru mu kontrol et
+                    ]);
+                    
                     ?>
-                </div>
             </div>
         </div>
-        <div class="card-body" style="height: 167px; border-radius: 4px; display: block;overflow: hidden;padding: 0px;overflow-x: auto;">
+    </div>
+    <div class="card-body"
+        style="height: 167px; border-radius: 4px; display: block;overflow: hidden;padding: 0px;overflow-x: auto;">
         <?php } ?>
         <?php
         if (isset(Storage::getMimeTypeList()[$model->mime_type])) {
@@ -129,15 +145,17 @@ if ($isPicker) {
         ?>
         <?php /* ($isModal == 1) ? Panel::end() : null */ ?>
         <?php if ($isModal == 1) { ?>
-        </div>
-        <div class="card-footer" style="overflow: auto; position:absolute; bottom:0px; background: #fafafa; width: 100%; opacity: 0.8;"><span></span>
-            <div class="actions" style="float:right;margin-top:-2px;">
-                <div style="float: left;">
-                    <?php echo (strlen($model->title) > 25) ? substr(str_replace("’", "´", $model->title), 0, 25) . '...' : Html::encode($model->title); ?>
-                </div>
+    </div>
+    <div class="card-footer"
+        style="overflow: auto; position:absolute; bottom:0px; background: #fafafa; width: 100%; opacity: 0.8;">
+        <span></span>
+        <div class="actions" style="float:right;margin-top:-2px;">
+            <div style="float: left;">
+                <?php echo (strlen($model->title) > 25) ? substr(str_replace("’", "´", $model->title), 0, 25) . '...' : Html::encode($model->title); ?>
             </div>
         </div>
     </div>
+</div>
 <?php } ?>
 
 <?php
@@ -410,6 +428,8 @@ if ($isModal == 1) {
                 function addTrashIcon(e) {
                     e.classList.add("fa-trash");
                 }
+                
+                
 
                 JS,
         View::POS_END
