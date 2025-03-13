@@ -27,4 +27,19 @@ return [
     'Update' => 'Güncelle',
     'Save' => 'Kaydet',
     'Search for file...' => 'Dosya ara...',
+    'Search' => 'Arama',
+    'Restricted'  => 'Erişim Kısıtlı', 
+    'Anyone with link' => 'Bağlantısı olan herkes',
+    'No results found.' => 'Sonuç bulunamadı.',
+    'Private' => 'Gizli',
+    'Public' => 'Açık',
+    'Upload'  => 'Yükleme',
+    'Delete'  => 'Sil',
+    'Download ' => 'İndir',
+    'No file selected'  => 'Dosya Seçilmedi',
+    'Are you sure you want to delete this item?' => 'Bu öğeyi silmek istediğinizden emin misiniz?',
+    'New Title' => 'Yeni Başlık',
+    'Rename File' => 'Dosya Yeniden Adlandır',
+    'Cancel' => 'İptal Et'
+    
 ];

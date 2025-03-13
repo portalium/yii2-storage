@@ -14,6 +14,12 @@ use portalium\theme\widgets\Panel;
 
 $this->registerCss(
     <<<CSS
+
+    .btn-dark {
+        color: black !important;
+       
+    }
+
     .storage-item {
         cursor: pointer;
         padding: 10px;
@@ -130,17 +136,20 @@ if ($isPicker) {
             'style' => 'overflow-y: hidden;',
         ],
     ]);
+
+    
     echo '<div class="d-flex justify-content-between modal-header" style="width: 100%; padding-top: 0px;">';
     echo $this->render('_search', ['model' => $searchModel, 'name' => $name, 'isPicker' => $isPicker, 'manage'=>$manage]);
     echo Html::button(
         '<span style="display: inline-flex; align-items: center;">
-            <i class="fa fa-upload" style="font-size: 18px; margin-right: 5px;"></i>
-            <span style="font-size: 12px; color: #555555; font-family: Arial, sans-serif;">' . Module::t('Upload') . '</span>
+            <i class="fa fa-upload" , style="font-size: 18px; margin-right: 5px;"></i>
+            <span style="font-size: 12px; color: #555555; font-family: Arial, sans-serif;">' .  Module::t('Upload') . '</span>
         </span>',
         [
             'class' => 'btn btn-success',
             'style' => 'float:right;',
             'id' => 'file-picker-add-button' . $name
+            
         ]
     ) . Html::tag('button', '
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -172,6 +181,7 @@ if ($isPicker) {
                         'class' => 'btn btn-success',
                         'style' => 'float:right;',
                         'id' => 'file-picker-add-button' . $name
+                        
                     ]
                 ) .
                 Html::tag('button', '
@@ -182,11 +192,12 @@ if ($isPicker) {
                     'role' => 'status',
                     'aria-hidden' => 'true',
                     'style' => 'display:none;'
+                    
                 ]),
             ]
         ],
         'headerOptions' => [
-            'class' => 'storage-panel-header',
+            'class' => 'storage-panel-header', 
         ],
 
     ]);
@@ -263,6 +274,42 @@ if ($isPicker) {
     Panel::end();
 }
 
+Modal::begin([
+    'id' => 'rename-modal',
+    'size' => Modal::SIZE_DEFAULT,
+    'title' => Module::t('Rename File'),
+    'footer' => 
+        Html::button(Module::t('Cancel'), [
+            'class' => 'btn btn-dark', 
+            'data-bs-dismiss' => 'modal'
+        ]) .
+        Html::button(Module::t('Save'), [
+            'class' => 'btn btn-primary', 
+            'id' => 'save-rename'
+        ]),
+    //'closeButton' => false,
+    'titleOptions' => ['style' => 'width: 100%; text-align: left;'],
+]); 
+
+echo '<div class="modal-body">';
+    echo '<form id="rename-form">';
+        echo '<div class="mb-3 row align-items-center">';
+            echo '<label for="rename-input" class="col-auto col-form-label">' . Module::t('New Title') . '</label>';
+            echo '<div class="col">';
+                echo '<input type="text" class="form-control w-100" id="rename-input">';
+                echo '<input type="hidden" id="rename-id">';
+            echo '</div>';
+        echo '</div>';
+    echo '</form>';
+echo '</div>';
+
+
+
+
+
+Modal::end();
+
+
 $modals = Modal::begin([
     'id' => 'file-update-modal' . $name,
     'size' => Modal::SIZE_DEFAULT,
@@ -275,6 +322,7 @@ $modals = Modal::begin([
     'closeButton' => false,
     'titleOptions' => ['style' => 'width: 100%; text-align: left;'],
 ]);
+
 Pjax::begin(['id' => 'file-update-pjax' . $name, 'history' => false, 'timeout' => false]);
 $id_storage = ($storageModel != null && $storageModel->id_storage != '') ? $storageModel->id_storage : "null";
 $this->registerJs('id_storage' . $variablePrefix . ' = ' . $id_storage . ';', View::POS_END);
@@ -294,6 +342,8 @@ echo $this->render('./_formModal', [
 ]);
 Pjax::end();
 Modal::end();
+
+
 
 if ($isPicker) {
     Modal::begin([
@@ -315,6 +365,8 @@ if ($isPicker) {
     echo Html::endTag('div');
     echo Html::endTag('div');
 }
+
+
 
 if ($isPicker && $callbackName != null) {
     $this->registerJs(
@@ -458,6 +510,9 @@ if ($isPicker) {
         View::POS_END
     );
 }
+
+$uploadText = Module::t('Upload');
+
 $this->registerJs(
     <<<JS
     document.getElementById("file-picker-add-button" + '$name').addEventListener("click", function(){
@@ -469,7 +524,7 @@ $this->registerJs(
 
         $.pjax.reload({container: "#file-update-pjax" + '$name', url: "/storage/file-browser/create?id_storage=null"+'&name=' + '$name'}).done(function(){
             //update-storage change name to create
-            document.getElementById("update-storage" + '$name').innerHTML = "Upload";
+            document.getElementById("update-storage" + '$name').innerHTML = "$uploadText";
             document.getElementById("update-storage" + '$name').classList.remove("btn-primary");
             document.getElementById("update-storage" + '$name').classList.add("btn-success");
             //show modal
@@ -611,4 +666,52 @@ $this->registerJs(
             });
         });
         JS,
+);
+
+$this->registerJs(
+    <<<JS
+        $(document).ready(function () {
+            $('#save-rename').click(function () {
+                var newTitle = $('#rename-input').val();
+                var idStorage = $('#rename-id').val();
+                
+                if (!newTitle.trim()) {
+                    alert('Title cannot be empty.');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/storage/file-browser/update?id=' + idStorage, 
+                    type: 'POST',
+                    data: {
+                        title: newTitle,
+                        _csrf: yii.getCsrfToken() 
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            $('#rename-modal').modal('hide');
+                            $.pjax.reload({
+                                container: '#file-picker-pjax' + '$name',
+                                timeout: false
+                            });
+                        } else {
+                            alert('Error: ' + response.error);
+                        }
+                    },
+                    error: function (xhr) {
+                        alert('Error updating title: ' + xhr.responseText);
+                    }
+                });
+            });
+
+            $('.rename-btn').click(function () {
+                var title = $(this).data('title');
+                var id = $(this).data('id');
+                
+                $('#rename-input').val(title);
+                $('#rename-id').val(id);
+            });
+        });
+    JS,
+    \yii\web\View::POS_END
 );
