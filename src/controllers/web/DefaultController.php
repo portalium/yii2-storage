@@ -76,8 +76,10 @@ class DefaultController extends Controller
         }
 
 
+        $model = new Storage();
+
         return $this->render('index', [
-            'manage' => false
+            'model' => $model,
         ]);
     }
 
