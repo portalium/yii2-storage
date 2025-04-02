@@ -27,4 +27,8 @@ return [
     'Update' => 'Güncelle',
     'Save' => 'Kaydet',
     'Search for file...' => 'Dosya ara...',
+    'Workspace Default Role' => ' Varsayılan Çalışma Alanı Rolü',
+    'Workspace Admin Role' => 'Yönetici Çalışma Alanı Rolü',
+    'Default Storage Path' => 'Varsayılan Depolama Yolu',
+
 ];
