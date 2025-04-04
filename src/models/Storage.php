@@ -389,4 +389,53 @@ class Storage extends \yii\db\ActiveRecord
         }
         return parent::afterFind();
     }
+    /**
+     * Dosya MIME tipine göre ikon URL'si döndürür
+     * @return string Dosya ikonu URL'si
+     */
+    public function getIconUrl()
+    {
+        $mimeType = $this->mime_type;
+
+        // Eğer mime_type sayısal ise, sabitten string karşılığını bul
+        if (is_numeric($mimeType)) {
+            $mimeType = array_search($mimeType, self::MIME_TYPE);
+        }
+
+        if (!$mimeType) {
+            return 'https://img.icons8.com/ios/452/file.png'; // default
+        }
+
+        if (strpos($mimeType, 'image/') === 0) {
+            return 'https://img.icons8.com/ios/452/image-file.png';
+        } else if (strpos($mimeType, 'audio/') === 0) {
+            return 'https://img.icons8.com/ios/452/audio-file.png';
+        } else if (strpos($mimeType, 'video/') === 0) {
+            return 'https://img.icons8.com/ios/452/video-file.png';
+        } else if (strpos($mimeType, 'text/') === 0) {
+            return 'https://img.icons8.com/ios/452/text-file.png';
+        } else {
+            switch ($mimeType) {
+                case 'application/pdf':
+                    return 'https://img.icons8.com/ios/452/pdf.png';
+                case 'application/msword':
+                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    return 'https://img.icons8.com/ios/452/doc.png';
+                case 'application/vnd.ms-excel':
+                case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                    return 'https://img.icons8.com/ios/452/xls.png';
+                case 'application/vnd.ms-powerpoint':
+                case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                    return 'https://img.icons8.com/ios/452/ppt.png';
+                case 'application/zip':
+                case 'application/x-rar-compressed':
+                case 'application/x-7z-compressed':
+                    return 'https://img.icons8.com/ios/452/zip.png';
+                default:
+                    return 'https://img.icons8.com/ios/452/file.png';
+            }
+        }
+    }
+
+
 }
