@@ -4,32 +4,24 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[id^="menu-trigger-"]').forEach(trigger => {
         const id = trigger.id.replace('menu-trigger-', '');
         const contextMenu = document.getElementById('context-menu-' + id);
-
-        // Sayfa açılışında menüyü gizle
         contextMenu.classList.remove('show');
 
-        // Tetikleyiciye tıklanınca menüyü aç/kapat
         trigger.addEventListener('click', function (e) {
             e.stopPropagation();
-
-            // Önce diğer açık menüleri kapat
+            
             document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
                 if (menu !== contextMenu) {
                     menu.classList.remove('show');
                 }
             });
-
-            // Bu menüyü toggle et
             contextMenu.classList.toggle('show');
         });
 
-        // Menüye tıklanırsa kapanmasın
         contextMenu.addEventListener('click', function (e) {
             e.stopPropagation();
         });
     });
 
-// Sayfa dışında bir yere tıklanınca tüm menüler kapanır
     document.addEventListener('click', function () {
         document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
             menu.classList.remove('show');
