@@ -5,18 +5,16 @@ use portalium\theme\widgets\ActiveForm;
 use portalium\storage\Module;
 use yii\helpers\Html;
 use yii\bootstrap5\Modal;
-use portalium\theme\widgets\ListView;
 use portalium\theme\widgets\Button;
 use yii\bootstrap5\Dropdown;
-
-
-
+use portalium\theme\widgets\ListView;
 
 FilePickerAsset::register($this);
 
 /* @var $this yii\web\View */
 /* @var $form portalium\theme\widgets\ActiveForm */
 /* @var $model portalium\storage\models\Storage */
+/* @var $dataProvider yii\data\ActiveDataProvider */
 
 $this->title = Module::t('TEST');
 $this->params['breadcrumbs'][] = $this->title;
@@ -24,14 +22,7 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 <?php
 
-$form = ActiveForm::begin([
-    'action' => ['index'],
-    'method' => 'get',
-]);
-
 echo Html::beginTag('span', ['class' => 'col-md-4 d-flex gap-2']);
-
-
 echo Html::tag('span',
     Html::textInput('file', '', [
         'class' => 'form-control',
@@ -65,20 +56,20 @@ Modal::begin([
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
     'footer' => Button::widget([
-        'label' => Module::t('Close'),
-        'options' => [
-            'class' => 'btn btn-danger',
-            'data-bs-dismiss' => 'modal',
-        ],
-    ]) . ' ' . Button::widget([
-        'label' => Html::tag('i', '', ['class' => 'fa fa-cloud-upload-alt']) . ' ' . Module::t('Upload'),
-        'encodeLabel' => false,
-        'options' => [
-            'class' => 'btn btn-success',
-            'id' => 'uploadButton',
-            'type' => 'submit',
-        ],
-    ]),
+            'label' => Module::t('Close'),
+            'options' => [
+                'class' => 'btn btn-danger',
+                'data-bs-dismiss' => 'modal',
+            ],
+        ]) . ' ' . Button::widget([
+            'label' => Html::tag('i', '', ['class' => 'fa fa-cloud-upload-alt']) . ' ' . Module::t('Upload'),
+            'encodeLabel' => false,
+            'options' => [
+                'class' => 'btn btn-success',
+                'id' => 'uploadButton',
+                'type' => 'submit',
+            ],
+        ]),
     'dialogOptions' => ['class' => 'modal-dialog-centered'],
     'closeButton' => false,
 ]);
@@ -100,44 +91,106 @@ Modal::end();
 
 ?>
 
-<hr />
+    <hr/>
 
 <?php
 
+echo ListView::widget([
+    'dataProvider' => $dataProvider,
+    'itemView' => function ($model) {
 
-echo Html::beginTag('span', ['class' => 'file-card col-md-2']);
-    echo Html::beginTag('span', ['class' => 'card-header']);
-        echo 'DosyaA';
-        echo Html::tag('i', '', ['class' => 'fa fa-ellipsis-h', 'id' => 'menu-trigger']);
-        echo Dropdown::widget([
-            'items' => array_map(function ($item) {
-                return [
-                    'label' => Html::tag('i', '', ['class' => 'fa ' . $item['icon']]) . ' ' . Module::t($item['label']),
-                    'url' => $item['url'] ?? '#',
+        $content = Html::beginTag('span', ['class' => 'file-card col-md-2', 'style' => 'margin: 5px; margin-bottom: 20px;']);
+        $content .= Html::beginTag('span', ['class' => 'card-header']);
+        $content .= $model->title ?: 'Başlık yok';
+        $content .= Html::tag('i', '', [
+            'class' => 'fa fa-ellipsis-h',
+            'id' => 'menu-trigger-' . $model->id_storage, 
+        ]);
+        $content .= Dropdown::widget([
+            'items' => [
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-download']) . ' ' . Module::t('Download'),
+                    'url' => '#',
                     'encode' => false,
                     'linkOptions' => [
-                        'onclick' => $item['onclick'] ?? null,
-                        'data-bs-toggle' => $item['dataBsToggle'] ?? null,
-                        'data-bs-target' => $item['dataBsTarget'] ?? null,
-                        'download-url' => $item['downloadUrl'] ?? null,
+                        'onclick' => '',
+                        'download-url' => '/portalium/data/' . $model->id_storage,
                     ],
-                ];
-            }, [
-                ['icon' => 'fa-download', 'label' => 'Download', 'onclick' => 'downloadItem(this)', 'downloadUrl' => '/portalium/data'],
-                ['icon' => 'fa-pencil', 'label' => 'Rename', 'dataBsToggle' => 'modal', 'dataBsTarget' => '#renameModal'],
-                ['icon' => 'fa-refresh', 'label' => 'Update', 'dataBsToggle' => 'modal', 'dataBsTarget' => '#updateModal'],
-                ['icon' => 'fa-arrows-alt', 'label' => 'Move'],
-                ['icon' => 'fa-share-alt', 'label' => 'Share', 'dataBsToggle' => 'modal', 'dataBsTarget' => '#shareModal'],
-                ['icon' => 'fa-copy', 'label' => 'Make a Copy'],
-                ['icon' => 'fa-trash', 'label' => 'Remove']
-            ]),
-            'options' => ['class' => 'dropdown-menu show', 'id' => 'context-menu'],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => [
+                        'data-bs-toggle' => 'modal',
+                        'data-bs-target' => '#renameModal',
+                    ],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-refresh']) . ' ' . Module::t('Update'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => [
+                        'data-bs-toggle' => 'modal',
+                        'data-bs-target' => '#updateModal',
+                    ],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => [],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => [
+                        'data-bs-toggle' => 'modal',
+                        'data-bs-target' => '#shareModal',
+                    ],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-copy']) . ' ' . Module::t('Make a Copy'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => [],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => [],
+                ],
+            ],
+            'options' => [
+                'class' => 'dropdown-menu',
+                'id' => 'context-menu-' . $model->id_storage,
+            ],
         ]);
-    echo Html::endTag('span');
-    echo Html::img('https://img.icons8.com/ios/452/pdf.png', ['alt' => 'PDF']);
-echo Html::endTag('span');
 
+        $content .= Html::endTag('span');
+        $content .= Html::img($model->getIconUrl(), [
+            'alt' => $model->title,
+            'class' => 'file-icon',
+            'style' => 'width:100px; display:block; margin:10px auto;'
+        ]);
+
+        $content .= Html::endTag('span');
+
+        return $content;
+    },
+    'options' => [
+        'class' => 'files-container row',
+    ],
+    'itemOptions' => [
+        'tag' => false,
+    ],
+    'layout' => "{items}\n{pager}",
+]);
 ?>
+
+
 
 <?php
 
@@ -147,19 +200,19 @@ Modal::begin([
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
     'footer' => Button::widget([
-        'label' => Module::t('Close'),
-        'options' => [
-            'class' => 'btn btn-danger',
-            'data-bs-dismiss' => 'modal',
-        ],
-    ]) . ' ' . Button::widget([
-        'label' => Module::t('Rename'),
-        'options' => [
-            'class' => 'btn btn-success',
-            'id' => 'renameButton',
-            'type' => 'submit',
-        ],
-    ]),
+            'label' => Module::t('Close'),
+            'options' => [
+                'class' => 'btn btn-danger',
+                'data-bs-dismiss' => 'modal',
+            ],
+        ]) . ' ' . Button::widget([
+            'label' => Module::t('Rename'),
+            'options' => [
+                'class' => 'btn btn-success',
+                'id' => 'renameButton',
+                'type' => 'submit',
+            ],
+        ]),
     'dialogOptions' => ['class' => 'modal-dialog-centered'],
     'closeButton' => false,
 ]);
@@ -190,19 +243,19 @@ Modal::begin([
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
     'footer' => Button::widget([
-        'label' => Module::t('Close'),
-        'options' => [
-            'class' => 'btn btn-danger',
-            'data-bs-dismiss' => 'modal',
-        ],
-    ]) . ' ' . Button::widget([
-        'label' => Module::t('Update'),
-        'options' => [
-            'class' => 'btn btn-success',
-            'id' => 'updateButton',
-            'type' => 'submit',
-        ],
-    ]),
+            'label' => Module::t('Close'),
+            'options' => [
+                'class' => 'btn btn-danger',
+                'data-bs-dismiss' => 'modal',
+            ],
+        ]) . ' ' . Button::widget([
+            'label' => Module::t('Update'),
+            'options' => [
+                'class' => 'btn btn-success',
+                'id' => 'updateButton',
+                'type' => 'submit',
+            ],
+        ]),
     'dialogOptions' => ['class' => 'modal-dialog-centered'],
     'closeButton' => false,
 ]);
@@ -236,48 +289,40 @@ $users = [
     ['name' => 'Elif Kaya', 'email' => 'elif.kaya@example.com'],
     ['name' => 'Elif Kaya', 'email' => 'elif.kaya@example.com'],
     ['name' => 'Elif Kaya', 'email' => 'elif.kaya@example.com'],
-    ];
+];
 
 
 Modal::begin([
     'id' => 'shareModal',
-    'title' => Module::t('Share Access'),
+    'title' => Module::t('Share'),
     'size' => Modal::SIZE_DEFAULT,
+    'closeButton' => false,
+    'dialogOptions' => ['class' => 'modal-dialog-centered'],
     'footer' => Button::widget([
-        'label' => Html::tag('i', '', ['class' => 'fa fa-link me-2']) . Module::t('Copy Link'),
-        'encodeLabel' => false,
-        'options' => [
-            'class' => 'btn btn-outline-secondary',
-            'id' => 'copyLink',
-            'data-copied' => htmlspecialchars(Module::t('Copied!'), ENT_QUOTES, 'UTF-8'),
-            'style' => 'float: left; margin-right: 300px;',
-        ],
-    ]) . ' ' . Button::widget([
-        'label' => Module::t('Done'),
-        'options' => [
-            'class' => 'btn btn-success',
-            'type' => 'submit',
-            'form' => 'shareForm',
-            'id' => 'doneButton',
-        ],
-    ]),
-]);
-
-
-$form = ActiveForm::begin([
-    'id' => 'shareForm',
-    'options' => ['class' => 'mb-3'],
+            'label' => Html::tag('i', '', ['class' => 'fa fa-link me-2']) . Module::t('Copy Link'),
+            'encodeLabel' => false,
+            'options' => [
+                'class' => 'btn btn-outline-secondary',
+                'id' => 'copyLink',
+                'data-copied' => htmlspecialchars(Module::t('Copied!'), ENT_QUOTES, 'UTF-8'),
+            ],
+        ]) . ' ' . Button::widget([
+            'label' => Module::t('Done'),
+            'options' => [
+                'class' => 'btn btn-success',
+                'type' => 'submit',
+                'form' => 'shareForm',
+                'id' => 'doneButton',
+            ],
+        ]),
 ]);
 
 echo Html::textInput('searchUser', '', [
-    'class' => 'form-control form-control-lg',
+    'class' => 'form-control form-control-lg mb-3',
     'id' => 'searchUser',
     'placeholder' => Module::t('Add person or group'),
 ]);
-
-ActiveForm::end();
-
-echo Html::tag('h6', Module::t('Erişimi olan kişiler'), ['class' => 'fw-bold mb-3 text-secondary']);
+echo Html::tag('h6', Module::t('People with access'), ['class' => 'fw-bold mb-3 text-secondary']);
 
 echo Html::beginTag('span', ['class' => 'list-group list-group-flush rounded-3', 'style' => 'max-height: 300px; overflow-y: auto;']);
 foreach ($users as $user) {
@@ -304,18 +349,42 @@ foreach ($users as $user) {
 }
 echo Html::endTag('span');
 
+echo Html::label(Module::t('General Access'), null, ['class' => 'fw-bold mb-3 text-secondary mt-4']);
 
-echo Html::label(Module::t('General Access'), 'accessLevel', ['class' => 'fw-bold mb-3 text-secondary ms-3 mt-4']);
-echo Html::dropDownList('accessLevel', 'private', [
-    'private' => Module::t('Restricted'),
-    'public' => Module::t('Public')
-], [
-    'class' => 'form-select form-select-lg mt-4',
-    'id' => 'accessSelect'
-]);
+echo Html::tag('div',
+    Html::tag('div',
+        Html::tag('div',
+            Html::tag('i', '', [
+                'class' => 'access-icon fa fa-lock bg-light rounded-circle p-2',
+                'style' => 'font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;'
+            ]) .
+            Html::tag('div',
+                Html::tag('span', Module::t('Restricted'), [
+                    'class' => 'access-text fw-semibold d-block',
+                    'data-public' => Module::t('Public'),
+                    'data-private' => Module::t('Restricted')
+                ]) .
+                Html::tag('small', Module::t('Only people with access can open it using this link'), [
+                    'class' => 'access-desc text-muted d-block',
+                    'data-public' => Module::t('Anyone with the link can view the content'),
+                    'data-private' => Module::t('Only people with access can open it using this link')
+                ]),
+                ['class' => 'ms-3']
+            ),
+            ['class' => 'd-flex align-items-center']
+        ),
+        ['class' => 'mb-3']
+    ) .
+    Html::dropDownList('accessLevel', 'private', [
+        'private' => Module::t('Restricted'),
+        'public' => Module::t('Public')
+    ], [
+        'class' => 'access-select form-select form-select-lg mt-4'
+    ]),
+    ['class' => 'file-access']
+);
+
 
 Modal::end();
 
 ?>
-
-<?php ActiveForm::end(); ?>
