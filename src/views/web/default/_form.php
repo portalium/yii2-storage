@@ -1,46 +1,49 @@
 <?php
 
 use yii\helpers\Html;
-use kartik\file\FileInput;
 use portalium\theme\widgets\ActiveForm;
 use portalium\storage\Module;
-use portalium\theme\widgets\Panel;
-use portalium\storage\models\Storage;
-use portalium\storage\widgets\FilePicker;
+use yii\bootstrap5\Modal;
+use portalium\theme\widgets\Button;
 
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\Storage */
 /* @var $form yii\widgets\ActiveForm */
 ?>
 
-<div class="storage-form">
+<?php
 
-    <?php $form = ActiveForm::begin(); ?>
-    <?php Panel::begin([
-    'title' => ($model->isNewRecord) ? Module::t('Create Media') : $model->title,
-    'actions' => [
-        'header' => [
+Modal::begin([
+    'id' => 'uploadModal',
+    'title' => Module::t('Upload File'),
+    'options' => ['class' => 'fade'],
+    'bodyOptions' => ['class' => 'modal-body'],
+    'footer' => Button::widget([
+            'label' => Module::t('Close'),
+            'options' => [
+                'class' => 'btn btn-danger',
+                'data-bs-dismiss' => 'modal',
+            ],
+        ]) . ' ' . Html::submitButton(
+            Html::tag('i', '', ['class' => 'fa fa-cloud-upload-alt']) . ' ' . Module::t('Upload'),
+            ['class' => 'btn btn-success', 'form' => 'uploadForm']
+        ),
+    'dialogOptions' => ['class' => 'modal-dialog-centered'],
+    'closeButton' => false,
+]);
 
-        ],
-        'footer' => [
-            (!$model->isNewRecord) ?  Html::submitButton(Module::t('Save'), ['class' => 'btn btn-primary']) : 
-            Html::submitButton(Module::t('Update'), ['class' => 'btn btn-primary'])
-        ]
-    ]
-]) ?>
-    <?= $form->field($model, 'title')->textInput(['maxlength' => true]) ?>
-
-    <?= $form->field($model, 'file')->widget(FileInput::className()); ?>
-
-    <?php //$form->field($model, 'mime_type')->dropDownList(Storage::getMimeTypeList()) ?>
-
-    <?= $form->field($model, 'access')->dropDownList(Storage::getAccesses()) ?>
+$form = ActiveForm::begin([
+    'id' => 'uploadForm',
+    'action' => ['default/create'],
+    'options' => ['enctype' => 'multipart/form-data'],
+]);
 
 
-    <?php Panel::end() ?>
+echo $form->field($model, 'title')->textInput(['placeholder' => Module::t('Enter title..'), 'required' => true]);
+echo $form->field($model, 'file')->fileInput();
 
-    <?php ActiveForm::end(); ?>
+ActiveForm::end();
 
-   
+Modal::end();
 
-</div>
+?>
