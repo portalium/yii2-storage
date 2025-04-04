@@ -20,5 +20,4 @@ class TestController extends WebController
             'dataProvider' => $dataProvider,
         ]);
     }
-
 }

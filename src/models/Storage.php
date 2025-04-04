@@ -396,8 +396,6 @@ class Storage extends \yii\db\ActiveRecord
     public function getIconUrl()
     {
         $mimeType = $this->mime_type;
-
-        // Eğer mime_type sayısal ise, sabitten string karşılığını bul
         if (is_numeric($mimeType)) {
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
@@ -436,6 +434,4 @@ class Storage extends \yii\db\ActiveRecord
             }
         }
     }
-
-
 }

@@ -104,7 +104,7 @@ echo ListView::widget([
         $content .= $model->title ?: 'Başlık yok';
         $content .= Html::tag('i', '', [
             'class' => 'fa fa-ellipsis-h',
-            'id' => 'menu-trigger-' . $model->id_storage, 
+            'id' => 'menu-trigger-' . $model->id_storage,
         ]);
         $content .= Dropdown::widget([
             'items' => [
