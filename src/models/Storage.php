@@ -145,10 +145,10 @@ class Storage extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title', 'id_workspace'], 'required'],
+            [['title'], 'required'],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
-            [['file', 'access', 'hash_file'], 'safe'],
+            [['file', 'access', 'hash_file', 'id_workspace'], 'safe'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE]
         ];
@@ -214,20 +214,25 @@ class Storage extends \yii\db\ActiveRecord
      */
     public function upload()
     {
-
         if ($this->validate()) {
             if (!$this->file) {
                 $this->save();
                 return true;
             }
-
             $path = realpath(Yii::$app->basePath . '/../data');
             $filename = md5(rand()) . "." . $this->file->extension;
-            // check if file extension is allowed
+            $hash = md5_file($this->file->tempName);
+
             if (in_array($this->file->extension, self::$allowExtensions)) {
                 if ($this->file->saveAs($path . '/' . $filename)) {
                     $this->name = $filename;
+                    $this->title = $this->title;
+                    $this->hash_file = $hash;
                     $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
+                    $this->id_workspace = Yii::$app->workspace->id;
+                    $this->id_user = Yii::$app->user->id;
+                    $this->date_create = date('Y-m-d H:i:s');
+                    $this->date_update = date('Y-m-d H:i:s');
                     if ($this->save()) {
                         return true;
                     } else {
@@ -240,6 +245,7 @@ class Storage extends \yii\db\ActiveRecord
         }
         return false;
     }
+
 
     public function getMIMEType($filename)
     {
@@ -388,5 +394,50 @@ class Storage extends \yii\db\ActiveRecord
             }
         }
         return parent::afterFind();
+    }
+    /**
+     * Dosya MIME tipine göre ikon URL'si döndürür
+     * @return string Dosya ikonu URL'si
+     */
+    public function getIconUrl()
+    {
+        $mimeType = $this->mime_type;
+        if (is_numeric($mimeType)) {
+            $mimeType = array_search($mimeType, self::MIME_TYPE);
+        }
+
+        if (!$mimeType) {
+            return 'https://img.icons8.com/ios/452/file.png'; // default
+        }
+
+        if (strpos($mimeType, 'image/') === 0) {
+            return 'https://img.icons8.com/ios/452/image-file.png';
+        } else if (strpos($mimeType, 'audio/') === 0) {
+            return 'https://img.icons8.com/ios/452/audio-file.png';
+        } else if (strpos($mimeType, 'video/') === 0) {
+            return 'https://img.icons8.com/ios/452/video-file.png';
+        } else if (strpos($mimeType, 'text/') === 0) {
+            return 'https://img.icons8.com/ios/452/text-file.png';
+        } else {
+            switch ($mimeType) {
+                case 'application/pdf':
+                    return 'https://img.icons8.com/ios/452/pdf.png';
+                case 'application/msword':
+                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    return 'https://img.icons8.com/ios/452/doc.png';
+                case 'application/vnd.ms-excel':
+                case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                    return 'https://img.icons8.com/ios/452/xls.png';
+                case 'application/vnd.ms-powerpoint':
+                case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                    return 'https://img.icons8.com/ios/452/ppt.png';
+                case 'application/zip':
+                case 'application/x-rar-compressed':
+                case 'application/x-7z-compressed':
+                    return 'https://img.icons8.com/ios/452/zip.png';
+                default:
+                    return 'https://img.icons8.com/ios/452/file.png';
+            }
+        }
     }
 }
