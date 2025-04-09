@@ -39,7 +39,7 @@ $form = ActiveForm::begin([
     'id' => 'uploadForm',
     'action' => '/storage/default/upload-file',
     'method' => 'post',
-    'options' => ['enctype' => 'multipart/form-data']
+    'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true]
 ]);
 echo $form->field($model, 'title')->textInput(['required' => true]);
 echo $form->field($model, 'file')->fileInput(['required' => true]);

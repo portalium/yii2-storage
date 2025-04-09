@@ -32,15 +32,22 @@ class DefaultController extends Controller
         if (Yii::$app->request->isPost) {
             $model->load(Yii::$app->request->post());
             $model->file = UploadedFile::getInstance($model, 'file');
+            $success = ($model->file && $model->upload());
 
-            if ($model->file && $model->upload()) {
-                Yii::$app->session->setFlash('success', Module::t('File uploaded successfully!'));
-                return $this->redirect(['index']);
-            } else {
-                Yii::$app->session->setFlash('error', Module::t('An error occurred while uploading the file!'));
-                return $this->redirect(['index']);
+            if (Yii::$app->request->isAjax) {
+                Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                if (!$success) {
+                    Yii::$app->session->setFlash('error', Module::t('File could not be loaded!'));
+                    return ['success' => false,];
+                }
+                else
+                {
+                    Yii::$app->session->setFlash('success', Module::t('File uploaded successfully!'));
+                    return ['success' => true];
+                }
             }
         }
+
         return $this->renderAjax('_upload-file', [
             'model' => $model,
         ]);
@@ -60,13 +67,26 @@ class DefaultController extends Controller
     public function actionRenameFile($id)
     {
         $model = Storage::findOne($id);
-        if ($model) {
-            return $this->renderAjax('_rename', [
-                'model' => $model,
-            ]);
+
+        if (!$model) {
+            return $this->asJson(['success' => false]);
         }
-        return null;
+        if (Yii::$app->request->isPost) {
+            if ($model->load(Yii::$app->request->post()) && $model->save()) {
+                Yii::$app->session->setFlash('success', 'File renamed successfully!');
+                return $this->asJson([
+                    'success' => true]);
+            } else {
+                Yii::$app->session->setFlash('error', ' File name could not be changed!');
+
+                return $this->asJson([
+                    'success' => false]);
+            }
+        }
+        return $this->renderAjax('_rename', ['model' => $model]);
     }
+
+
 
     public function actionCopy($id)
     {

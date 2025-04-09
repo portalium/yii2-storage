@@ -108,4 +108,3 @@ echo ListView::widget([
     ],
     'layout' => "{items}\n{pager}",
 ]);
-

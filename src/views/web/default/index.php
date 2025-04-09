@@ -2,6 +2,7 @@
 
 use portalium\storage\bundles\FilePickerAsset;
 use portalium\storage\Module;
+use portalium\theme\widgets\Alert;
 use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Html;
 use portalium\widgets\Pjax;
@@ -19,7 +20,6 @@ $this->params['breadcrumbs'][] = $this->title;
 
 ?>
 <?php
-
 echo Html::beginTag('span', ['class' => 'col-md-4 d-flex gap-2']);
 echo Html::tag(
     'span',
@@ -38,8 +38,6 @@ echo Button::widget([
     'options' => [
         'type' => 'button',
         'class' => 'btn btn-success btn-md d-flex',
-        'data-bs-toggle' => 'modal',
-        'data-bs-target' => '#uploadModal',
         'onclick' => 'openUploadModal()',
     ],
 ]);
@@ -65,12 +63,16 @@ echo $this->render('_file-list', [
 ]);
 Pjax::end();
 
+
+
 Pjax::begin([
     'id' => 'rename-file-pjax',
     'history' => false,
     'timeout' => false,
     'enablePushState' => false
 ]);
+
+
 Pjax::end();
 
 Pjax::begin([
@@ -99,11 +101,40 @@ $this->registerJs(
         }).done(function() {
             setTimeout(function() {
                 $('#renameModal').modal('show');
-            }, 1);
+            }, 1000);
         }).fail(function(e) {
             console.log(e);
         });
     }
+    $(document).on('click', '#renameButton', function(e) {
+        e.preventDefault();
+        var form = $('#renameForm');
+    $.ajax({
+        url: form.attr('action'),
+        type: 'POST',
+        data: form.serialize(),
+        headers: {
+        'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content') 
+    },
+        success: function(response) {
+            if (response.success) {
+                $('#renameModal').modal('hide');
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                $.pjax.reload({container: '#list-file-pjax'});
+            }); 
+            } else {
+               $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                $.pjax.reload({container: '#list-file-pjax'});
+            });
+            }
+        },
+        error: function() {
+            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                $.pjax.reload({container: '#list-file-pjax'});
+            });
+        }
+    });
+    });
     JS,
     \yii\web\View::POS_END
 );
@@ -119,16 +150,39 @@ $this->registerJs(
         }).done(function() {
             setTimeout(function() {
                 $('#uploadModal').modal('show');
-            }, 1);
+            }, 1000);
         }).fail(function(e) {
             console.log(e);
         });
     }
     $(document).on('click', '#uploadButton', function(e) {
-        e.preventDefault();
-        $('#uploadForm').submit();
+    e.preventDefault();
+
+    var form = document.getElementById('uploadForm');
+    var formData = new FormData(form);
+
+    $.ajax({
+        url: form.action,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(response) {
+            $('#uploadModal').modal('hide');
+            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                $.pjax.reload({container: '#list-file-pjax'});
+            });
+        },
+        error: function(xhr, status, error) {
+            $('#uploadModal').modal('hide');
+            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                $.pjax.reload({container: '#list-file-pjax'});
+            });
+            console.error('AJAX Error: ' + error);
+        }
     });
-    JS,
+});
+JS,
     \yii\web\View::POS_END
 );
 
@@ -221,5 +275,29 @@ function removeItem(el) {
 }
 JS,
      \yii\web\View::POS_END
+);
+
+$this->registerJs(
+    <<<JS
+
+function bindContextMenus() {
+    $('[id^="menu-trigger-"]').off('click').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+
+        var id = $(this).attr('id').replace('menu-trigger-', '');
+        $('#context-menu-' + id).toggle();
+    });
+
+    $(document).off('click.contextmenu-close').on('click.contextmenu-close', function() {
+        $('.dropdown-menu').hide();
+    });
+}
+bindContextMenus();
+$(document).on('pjax:end', function() {
+    bindContextMenus();
+});
+JS
 );
 ?>

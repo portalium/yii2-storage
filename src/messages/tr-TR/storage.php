@@ -33,6 +33,8 @@ return [
     'Copied!' => 'Kopyalandı',
     'New Name' => 'Yeni İsim',
     'Enter new name' => 'Yeni isim girin',
+    'File could not be loaded!' => 'Dosya yüklenemedi!',
     'File uploaded successfully!' => 'Dosya başarıyla yüklendi!',
-    'An error occurred while uploading the file!' => 'Dosya yüklenirken bir hata oluştu!'
+    'File renamed successfully!' => 'Dosya başarıyla yeniden adlandırıldı!',
+    'File name could not be changed!' => 'Dosya adı değiştirilemedi!',
 ];
