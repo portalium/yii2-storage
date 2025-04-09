@@ -5,6 +5,7 @@ use portalium\storage\Module;
 use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Html;
 use portalium\widgets\Pjax;
+use yii\helpers\Url;
 
 FilePickerAsset::register($this);
 
@@ -57,12 +58,11 @@ Pjax::begin([
 Pjax::end();
 
 Pjax::begin([
-    'id' => 'list-file-pjax',
+    'id' => 'list-file-pjax'
 ]);
 echo $this->render('_file-list', [
-'dataProvider' => $dataProvider,
+    'dataProvider' => $dataProvider,
 ]);
-
 Pjax::end();
 
 Pjax::begin([
@@ -130,5 +130,96 @@ $this->registerJs(
     });
     JS,
     \yii\web\View::POS_END
+);
+
+$this->registerJs(
+        <<<JS
+    
+if (typeof downloadItem === 'undefined') {
+    function downloadItem(e) {
+        var downloadUrl = e.getAttribute('download-url');
+        var a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = downloadUrl.split('/').pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+JS,
+    \yii\web\View::POS_END);
+
+$copyUrl = Url::to(['default/copy']);
+
+$this->registerJs(
+    <<<JS
+    function copyFile(element) {
+        event.preventDefault();
+        var id = element.getAttribute('data-id');
+
+        fetch('{$copyUrl}?id=' + id, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                $.pjax.reload({container: '#list-file-pjax', async: false});
+            }
+        })
+        .catch(error => {
+            console.error('Request error', error);
+        });
+    }
+    JS,
+    \yii\web\View::POS_END
+);
+
+$this->registerJs(
+    <<<JS
+function removeItem(el) {
+    var id = el.getAttribute('data-id');
+    var url = el.getAttribute('data-url');
+    var csrfToken = $('meta[name="csrf-token"]').attr("content");
+    
+    if (!id || !url) {
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('id', id);
+    formData.append(yii.getCsrfParam(), csrfToken);
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            if ($.pjax && $('#list-file-pjax').length) {
+                $.pjax.reload({container: '#list-file-pjax', async: false});
+            } else {
+                window.location.reload();
+            }
+        }
+    })
+    .catch(function(error) {
+        console.error("Fetch error:", error);
+    });
+}
+JS,
+     \yii\web\View::POS_END
 );
 ?>

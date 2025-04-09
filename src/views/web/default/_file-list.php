@@ -4,8 +4,9 @@ use portalium\storage\Module;
 use portalium\theme\widgets\Dropdown;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\ListView;
-
+use yii\helpers\Url;
 /* @var $dataProvider yii\data\ActiveDataProvider */
+
 
 echo ListView::widget([
     'dataProvider' => $dataProvider,
@@ -25,8 +26,8 @@ echo ListView::widget([
                     'url' => '#',
                     'encode' => false,
                     'linkOptions' => [
-                        'onclick' => '',
-                        'download-url' => '/portalium/data/' . $model->id_storage,
+                        'onclick' => 'downloadItem(this); return false;',
+                        'download-url' => Url::to(['/storage/default/get-file', 'id' => $model->id_storage]),
                     ],
                 ],
                 [
@@ -65,13 +66,22 @@ echo ListView::widget([
                     'label' => Html::tag('i', '', ['class' => 'fa fa-copy']) . ' ' . Module::t('Make a Copy'),
                     'url' => '#',
                     'encode' => false,
-                    'linkOptions' => [],
+                    'linkOptions' => [
+                        'data-id' => $model->id_storage,
+                        'onclick' => 'copyFile(this); return false;',
+                        'class' => 'make-copy-btn'
+                    ],
                 ],
                 [
                     'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
                     'url' => '#',
                     'encode' => false,
-                    'linkOptions' => [],
+                    'linkOptions' => [
+                        'onclick' => 'removeItem(this); return false;',
+                        'data-id' => $model->id_storage,
+                        'data-url' => Url::to(['/storage/default/delete']),
+                        'class' => 'btn-delete',
+                    ],
                 ],
             ],
             'options' => [
@@ -98,5 +108,4 @@ echo ListView::widget([
     ],
     'layout' => "{items}\n{pager}",
 ]);
-
 
