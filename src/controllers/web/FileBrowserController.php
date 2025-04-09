@@ -222,6 +222,7 @@ class FileBrowserController extends Controller
         $model = new Storage();
 
         if ($this->request->isAjax && $this->request->isPost) {
+
             if ($file = UploadedFile::getInstanceByName('file')) {
                 $model->file = $file;
                 $model->title = $this->request->post('title');
@@ -233,7 +234,6 @@ class FileBrowserController extends Controller
                     $model->access = $this->request->post('access');
                     $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
                     $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
-
                     if ($model->save()) {
                         $model = new Storage();
                         \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
