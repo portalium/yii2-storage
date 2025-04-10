@@ -27,7 +27,7 @@ echo Html::tag(
         'class' => 'form-control',
         'placeholder' => Module::t('Search file..')
     ]) .
-    Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), ['class' => 'input-group-text']),
+        Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), ['class' => 'input-group-text']),
     ['class' => 'input-group']
 );
 
@@ -187,7 +187,7 @@ JS,
 );
 
 $this->registerJs(
-        <<<JS
+    <<<JS
     
 if (typeof downloadItem === 'undefined') {
     function downloadItem(e) {
@@ -202,7 +202,8 @@ if (typeof downloadItem === 'undefined') {
 }
 
 JS,
-    \yii\web\View::POS_END);
+    \yii\web\View::POS_END
+);
 
 $copyUrl = Url::to(['default/copy']);
 
@@ -274,7 +275,7 @@ function removeItem(el) {
     });
 }
 JS,
-     \yii\web\View::POS_END
+    \yii\web\View::POS_END
 );
 
 $this->registerJs(
@@ -285,16 +286,21 @@ function bindContextMenus() {
         e.preventDefault();
         e.stopPropagation();
 
-
         var id = $(this).attr('id').replace('menu-trigger-', '');
-        $('#context-menu-' + id).toggle();
-    });
+        var currentMenu = $('#context-menu-' + id);
 
+        $('.dropdown-menu').not(currentMenu).hide();
+
+        currentMenu.toggle();
+    });
+    
     $(document).off('click.contextmenu-close').on('click.contextmenu-close', function() {
         $('.dropdown-menu').hide();
     });
 }
+
 bindContextMenus();
+
 $(document).on('pjax:end', function() {
     bindContextMenus();
 });
