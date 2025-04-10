@@ -13,6 +13,7 @@ Modal::begin([
     'title' => Module::t('Update'),
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
+    'closeButton' => false,
     'footer' => Button::widget([
             'label' => Module::t('Close'),
             'options' => [
@@ -27,7 +28,7 @@ Modal::begin([
                 'type' => 'button',
             ],
         ]),
-    'dialogOptions' => ['class' => 'modal-dialog-centered']
+    'dialogOptions' => ['class' => 'modal-dialog-centered'],
 ]);
 
 $form = ActiveForm::begin([

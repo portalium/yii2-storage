@@ -21,8 +21,8 @@ $users = [
 Modal::begin([
     'id' => 'shareModal',
     'title' => Module::t('Share'),
-    'size' => Modal::SIZE_DEFAULT,
     'dialogOptions' => ['class' => 'modal-dialog-centered'],
+    'closeButton' => false,
     'footer' => Button::widget([
             'label' => Html::tag('i', '', ['class' => 'fa fa-link me-2']) . Module::t('Copy Link'),
             'encodeLabel' => false,

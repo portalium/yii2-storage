@@ -12,6 +12,7 @@ Modal::begin([
     'title' => Module::t('Rename'),
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
+    'closeButton' => false,
     'footer' => Button::widget([
             'label' => Module::t('Close'),
             'options' => [

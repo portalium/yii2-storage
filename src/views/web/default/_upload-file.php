@@ -13,7 +13,6 @@ use portalium\theme\widgets\Html;
 Modal::begin([
     'id' => 'uploadModal',
     'title' => Module::t('Upload File'),
-    'titleOptions' => ['class' => 'modal-title text-start w-100'],
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
     'closeButton' => false,
