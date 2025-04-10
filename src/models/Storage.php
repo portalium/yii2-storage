@@ -406,26 +406,57 @@ class Storage extends \yii\db\ActiveRecord
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
         if (!$mimeType) {
-            return 'https://img.icons8.com/ios/452/file.png';
+            return [
+                'url' => 'https://img.icons8.com/ios/452/file.png',
+                'class' => 'non-image'
+            ];
         }
         if (strpos($mimeType, 'image/') === 0) {
-            return 'https://img.icons8.com/ios/452/image-file.png';
-        } else {
-            switch ($mimeType) {
-                case 'application/pdf':
-                    return 'https://img.icons8.com/ios/452/pdf.png';
-                case 'application/msword':
-                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                    return 'https://img.icons8.com/ios/452/doc.png';
-                case 'application/vnd.ms-excel':
-                case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                    return 'https://img.icons8.com/ios/452/xls.png';
-                case 'application/vnd.ms-powerpoint':
-                case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                    return 'https://img.icons8.com/ios/452/ppt.png';
-                default:
-                    return 'https://img.icons8.com/ios/452/file.png';
+            $path = Yii::$app->basePath . '/../data/' . $this->name;
+
+            if (file_exists($path)) {
+                return [
+                    'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,
+                    'class' => 'image-file'
+                ];
+            } else {
+                return [
+                    'url' => 'https://img.icons8.com/ios/452/image-file.png',
+                    'class' => 'image-file'
+                ];
             }
         }
+        switch ($mimeType) {
+            case 'application/pdf':
+                return [
+                    'url' => 'https://img.icons8.com/ios/452/pdf.png',
+                    'class' => 'non-image'
+                ];
+            case 'application/msword':
+            case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                return [
+                    'url' => 'https://img.icons8.com/ios/452/doc.png',
+                    'class' => 'non-image'
+                ];
+            case 'application/vnd.ms-excel':
+            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                return [
+                    'url' => 'https://img.icons8.com/ios/452/xls.png',
+                    'class' => 'non-image'
+                ];
+            case 'application/vnd.ms-powerpoint':
+            case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                return [
+                    'url' => 'https://img.icons8.com/ios/452/ppt.png',
+                    'class' => 'non-image'
+                ];
+            default:
+                return [
+                    'url' => 'https://img.icons8.com/ios/452/file.png',
+                    'class' => 'non-image'
+                ];
+        }
     }
+
+
 }

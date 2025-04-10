@@ -90,13 +90,12 @@ echo ListView::widget([
         ]);
 
         $content .= Html::endTag('span');
-        $content .= Html::img($model->getIconUrl(), [
+        $iconUrlData = $model->getIconUrl();
+        $content .= Html::img($iconUrlData['url'], [
             'alt' => $model->title,
-            'class' => 'file-icon',
+            'class' => 'file-icon ' . $iconUrlData['class'],
         ]);
-
         $content .= Html::endTag('span');
-
         return $content;
     },
     'options' => [
