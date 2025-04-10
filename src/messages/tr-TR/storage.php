@@ -37,4 +37,6 @@ return [
     'File uploaded successfully!' => 'Dosya başarıyla yüklendi!',
     'File renamed successfully!' => 'Dosya başarıyla yeniden adlandırıldı!',
     'File name could not be changed!' => 'Dosya adı değiştirilemedi!',
+    'File updated successfully!' => 'Dosya başarıyla güncellendi!',
+    'File update failed!' => 'Dosya güncellemesi başarısız!'
 ];

@@ -32,7 +32,9 @@ Modal::begin([
 
 $form = ActiveForm::begin([
     'id' => 'updateForm',
-    'options' => ['enctype' => 'multipart/form-data'],
+    'action' => ['/storage/default/update-file', 'id' => $model->id_storage],
+    'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true],
+    'method' => 'post'
 ]);
 
 if (isset($model)) {

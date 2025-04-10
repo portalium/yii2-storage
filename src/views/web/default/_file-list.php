@@ -35,7 +35,7 @@ echo ListView::widget([
                     'encode' => false,
                     'url' => '#',
                     'linkOptions' => [
-                        'onclick' => 'openRenameModal(' . $model->id_storage . ')',
+                        'onclick' => 'openRenameModal(' . $model->id_storage . ')'
                     ],
                 ],
                 [
@@ -43,8 +43,7 @@ echo ListView::widget([
                     'url' => '#',
                     'encode' => false,
                     'linkOptions' => [
-                        'data-bs-toggle' => 'modal',
-                        'data-bs-target' => '#updateModal',
+                        'onclick' => 'openUpdateModal(' . $model->id_storage . ')'
                     ],
                 ],
                 [

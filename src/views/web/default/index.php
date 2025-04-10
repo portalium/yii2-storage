@@ -63,8 +63,6 @@ echo $this->render('_file-list', [
 ]);
 Pjax::end();
 
-
-
 Pjax::begin([
     'id' => 'rename-file-pjax',
     'history' => false,
@@ -77,7 +75,11 @@ Pjax::end();
 
 Pjax::begin([
     'id' => 'update-file-pjax',
+    'history' => false,
+    'timeout' => false,
+    'enablePushState' => false
 ]);
+
 Pjax::end();
 
 Pjax::begin([
@@ -88,6 +90,71 @@ Pjax::end();
 ?>
 
 <?php
+$this->registerJs(
+    <<<JS
+    function openUploadModal() {
+        event.preventDefault();
+        $.pjax.reload({
+            container: '#upload-file-pjax',
+            type: 'GET',
+            url: '/storage/default/upload-file',
+        }).done(function() {
+            setTimeout(function() {
+                $('#uploadModal').modal('show');
+            }, 1000);
+        }).fail(function(e) {
+            console.log(e);
+        });
+    }
+    $(document).on('click', '#uploadButton', function(e) {
+        e.preventDefault();
+    
+        var form = document.getElementById('uploadForm');
+        var formData = new FormData(form);
+    
+        $.ajax({
+            url: form.action,
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                $('#uploadModal').modal('hide');
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            },
+            error: function(xhr, status, error) {
+                $('#uploadModal').modal('hide');
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+                console.error('AJAX Error: ' + error);
+            }
+        });
+    });
+JS,
+    \yii\web\View::POS_END
+);
+
+$this->registerJs(
+    <<<JS
+    
+if (typeof downloadItem === 'undefined') {
+    function downloadItem(e) {
+        var downloadUrl = e.getAttribute('download-url');
+        var a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = downloadUrl.split('/').pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+JS,
+    \yii\web\View::POS_END
+);
 
 $this->registerJs(
     <<<JS
@@ -141,72 +208,60 @@ $this->registerJs(
 
 $this->registerJs(
     <<<JS
-    function openUploadModal() {
+    function openUpdateModal(id) {
         event.preventDefault();
         $.pjax.reload({
-            container: '#upload-file-pjax',
+            container: '#update-file-pjax',
             type: 'GET',
-            url: '/storage/default/upload-file',
+            url: '/storage/default/update-file',
+            data: { id: id },
         }).done(function() {
             setTimeout(function() {
-                $('#uploadModal').modal('show');
+                $('#updateModal').modal('show');
             }, 1000);
         }).fail(function(e) {
             console.log(e);
         });
     }
-    $(document).on('click', '#uploadButton', function(e) {
-    e.preventDefault();
 
-    var form = document.getElementById('uploadForm');
-    var formData = new FormData(form);
+    $(document).on('click', '#updateButton', function(e) {
+        e.preventDefault();
+        var form = $('#updateForm')[0];
+        var formData = new FormData(form);
 
-    $.ajax({
-        url: form.action,
-        type: 'POST',
-        data: formData,
-        contentType: false,
-        processData: false,
-        success: function(response) {
-            $('#uploadModal').modal('hide');
-            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                $.pjax.reload({container: '#list-file-pjax'});
-            });
-        },
-        error: function(xhr, status, error) {
-            $('#uploadModal').modal('hide');
-            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                $.pjax.reload({container: '#list-file-pjax'});
-            });
-            console.error('AJAX Error: ' + error);
-        }
+        $.ajax({
+            url: $(form).attr('action'),
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#updateModal').modal('hide');
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});
+                    });
+                } else {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});
+                    });
+                }
+            },
+            error: function() {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            }
+        });
     });
-});
-JS,
-    \yii\web\View::POS_END
-);
-
-$this->registerJs(
-    <<<JS
-    
-if (typeof downloadItem === 'undefined') {
-    function downloadItem(e) {
-        var downloadUrl = e.getAttribute('download-url');
-        var a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = downloadUrl.split('/').pop();
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-}
-
-JS,
+    JS,
     \yii\web\View::POS_END
 );
 
 $copyUrl = Url::to(['default/copy']);
-
 $this->registerJs(
     <<<JS
     function copyFile(element) {

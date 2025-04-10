@@ -85,8 +85,40 @@ class DefaultController extends Controller
         }
         return $this->renderAjax('_rename', ['model' => $model]);
     }
+    public function actionUpdateFile($id)
+    {
+        $model = Storage::findOne($id);
 
+        if (!$model) {
+            return $this->asJson(['success' => false]);
+        }
 
+        if (Yii::$app->request->isPost) {
+            $model->file = UploadedFile::getInstance($model, 'file');
+
+            if ($model->file && in_array($model->file->extension, Storage::$allowExtensions)) {
+                $path = realpath(Yii::$app->basePath . '/../data');
+                $filename = md5(rand()) . "." . $model->file->extension;
+                $hash = md5_file($model->file->tempName);
+
+                if ($model->file->saveAs($path . '/' . $filename)) {
+                    $model->name = $filename;
+                    $model->hash_file = $hash;
+                    $model->mime_type = Storage::MIME_TYPE[$model->getMIMEType($path . '/' . $filename)];
+                    $model->date_update = date('Y-m-d H:i:s');
+
+                    if ($model->save(false)) {
+                        Yii::$app->session->setFlash('success', Module::t('File updated successfully!'));
+                        return $this->asJson(['success' => true]);
+                    }
+                }
+            }
+            Yii::$app->session->setFlash('error', Module::t('File update failed!'));
+            return $this->asJson(['success' => false]);
+        }
+
+        return $this->renderAjax('_update', ['model' => $model]);
+    }
 
     public function actionCopy($id)
     {
@@ -96,7 +128,6 @@ class DefaultController extends Controller
             if (!$file) {
                 return $this->jsonResponse(false, 'File not found in the database.');
             }
-
             $storagePath = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/';
             $originalFilePath = $storagePath . $file->name;
             $newFileName = md5(uniqid()) . '.' . pathinfo($file->name, PATHINFO_EXTENSION);
@@ -109,20 +140,13 @@ class DefaultController extends Controller
             if (!copy($originalFilePath, $newFilePath)) {
                 return $this->jsonResponse(false, 'Failed to physically copy the file.');
             }
-
-
             $originalTitle = $file->title;
             $baseTitle = preg_replace('/_\d+$/', '', $originalTitle);
-
-
             $pattern = '/^' . preg_quote($baseTitle, '/') . '_(\d+)$/';
             $maxNumber = 0;
-
-
             $similarFiles = Storage::find()
                 ->where(['like', 'title', $baseTitle . '_'])
                 ->all();
-
             foreach ($similarFiles as $similarFile) {
                 if (preg_match($pattern, $similarFile->title, $matches)) {
                     $number = (int)$matches[1];
@@ -131,8 +155,6 @@ class DefaultController extends Controller
                     }
                 }
             }
-
-
             $newTitle = $baseTitle . '_' . ($maxNumber + 1);
 
             $newFile = new Storage([
@@ -144,8 +166,6 @@ class DefaultController extends Controller
             if ($newFile->save()) {
                 return $this->jsonResponse(true, 'File successfully copied.');
             }
-
-
             unlink($newFilePath);
             return $this->jsonResponse(false, 'Failed to save the copied file.');
         } catch (\Exception $e) {

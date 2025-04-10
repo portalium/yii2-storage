@@ -33,11 +33,10 @@ $form = ActiveForm::begin([
     'id' => 'renameForm',
     'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true],
     'action' => ['/storage/default/rename-file', 'id' => $model->id_storage],
-    'method' => 'post',
+    'method' => 'post'
 ]);
 
 if (isset($model)) {
-    Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->getCsrfToken());
     echo $form->field($model, 'title')->textInput(['maxlength' => true, 'placeholder' => Module::t('Enter new name')]);
 }
 ActiveForm::end();
