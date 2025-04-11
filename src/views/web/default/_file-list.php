@@ -26,8 +26,7 @@ echo ListView::widget([
                     'url' => '#',
                     'encode' => false,
                     'linkOptions' => [
-                        'onclick' => 'downloadItem(this); return false;',
-                        'download-url' => Url::to(['/storage/default/get-file', 'id' => $model->id_storage]),
+                        'onclick' => 'downloadFile(' . $model->id_storage . '); return false;',
                     ],
                 ],
                 [
@@ -66,9 +65,7 @@ echo ListView::widget([
                     'url' => '#',
                     'encode' => false,
                     'linkOptions' => [
-                        'data-id' => $model->id_storage,
-                        'onclick' => 'copyFile(this); return false;',
-                        'class' => 'make-copy-btn'
+                        'onclick' => 'copyFile(' . $model->id_storage . '); return false;'
                     ],
                 ],
                 [
@@ -76,10 +73,7 @@ echo ListView::widget([
                     'url' => '#',
                     'encode' => false,
                     'linkOptions' => [
-                        'onclick' => 'removeItem(this); return false;',
-                        'data-id' => $model->id_storage,
-                        'data-url' => Url::to(['/storage/default/delete']),
-                        'class' => 'btn-delete',
+                        'onclick' => 'deleteFile(' . $model->id_storage . '); return false;',
                     ],
                 ],
             ],

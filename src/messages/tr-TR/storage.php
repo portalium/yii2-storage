@@ -38,5 +38,11 @@ return [
     'File renamed successfully!' => 'Dosya başarıyla yeniden adlandırıldı!',
     'File name could not be changed!' => 'Dosya adı değiştirilemedi!',
     'File updated successfully!' => 'Dosya başarıyla güncellendi!',
-    'File update failed!' => 'Dosya güncellemesi başarısız!'
+    'File update failed!' => 'Dosya güncellemesi başarısız!',
+    'File copied successfully!' => 'Dosya başarıyla kopyalandı!',
+    'File could not be copied!' => 'Dosya kopyalanamadı!',
+    'File not found!' => 'Dosya Bulunamadı!',
+    'File deleted successfully!' => 'Dosya başarıyla silindi!',
+    'The file could not be deleted!' => 'Dosya silinemedi!',
+    'File not found!' => 'Dosya bulunamadı!'
 ];

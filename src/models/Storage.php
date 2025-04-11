@@ -33,76 +33,15 @@ class Storage extends \yii\db\ActiveRecord
     const IS_MODAL_FALSE = 0;
 
     const MIME_TYPE = [
-        'audio/aac' => '0',
-        'audio/mpeg' => '1',
-        'audio/ogg' => '2',
-        'audio/opus' => '3',
-        'audio/wav' => '4',
-        'audio/webm' => '5',
-        'audio/midi audio/x-midi' => '6',
-        'video/avi' => '7',
-        'video/mpeg' => '8',
-        'video/ogg' => '9',
-        'video/mp4' => '10',
-        'video/webm' => '11',
-        'video/3gpp' => '12',
-        'image/bmp' => '13',
-        'image/gif' => '14',
-        'image/vnd.microsoft.icon' => '15',
-        'image/jpg' => '16',
-        'image/jpeg' => '17',
-        'image/png' => '18',
-        'image/svg+xml' => '19',
-        'image/tiff' => '20',
-        'image/webp' => '21',
-        'application/x-abiword' => '22',
-        'application/x-freearc' => '23',
-        'application/vnd.amazon.ebook' => '24',
-        'application/octet-stream' => '25',
-        'application/x-bzip' => '26',
-        'application/x-bzip2' => '27',
-        'application/x-csh' => '28',
-        'text/css' => '29',
-        'text/csv' => '30',
-        'application/msword' => '31',
-        'application/vnd.ms-fontobject' => '32',
-        'application/epub+zip' => '33',
-        'application/gzip' => '34',
-        'text/html' => '35',
-        'text/calendar' => '36',
-        'application/java-archive' => '37',
-        'text/javascript' => '38',
-        'application/json' => '39',
-        'application/ld+json' => '40',
-        'text/javascript' => '41',
-        'application/vnd.apple.installer+xml' => '42',
-        'application/vnd.oasis.opendocument.presentation' => '43',
-        'application/vnd.oasis.opendocument.spreadsheet' => '44',
-        'application/vnd.oasis.opendocument.text' => '45',
-        'application/ogg' => '46',
-        'font/otf' => '47',
-        'application/pdf' => '48',
-        'application/x-httpd-php' => '49',
-        'application/vnd.ms-powerpoint' => '50',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => '51',
-        'application/vnd.rar' => '52',
-        'application/rtf' => '53',
-        'application/x-sh' => '54',
-        'application/x-shockwave-flash' => '55',
-        'application/x-tar' => '56',
-        'font/ttf' => '57',
-        'text/plain' => '58',
-        'application/vnd.visio' => '59',
-        'font/woff' => '60',
-        'font/woff2' => '61',
-        'application/xhtml+xml' => '62',
-        'application/vnd.ms-excel' => '63',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '64',
-        'application/xml' => '65',
-        'application/vnd.mozilla.xul+xml' => '66',
-        'application/zip' => '67',
-        'application/x-7z-compressed' => '68',
-        'other' => '69',
+        'image/jpeg' => '0',
+        'image/png' => '1',
+        'application/pdf' => '2',
+        'application/msword' => '3',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => '4',
+        'application/vnd.ms-excel' => '5',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '6',
+        'application/vnd.ms-powerpoint' => '7',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => '8',
     ];
 
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
@@ -231,8 +170,6 @@ class Storage extends \yii\db\ActiveRecord
                     $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
                     $this->id_workspace = Yii::$app->workspace->id;
                     $this->id_user = Yii::$app->user->id;
-                    $this->date_create = date('Y-m-d H:i:s');
-                    $this->date_update = date('Y-m-d H:i:s');
                     if ($this->save()) {
                         return true;
                     } else {
@@ -249,37 +186,48 @@ class Storage extends \yii\db\ActiveRecord
 
     public function getMIMEType($filename)
     {
-        $mime_types = self::MIME_TYPE;
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
-        if (array_key_exists($ext, $mime_types)) {
-            if (is_array($mime_types[$ext])) {
-                //; charset=binary to ''
-                $mime_types[$ext][0] = str_replace('; charset=binary', '', $mime_types[$ext][0]);
-                return $mime_types[$ext][0];
-            } else {
-                $mime_types[$ext] = str_replace('; charset=binary', '', $mime_types[$ext]);
-                return $mime_types[$ext];
-            }
-        } elseif (function_exists('finfo_open')) {
-            $finfo = finfo_open(FILEINFO_MIME);
-            $mimetype = finfo_file($finfo, $filename);
-            finfo_close($finfo);
-            $mimetype = explode(';', $mimetype);
-            return $mimetype[0];
-        } else {
-            return 'application/octet-stream';
+        switch ($ext) {
+            case 'jpg':
+            case 'jpeg':
+                return 'image/jpeg';
+            case 'png':
+                return 'image/png';
+            case 'pdf':
+                return 'application/pdf';
+            case 'doc':
+                return 'application/msword';
+            case 'docx':
+                return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            case 'xls':
+                return 'application/vnd.ms-excel';
+            case 'xlsx':
+                return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            case 'ppt':
+                return 'application/vnd.ms-powerpoint';
+            case 'pptx':
+                return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            default:
+                if (function_exists('finfo_open')) {
+                    $finfo = finfo_open(FILEINFO_MIME);
+                    $mimetype = finfo_file($finfo, $filename);
+                    finfo_close($finfo);
+                    $mimetype = explode(';', $mimetype);
+                    return $mimetype[0];
+                } else {
+                    return 'application/octet-stream';
+                }
         }
     }
-
-    public function deleteFile($filename)
+    public function deleteFile()
     {
-        $path = realpath(Yii::$app->basePath . '/../data');
-        if (file_exists($path . '/' . $filename)) {
-            if (unlink($path . '/' . $filename)) {
-                return true;
+        $filePath = Yii::$app->basePath . '/../data/' . $this->name;
+        if (file_exists($filePath)) {
+            if (unlink($filePath)) {
+                return $this->delete();
             }
         }
-        return true;
+        return false;
     }
 
     public function getFilePath()
@@ -312,30 +260,46 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
-    public function cloneStorage()
+    public function copyFile()
     {
-        $newStorage = new Storage();
-        $newStorage->title = $this->title;
-        $newStorage->id_user = Yii::$app->user->id;
-        $newStorage->mime_type = $this->mime_type;
-        $newStorage->id_workspace = Yii::$app->workspace->id;
-        $newStorage->access = self::ACCESS_PUBLIC;
-
         $path = realpath(Yii::$app->basePath . '/../data');
-        $extension = pathinfo($this->name, PATHINFO_EXTENSION);
-        $filename = md5(rand()) . "." . $extension;
-        try {
-            if (copy($path . '/' . $this->name, $path . '/' . $filename)) {
-                $newStorage->name = $filename;
-                // system("cp -r " . $path . '/' . $this->name . " " . $path . '/' . $filename);
-                if ($newStorage->save()) {
-                    return $newStorage;
-                }
-            }
-        } catch (\Throwable $th) {
+        $sourcePath = $path . '/' . $this->name;
+
+        if (!file_exists($sourcePath)) {
             return false;
         }
+        $newModel = new Storage();
+        $newModel->attributes = $this->attributes;
+        $newModel->id_storage = null;
+
+        $extension = pathinfo($this->name, PATHINFO_EXTENSION);
+        $newFileName = md5(rand()) . "." . $extension;
+        $newFilePath = $path . '/' . $newFileName;
+        $newModel->title = $this->generateNewTitle($this->title);
+
+        if (copy($sourcePath, $newFilePath)) {
+            $newModel->name = $newFileName;
+            if ($newModel->save()) {
+                return $newModel;
+            } else {
+                if (file_exists($newFilePath)) {
+                    unlink($newFilePath);
+                }
+                return false;
+            }
+        }
         return false;
+    }
+    private function generateNewTitle($originalTitle)
+    {
+        $baseName = $originalTitle;
+        $newTitle = $baseName . '_1';
+        $counter = 1;
+        while (self::find()->where(['title' => $newTitle])->exists()) {
+            $counter++;
+            $newTitle = $baseName . '_' . $counter;
+        }
+        return $newTitle;
     }
 
     public function getExtension()
@@ -405,56 +369,50 @@ class Storage extends \yii\db\ActiveRecord
         if (is_numeric($mimeType)) {
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
-        if (!$mimeType) {
-            return [
-                'url' => 'https://img.icons8.com/ios/452/file.png',
-                'class' => 'non-image'
-            ];
-        }
-        if (strpos($mimeType, 'image/') === 0) {
-            $path = Yii::$app->basePath . '/../data/' . $this->name;
-
-            if (file_exists($path)) {
-                return [
-                    'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,
-                    'class' => 'image-file'
-                ];
-            } else {
-                return [
-                    'url' => 'https://img.icons8.com/ios/452/image-file.png',
-                    'class' => 'image-file'
-                ];
+        $path = Yii::$app->basePath . '/../data/' . $this->name;
+        if (file_exists($path)) {
+            switch ($mimeType) {
+                case 'application/pdf':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=13417&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'application/msword':
+                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=13674&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'application/vnd.ms-excel':
+                case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=13654&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'application/vnd.ms-powerpoint':
+                case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=81726&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'image/jpeg':
+                case 'image/png':
+                    return [
+                        'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,
+                        'class' => 'image-file'
+                    ];
+                default:
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=12141&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
             }
         }
-        switch ($mimeType) {
-            case 'application/pdf':
-                return [
-                    'url' => 'https://img.icons8.com/ios/452/pdf.png',
-                    'class' => 'non-image'
-                ];
-            case 'application/msword':
-            case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                return [
-                    'url' => 'https://img.icons8.com/ios/452/doc.png',
-                    'class' => 'non-image'
-                ];
-            case 'application/vnd.ms-excel':
-            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                return [
-                    'url' => 'https://img.icons8.com/ios/452/xls.png',
-                    'class' => 'non-image'
-                ];
-            case 'application/vnd.ms-powerpoint':
-            case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                return [
-                    'url' => 'https://img.icons8.com/ios/452/ppt.png',
-                    'class' => 'non-image'
-                ];
-            default:
-                return [
-                    'url' => 'https://img.icons8.com/ios/452/file.png',
-                    'class' => 'non-image'
-                ];
+        else {
+            return [
+                'url' => 'https://img.icons8.com/?size=100&id=12141&format=png&color=000000',
+                'class' => 'non-image'
+            ];
         }
     }
 

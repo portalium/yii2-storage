@@ -45,23 +45,34 @@ class DefaultController extends Controller
                 }
             }
         }
-
         return $this->renderAjax('_upload-file', [
             'model' => $model,
         ]);
     }
 
-    public function actionGetFile($id, $access_token = null)
+    public function actionDownloadFile()
     {
+        $id = Yii::$app->request->post('id');
         $file = Storage::findOne($id);
-        $path = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
 
-        if (file_exists($path)) {
+        if ($file) {
+            $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+
+            if (!file_exists($path)) {
+                Storage::deleteAll(['id_storage' => $file->id_storage]);
+                Yii::$app->session->setFlash('error', Module::t('File not found!'));
+                return ['success' => false];
+            }
+
             return Yii::$app->response->sendFile($path, $file->title . '.' . pathinfo($path, PATHINFO_EXTENSION));
-        } else {
-            throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
         }
+
+        Yii::$app->session->setFlash('error', Module::t('File not found!'));
+        return ['success' => false];
     }
+
+
+
     public function actionRenameFile($id)
     {
         $model = Storage::findOne($id);
@@ -119,121 +130,56 @@ class DefaultController extends Controller
 
         return $this->renderAjax('_update', ['model' => $model]);
     }
-
-    public function actionCopy($id)
+    public function actionCopyFile()
     {
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        try {
-            $file = Storage::findOne($id);
-            if (!$file) {
-                return $this->jsonResponse(false, 'File not found in the database.');
-            }
-            $storagePath = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/';
-            $originalFilePath = $storagePath . $file->name;
-            $newFileName = md5(uniqid()) . '.' . pathinfo($file->name, PATHINFO_EXTENSION);
-            $newFilePath = $storagePath . $newFileName;
 
-            if (!file_exists($originalFilePath)) {
-                return $this->jsonResponse(false, 'Original file not found: {path}', ['path' => $originalFilePath]);
-            }
+        $id = Yii::$app->request->post('id');
+        $sourceModel = Storage::findOne($id);
 
-            if (!copy($originalFilePath, $newFilePath)) {
-                return $this->jsonResponse(false, 'Failed to physically copy the file.');
-            }
-            $originalTitle = $file->title;
-            $baseTitle = preg_replace('/_\d+$/', '', $originalTitle);
-            $pattern = '/^' . preg_quote($baseTitle, '/') . '_(\d+)$/';
-            $maxNumber = 0;
-            $similarFiles = Storage::find()
-                ->where(['like', 'title', $baseTitle . '_'])
-                ->all();
-            foreach ($similarFiles as $similarFile) {
-                if (preg_match($pattern, $similarFile->title, $matches)) {
-                    $number = (int)$matches[1];
-                    if ($number > $maxNumber) {
-                        $maxNumber = $number;
-                    }
-                }
-            }
-            $newTitle = $baseTitle . '_' . ($maxNumber + 1);
+        if (!$sourceModel) {
+            Yii::$app->session->setFlash('error', Module::t('File not found!'));
+            return ['success' => false];
+        }
+        $newModel = $sourceModel->copyFile();
 
-            $newFile = new Storage([
-                'attributes' => $file->attributes,
-                'title' => $newTitle,
-                'name' => $newFileName
-            ]);
-
-            if ($newFile->save()) {
-                return $this->jsonResponse(true, 'File successfully copied.');
-            }
-            unlink($newFilePath);
-            return $this->jsonResponse(false, 'Failed to save the copied file.');
-        } catch (\Exception $e) {
-            return $this->jsonResponse(false, 'An unexpected error occurred: {error}', ['error' => $e->getMessage()]);
+        if ($newModel) {
+            Yii::$app->session->setFlash('success', Module::t('File copied successfully!'));
+            return ['success' => true];
+        } else {
+            Yii::$app->session->setFlash('error', Module::t('File could not be copied!'));
+            return ['success' => false];
         }
     }
-    private function jsonResponse($success, $message, $params = [])
+
+    public function actionDeleteFile()
     {
-        return ['success' => $success, 'message' => Module::t($message, $params)];
-    }
+        $fileId = Yii::$app->request->post('id');
 
-    public function actionDelete()
-    {
-        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        if (Yii::$app->request->isPost && Yii::$app->request->validateCsrfToken()) {
+            $file = Storage::findOne($fileId);
 
-        try {
-            $request = \Yii::$app->request;
-            $id = $request->post('id');
+            if ($file) {
+                $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
 
-            if (empty($id)) {
-                return ['success' => false, 'message' => 'Missing ID parameter'];
-            }
+                if (!file_exists($path)) {
+                    Storage::deleteAll(['id_storage' => $file->id_storage]);
+                    Yii::$app->session->setFlash('error', Module::t('File not found!'));
+                    return ['success' => false];
+                }
 
-            $model = $this->findModel($id);
-
-            if (!$model) {
-                return ['success' => false, 'message' => 'Record not found'];
-            }
-
-            if (!\Yii::$app->user->can('storageWebDefaultDelete', ['model' => $model, 'id_module' => 'storage'])) {
-                return ['success' => false, 'message' => Module::t('Permission denied')];
-            }
-
-            $transaction = \Yii::$app->db->beginTransaction();
-            try {
-                if ($model->delete()) {
-                    if (!$model->deleteFile($model->name)) {
-                        $transaction->rollBack();
-                        return ['success' => false, 'message' => Module::t('File deleted from DB, but file could not be deleted from disk.')];
-                    }
-                    $transaction->commit();
-                    return ['success' => true, 'message' => Module::t('File deleted successfully.')];
+                if ($file->deleteFile()) {
+                    Yii::$app->session->setFlash('success', Module::t('File deleted successfully!'));
+                    return ['success' => true];
                 } else {
-                    $transaction->rollBack();
-                    return ['success' => false, 'message' => 'Unable to delete record from database'];
+                    Yii::$app->session->setFlash('error', Module::t('File could not be deleted!'));
+                    return ['success' => false];
                 }
-            } catch (\Exception $e) {
-                $transaction->rollBack();
-                return ['success' => false, 'message' => $e->getMessage()];
+            } else {
+                Yii::$app->session->setFlash('error', Module::t('File not found!'));
+                return ['success' => false];
             }
-        } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'System error: ' . $e->getMessage()];
         }
     }
 
-    /**
-     * Finds the Storage model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param int $id Id Storage
-     * @return Storage the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        if (($model = Storage::findOne(['id_storage' => $id])) !== null) {
-            return $model;
-        }
-
-        throw new NotFoundHttpException(Module::t('The requested page does not exist.'));
-    }
 }

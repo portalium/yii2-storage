@@ -36,17 +36,22 @@
     cursor: pointer;
     z-index: 1001;
 }
-.file-card img.file-icon {
-    max-width: 200px;
-    max-height: 150px;
-    margin-top: 20px;
-    border-radius: 5px;
+.file-card img.file-icon.image-file {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    padding-top: 30px;
+    overflow: hidden;
+    border-radius: 3px;
 }
 .file-card img.file-icon.non-image {
     width: 70px;
     height: 70px;
     margin-top: 20px;
 }
+
 .dropdown-menu {
     position: absolute;
     display: none;

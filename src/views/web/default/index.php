@@ -139,22 +139,46 @@ JS,
 
 $this->registerJs(
     <<<JS
-    
-if (typeof downloadItem === 'undefined') {
-    function downloadItem(e) {
-        var downloadUrl = e.getAttribute('download-url');
-        var a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = downloadUrl.split('/').pop();
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    }
-}
+function downloadFile(id) {
+    event.preventDefault();
 
+    $.post({
+        url: '/storage/default/download-file',
+        data: { id: id },
+        xhrFields: { responseType: 'blob' },
+        headers: {
+            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(data, status, xhr) {
+            const disposition = xhr.getResponseHeader('Content-Disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filename = disposition.split('filename=')[1]?.replace(/["']/g, '') || 'downloaded_file';
+                const blobUrl = URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = decodeURIComponent(filename);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            } else {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            }
+        },
+        error: function() {
+           $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+               $.pjax.reload({container: '#list-file-pjax'});
+           });
+        }
+    });
+}
 JS,
     \yii\web\View::POS_END
 );
+
+
 
 $this->registerJs(
     <<<JS
@@ -261,28 +285,35 @@ $this->registerJs(
     \yii\web\View::POS_END
 );
 
-$copyUrl = Url::to(['default/copy']);
 $this->registerJs(
     <<<JS
-    function copyFile(element) {
-        event.preventDefault();
-        var id = element.getAttribute('data-id');
-
-        fetch('{$copyUrl}?id=' + id, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
+    function copyFile(id) {
+    event.preventDefault();
+    
+    $.ajax({
+        url: '/storage/default/copy-file',
+        type: 'POST',
+        data: { id: id },
+        headers: {
+            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            if (response.success) {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            } else {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                $.pjax.reload({container: '#list-file-pjax', async: false});
-            }
-        })
-        .catch(error => {
-            console.error('Request error', error);
-        });
+        },
+        error: function() {
+            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                $.pjax.reload({container: '#list-file-pjax'});
+            });
+        }
+    });
     }
     JS,
     \yii\web\View::POS_END
@@ -290,48 +321,38 @@ $this->registerJs(
 
 $this->registerJs(
     <<<JS
-function removeItem(el) {
-    var id = el.getAttribute('data-id');
-    var url = el.getAttribute('data-url');
-    var csrfToken = $('meta[name="csrf-token"]').attr("content");
-    
-    if (!id || !url) {
-        return;
-    }
-
-    var formData = new FormData();
-    formData.append('id', id);
-    formData.append(yii.getCsrfParam(), csrfToken);
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: formData
-    })
-    .then(function(response) {
-        if (!response.ok) {
-            throw new Error('Network response was not ok: ' + response.status);
-        }
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            if ($.pjax && $('#list-file-pjax').length) {
-                $.pjax.reload({container: '#list-file-pjax', async: false});
-            } else {
-                window.location.reload();
+    function deleteFile(id) {
+        event.preventDefault();
+        
+        $.ajax({
+            url: '/storage/default/delete-file',  
+            type: 'POST',
+            data: { id: id },  
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')  
+            },
+            success: function(response) {
+                if (response.success) {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});  
+                    });
+                } else {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'}); 
+                    });
+                }
+            },
+            error: function() {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'}); 
+                });
             }
-        }
-    })
-    .catch(function(error) {
-        console.error("Fetch error:", error);
-    });
-}
-JS,
+        });
+    }
+    JS,
     \yii\web\View::POS_END
 );
+
 
 $this->registerJs(
     <<<JS
