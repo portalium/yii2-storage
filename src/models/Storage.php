@@ -264,14 +264,9 @@ class Storage extends \yii\db\ActiveRecord
     {
         $path = realpath(Yii::$app->basePath . '/../data');
         $sourcePath = $path . '/' . $this->name;
-
-        if (!file_exists($sourcePath)) {
-            return false;
-        }
         $newModel = new Storage();
         $newModel->attributes = $this->attributes;
         $newModel->id_storage = null;
-
         $extension = pathinfo($this->name, PATHINFO_EXTENSION);
         $newFileName = md5(rand()) . "." . $extension;
         $newFilePath = $path . '/' . $newFileName;

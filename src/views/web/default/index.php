@@ -184,47 +184,56 @@ $this->registerJs(
     <<<JS
     function openRenameModal(id) {
         event.preventDefault();
-        $.pjax.reload({
-            container: '#rename-file-pjax',
-            type: 'GET',
+        $.ajax({
             url: '/storage/default/rename-file',
+            type: 'GET',
             data: { id: id },
-        }).done(function() {
-            setTimeout(function() {
-                $('#renameModal').modal('show');
-            }, 1000);
-        }).fail(function(e) {
-            console.log(e);
+            success: function(response) {
+                if (response.success === false) {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});
+                    });
+                } else {
+                    $.pjax.reload({
+                        container: '#rename-file-pjax',
+                        type: 'GET',
+                        url: '/storage/default/rename-file',
+                        data: { id: id },
+                    }).done(function() {
+                        $('#renameModal').modal('show');
+                    });
+                }
+            },
+            error: function(e) {
+                console.log('Ajax Error', e);
+            }
         });
     }
+
     $(document).on('click', '#renameButton', function(e) {
         e.preventDefault();
         var form = $('#renameForm');
-    $.ajax({
-        url: form.attr('action'),
-        type: 'POST',
-        data: form.serialize(),
-        headers: {
-        'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content') 
-    },
-        success: function(response) {
-            if (response.success) {
-                $('#renameModal').modal('hide');
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#renameModal').modal('hide');
+                }
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                $.pjax.reload({container: '#list-file-pjax'});
-            }); 
-            } else {
-               $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                $.pjax.reload({container: '#list-file-pjax'});
-            });
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            },
+            error: function() {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
             }
-        },
-        error: function() {
-            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                $.pjax.reload({container: '#list-file-pjax'});
-            });
-        }
-    });
+        });
     });
     JS,
     \yii\web\View::POS_END
@@ -234,17 +243,29 @@ $this->registerJs(
     <<<JS
     function openUpdateModal(id) {
         event.preventDefault();
-        $.pjax.reload({
-            container: '#update-file-pjax',
-            type: 'GET',
+        $.ajax({
             url: '/storage/default/update-file',
+            type: 'GET',
             data: { id: id },
-        }).done(function() {
-            setTimeout(function() {
-                $('#updateModal').modal('show');
-            }, 1000);
-        }).fail(function(e) {
-            console.log(e);
+            success: function(response) {
+                if (response.success === false) {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});
+                    });
+                } else {
+                    $.pjax.reload({
+                        container: '#update-file-pjax',
+                        type: 'GET',
+                        url: '/storage/default/update-file',
+                        data: { id: id },
+                    }).done(function() {
+                        $('#updateModal').modal('show');
+                    });
+                }
+            },
+            error: function(e) {
+                console.log('Ajax Error', e);
+            }
         });
     }
 
@@ -265,14 +286,10 @@ $this->registerJs(
             success: function(response) {
                 if (response.success) {
                     $('#updateModal').modal('hide');
-                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-file-pjax'});
-                    });
-                } else {
-                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-file-pjax'});
-                    });
                 }
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
             },
             error: function() {
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
@@ -288,32 +305,26 @@ $this->registerJs(
 $this->registerJs(
     <<<JS
     function copyFile(id) {
-    event.preventDefault();
-    
-    $.ajax({
-        url: '/storage/default/copy-file',
-        type: 'POST',
-        data: { id: id },
-        headers: {
-            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(response) {
-            if (response.success) {
+        event.preventDefault();
+        
+        $.ajax({
+            url: '/storage/default/copy-file',
+            type: 'POST',
+            data: { id: id },
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {   
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
                     $.pjax.reload({container: '#list-file-pjax'});
                 });
-            } else {
+            },
+            error: function() {
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
                     $.pjax.reload({container: '#list-file-pjax'});
                 });
             }
-        },
-        error: function() {
-            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                $.pjax.reload({container: '#list-file-pjax'});
-            });
-        }
-    });
+        });
     }
     JS,
     \yii\web\View::POS_END

@@ -14,7 +14,9 @@ echo ListView::widget([
 
         $content = Html::beginTag('span', ['class' => 'file-card col-md-2', 'style' => 'margin-left: 5px; margin-right: 7px;']);
         $content .= Html::beginTag('span', ['class' => 'card-header']);
-        $content .= $model->title ?: 'Başlık yok';
+        $title = $model->title ?: 'Başlık yok';
+        $shortTitle = mb_strlen($title) > 15 ? mb_substr($title, 0, 10) . '..' : $title;
+        $content .= $shortTitle;
         $content .= Html::tag('i', '', [
             'class' => 'fa fa-ellipsis-h',
             'id' => 'menu-trigger-' . $model->id_storage,
