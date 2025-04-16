@@ -15,7 +15,7 @@ use yii\helpers\Url;
 /* @var $model portalium\storage\models\Storage */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-//FilePickerAsset::register($this); // ==> SORUN BURADA BUNU KALDIRINCA TÜM CSS GİDİYOR AMA MENÜLER ÇALIŞIYOR
+FilePickerAsset::register($this);
 
 $this->title = Module::t('Storage');
 $this->params['breadcrumbs'][] = $this->title;
@@ -423,35 +423,5 @@ $this->registerJs(
     }
     JS,
     \yii\web\View::POS_END
-);
-
-
-$this->registerJs(
-    <<<JS
-
-function bindContextMenus() {
-    $('[id^="menu-trigger-"]').off('click').on('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        var id = $(this).attr('id').replace('menu-trigger-', '');
-        var currentMenu = $('#context-menu-' + id);
-
-        $('.dropdown-menu').not(currentMenu).hide();
-
-        currentMenu.toggle();
-    });
-    
-    $(document).off('click.contextmenu-close').on('click.contextmenu-close', function() {
-        $('.dropdown-menu').hide();
-    });
-}
-
-bindContextMenus();
-
-$(document).on('pjax:end', function() {
-    bindContextMenus();
-});
-JS
 );
 ?>

@@ -21,7 +21,7 @@ echo ListView::widget([
             'class' => 'fa fa-ellipsis-h',
             'id' => 'menu-trigger-' . $model->id_storage,
             'data-title' => strtolower($model->title ?: 'Başlık yok'),
-            //'onclick' => 'handleMenuClick(event, ' . $model->id_storage . ')'
+            'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')'
         ]);
         $content .= Dropdown::widget([
             'items' => [

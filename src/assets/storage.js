@@ -6,10 +6,21 @@ function toggleContextMenu(e, id) {
             menu.classList.remove('show');
         }
     });
-
     const menu = document.getElementById('context-menu-' + id);
     if (menu) {
         menu.classList.toggle('show');
+    }
+    const closeContextMenus = function(event) {
+        document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        document.removeEventListener('click', closeContextMenus);
+    };
+
+    if (menu && menu.classList.contains('show')) {
+        setTimeout(() => {
+            document.addEventListener('click', closeContextMenus);
+        }, 0);
     }
 }
 
