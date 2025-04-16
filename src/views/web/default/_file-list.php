@@ -20,6 +20,8 @@ echo ListView::widget([
         $content .= Html::tag('i', '', [
             'class' => 'fa fa-ellipsis-h',
             'id' => 'menu-trigger-' . $model->id_storage,
+            'data-title' => strtolower($model->title ?: 'Başlık yok'),
+            //'onclick' => 'handleMenuClick(event, ' . $model->id_storage . ')'
         ]);
         $content .= Dropdown::widget([
             'items' => [
@@ -58,8 +60,7 @@ echo ListView::widget([
                     'url' => '#',
                     'encode' => false,
                     'linkOptions' => [
-                        'data-bs-toggle' => 'modal',
-                        'data-bs-target' => '#shareModal',
+                        'onclick' => 'openShareModal(' . $model->id_storage . ')',
                     ],
                 ],
                 [
@@ -81,7 +82,7 @@ echo ListView::widget([
             ],
             'options' => [
                 'class' => 'dropdown-menu',
-                'id' => 'context-menu-' . $model->id_storage,
+                'id' => 'context-menu-' . $model->id_storage
             ],
         ]);
 

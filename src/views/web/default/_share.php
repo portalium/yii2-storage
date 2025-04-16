@@ -30,6 +30,7 @@ Modal::begin([
                 'class' => 'btn btn-outline-secondary',
                 'id' => 'copyLink',
                 'data-copied' => htmlspecialchars(Module::t('Copied!'), ENT_QUOTES, 'UTF-8'),
+                'onclick' => 'handleCopyLink(this)'
             ],
         ]) . ' ' . Button::widget([
             'label' => Module::t('Done'),
@@ -111,7 +112,8 @@ echo Html::tag(
         'private' => Module::t('Restricted'),
         'public' => Module::t('Public')
     ], [
-        'class' => 'access-select form-select form-select-lg mt-4'
+        'class' => 'access-select form-select form-select-lg mt-4',
+        'onchange' => 'handleAccessChange(this)'
     ]),
     ['class' => 'file-access']
 );

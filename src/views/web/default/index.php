@@ -8,23 +8,29 @@ use portalium\theme\widgets\Html;
 use portalium\widgets\Pjax;
 use yii\helpers\Url;
 
-FilePickerAsset::register($this);
+
 
 /* @var $this yii\web\View */
 /* @var $form portalium\theme\widgets\ActiveForm */
 /* @var $model portalium\storage\models\Storage */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
+//FilePickerAsset::register($this); // ==> SORUN BURADA BUNU KALDIRINCA TÜM CSS GİDİYOR AMA MENÜLER ÇALIŞIYOR
+
 $this->title = Module::t('Storage');
 $this->params['breadcrumbs'][] = $this->title;
 
 ?>
+
+
 <?php
+
 echo Html::beginTag('span', ['class' => 'col-md-4 d-flex gap-2']);
 echo Html::tag(
     'span',
     Html::textInput('file', '', [
         'class' => 'form-control',
+        'id' => 'searchFileInput',
         'placeholder' => Module::t('Search file..')
     ]) .
         Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), ['class' => 'input-group-text']),
@@ -43,10 +49,8 @@ echo Button::widget([
 ]);
 
 echo Html::endTag('span');
+echo html::tag('br');
 
-?>
-<br />
-<?php
 Pjax::begin([
     'id' => 'upload-file-pjax',
     'history' => false,
@@ -88,6 +92,7 @@ Pjax::begin([
 Pjax::end();
 
 ?>
+
 
 <?php
 $this->registerJs(
@@ -177,8 +182,6 @@ function downloadFile(id) {
 JS,
     \yii\web\View::POS_END
 );
-
-
 
 $this->registerJs(
     <<<JS
@@ -286,6 +289,64 @@ $this->registerJs(
             success: function(response) {
                 if (response.success) {
                     $('#updateModal').modal('hide');
+                }
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            },
+            error: function() {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            }
+        });
+    });
+    JS,
+    \yii\web\View::POS_END
+);
+$this->registerJs(
+    <<<JS
+    function openShareModal(id) {
+        event.preventDefault();
+        $.ajax({
+            url: '/storage/default/share-file',
+            type: 'GET',
+            data: { id: id },
+            success: function(response) {
+                if (response.success === false) {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});
+                    });
+                } else {
+                    $.pjax.reload({
+                        container: '#share-file-pjax',
+                        type: 'GET',
+                        url: '/storage/default/share-file',
+                        data: { id: id },
+                    }).done(function() {
+                        $('#shareModal').modal('show');
+                    });
+                }
+            },
+            error: function(e) {
+                console.log('Ajax Error', e);
+            }
+        });
+    }
+
+    $(document).on('click', '#shareButton', function(e) {
+        e.preventDefault();
+        var form = $('#shareForm');
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.success) {
+                    $('#shareModal').modal('hide');
                 }
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
                     $.pjax.reload({container: '#list-file-pjax'});

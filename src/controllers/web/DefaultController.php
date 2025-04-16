@@ -143,6 +143,15 @@ class DefaultController extends Controller
 
         return $this->renderAjax('_update', ['model' => $model]);
     }
+
+    public function actionShareFile($id)
+    {
+        $model = Storage::findOne($id);
+            return $this->renderAjax('_share', [
+                'model' => $model,
+            ]);
+    }
+
     public function actionCopyFile()
     {
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
