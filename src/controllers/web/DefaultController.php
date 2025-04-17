@@ -36,13 +36,10 @@ class DefaultController extends Controller
 
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-                if (!$success) {
+                if (!$success)
                     Yii::$app->session->setFlash('error', Module::t('File could not be loaded!'));
-                    return ['success' => false,];
-                } else {
+                else
                     Yii::$app->session->setFlash('success', Module::t('File uploaded successfully!'));
-                    return ['success' => true];
-                }
             }
         }
         return $this->renderAjax('_upload-file', [
@@ -61,14 +58,10 @@ class DefaultController extends Controller
             if (!file_exists($path)) {
                 Storage::deleteAll(['id_storage' => $file->id_storage]);
                 Yii::$app->session->setFlash('error', Module::t('File not found!'));
-                return ['success' => false];
             }
-
             return Yii::$app->response->sendFile($path, $file->title . '.' . pathinfo($path, PATHINFO_EXTENSION));
         }
-
         Yii::$app->session->setFlash('error', Module::t('File not found!'));
-        return ['success' => false];
     }
 
 
@@ -76,9 +69,9 @@ class DefaultController extends Controller
     public function actionRenameFile($id)
     {
         $model = Storage::findOne($id);
-
         if (!$model) {
-            return $this->asJson(['success' => false]);
+            Yii::$app->session->setFlash('error', Module::t('File not found!'));
+            return '';
         }
 
         $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
@@ -87,58 +80,66 @@ class DefaultController extends Controller
         if (!file_exists($filePath)) {
             Storage::deleteAll(['id_storage' => $model->id_storage]);
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return $this->asJson(['success' => false]);
+            return '';
         }
 
         if (Yii::$app->request->isPost) {
-            if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            if ($model->load(Yii::$app->request->post()) && $model->save())
                 Yii::$app->session->setFlash('success', Module::t('File renamed successfully!'));
-                return $this->asJson(['success' => true]);
-            } else {
+            else
                 Yii::$app->session->setFlash('error', Module::t('File name could not be changed!'));
-                return $this->asJson(['success' => false]);
-            }
         }
+
         return $this->renderAjax('_rename', ['model' => $model]);
     }
 
     public function actionUpdateFile($id)
     {
         $model = Storage::findOne($id);
-
         if (!$model) {
-            return $this->asJson(['success' => false]);
+            Yii::$app->session->setFlash('error', Module::t('File not found!'));
+            return '';
         }
-        $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
-        $filePath = $storagePath . '/' . $model->name;
 
-        if (!file_exists($filePath)) {
+        $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
+        $oldFilePath = $storagePath . '/' . $model->name;
+
+        if (!file_exists($oldFilePath)) {
             Storage::deleteAll(['id_storage' => $model->id_storage]);
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return $this->asJson(['success' => false]);
+            return '';
         }
+
         if (Yii::$app->request->isPost) {
+            $oldFileName = $model->name;
+
             $model->file = UploadedFile::getInstance($model, 'file');
 
             if ($model->file && in_array($model->file->extension, Storage::$allowExtensions)) {
-                $path = realpath(Yii::$app->basePath . '/../data');
+                $path = realpath(Yii::getAlias('@app') . '/../data');
                 $filename = md5(rand()) . "." . $model->file->extension;
                 $hash = md5_file($model->file->tempName);
 
                 if ($model->file->saveAs($path . '/' . $filename)) {
+                    if (file_exists($oldFilePath)) {
+                        @unlink($oldFilePath);
+                    }
+
                     $model->name = $filename;
                     $model->hash_file = $hash;
                     $model->mime_type = Storage::MIME_TYPE[$model->getMIMEType($path . '/' . $filename)];
                     $model->date_update = date('Y-m-d H:i:s');
 
-                    if ($model->save(false)) {
+                    if ($model->save(false))
                         Yii::$app->session->setFlash('success', Module::t('File updated successfully!'));
-                        return $this->asJson(['success' => true]);
-                    }
+                    else
+                        Yii::$app->session->setFlash('error', Module::t('File update failed!'));
+                } else {
+                    Yii::$app->session->setFlash('error', Module::t('File could not be saved!'));
                 }
+            } else {
+                Yii::$app->session->setFlash('error', Module::t('Invalid file format!'));
             }
-            Yii::$app->session->setFlash('error', Module::t('File update failed!'));
-            return $this->asJson(['success' => false]);
         }
 
         return $this->renderAjax('_update', ['model' => $model]);
@@ -154,32 +155,31 @@ class DefaultController extends Controller
 
     public function actionCopyFile()
     {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-
         $id = Yii::$app->request->post('id');
         $sourceModel = Storage::findOne($id);
+        if (!$sourceModel) {
+            Yii::$app->session->setFlash('error', Module::t('File not found!'));
+            return '';
+        }
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
         $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
         $filePath = $storagePath . '/' . $sourceModel->name;
 
-        if (!$sourceModel) {
+        if (!$sourceModel)
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return ['success' => false];
-        }
 
         if (!file_exists($filePath)) {
             Storage::deleteAll(['id_storage' => $sourceModel->id_storage]);
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return $this->asJson(['success' => false]);
+            return  '';
         }
         $newModel = $sourceModel->copyFile();
 
-        if ($newModel) {
+        if ($newModel)
             Yii::$app->session->setFlash('success', Module::t('File copied successfully!'));
-            return ['success' => true];
-        } else {
+        else
             Yii::$app->session->setFlash('error', Module::t('File could not be copied!'));
-            return ['success' => false];
-        }
     }
 
     public function actionDeleteFile()
@@ -195,20 +195,14 @@ class DefaultController extends Controller
                 if (!file_exists($path)) {
                     Storage::deleteAll(['id_storage' => $file->id_storage]);
                     Yii::$app->session->setFlash('error', Module::t('File not found!'));
-                    return ['success' => false];
                 }
-
-                if ($file->deleteFile()) {
+                if ($file->deleteFile())
                     Yii::$app->session->setFlash('success', Module::t('File deleted successfully!'));
-                    return ['success' => true];
-                } else {
-                    Yii::$app->session->setFlash('error', Module::t('File could not be deleted!'));
-                    return ['success' => false];
-                }
-            } else {
-                Yii::$app->session->setFlash('error', Module::t('File not found!'));
-                return ['success' => false];
+                else
+                    Yii::$app->session->setFlash('error', Module::t('File not found!'));
             }
+            else
+                Yii::$app->session->setFlash('error', Module::t('File not found!'));
         }
     }
 

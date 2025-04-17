@@ -26,12 +26,8 @@ use portalium\workspace\models\Workspace;
 class Storage extends \yii\db\ActiveRecord
 {
     public $file;
-
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
-    const IS_MODAL_TRUE = 1;
-    const IS_MODAL_FALSE = 0;
-
     const MIME_TYPE = [
         'image/jpeg' => '0',
         'image/png' => '1',
@@ -45,7 +41,7 @@ class Storage extends \yii\db\ActiveRecord
     ];
 
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
-    // behaviors id_user is set to current user
+
     public function behaviors()
     {
         return [
@@ -69,18 +65,11 @@ class Storage extends \yii\db\ActiveRecord
         }, $this);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function tableName()
     {
-        //use prefix from module
         return '{{%' . Module::$tablePrefix . 'storage}}';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function rules()
     {
         return [
@@ -93,19 +82,6 @@ class Storage extends \yii\db\ActiveRecord
         ];
     }
 
-    /* //fields add url
-    public function fields()
-    {
-        return array_merge(parent::fields(), [
-            'url' => function ($model) {
-                return Yii::getAlias('@data') . '/' . $model->name;
-            },
-        ]);
-    } */
-
-    /**
-     * {@inheritdoc}
-     */
     public function attributeLabels()
     {
         return [
@@ -120,37 +96,6 @@ class Storage extends \yii\db\ActiveRecord
         ];
     }
 
-    public static function getMimeTypeList()
-    {
-        $array = [];
-        foreach (self::MIME_TYPE as $key => $value) {
-            if (is_array($value)) {
-                foreach ($value as $k => $v) {
-                    $array[$key][$v] = $k;
-                }
-            } else {
-                $array[$value] = $key;
-            }
-        }
-        return $array;
-    }
-
-    public function getAllowedExtensions()
-    {
-        return implode(', ', self::$allowExtensions);
-    }
-
-    public static function getAccesses()
-    {
-        return [
-            self::ACCESS_PUBLIC => Module::t('Public'),
-            self::ACCESS_PRIVATE => Module::t('Private'),
-        ];
-    }
-
-    /**
-     * (@inheritdoc)
-     */
     public function upload()
     {
         if ($this->validate()) {
@@ -182,7 +127,6 @@ class Storage extends \yii\db\ActiveRecord
         }
         return false;
     }
-
 
     public function getMIMEType($filename)
     {
@@ -230,36 +174,6 @@ class Storage extends \yii\db\ActiveRecord
         return false;
     }
 
-    public function getFilePath()
-    {
-        // $path =  Yii::$app->request->baseUrl . '/' . Yii::$app->setting->getValue('storage::path');
-        // return $path . '/' . $this->name;
-        return '/storage/default/get-file?id=' . $this->id_storage;
-    }
-
-    public static function findForApi()
-    {
-        $query = parent::find();
-
-//        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
-            return $query;
-//        }
-
-        if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
-            // get public files
-            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        }
-        $workspaces = WorkspaceUser::find()->select('id_workspace')->where(['id_user' => Yii::$app->user->id])->asArray()->all();
-        $workspaces = ArrayHelper::getColumn($workspaces, 'id_workspace');
-
-        if ($workspaces) {
-            // $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-            return $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $workspaces])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        } else {
-            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        }
-    }
-
     public function copyFile()
     {
         $path = realpath(Yii::$app->basePath . '/../data');
@@ -297,67 +211,6 @@ class Storage extends \yii\db\ActiveRecord
         return $newTitle;
     }
 
-    public function getExtension()
-    {
-        return pathinfo($this->name, PATHINFO_EXTENSION);
-    }
-
-    public static function getWorkspaces()
-    {
-        $workspaces = Workspace::find()->all();
-        $array = [];
-        foreach ($workspaces as $workspace) {
-            $array[$workspace->id_workspace] = $workspace->name . ' (' . (isset($workspace->user) ? $workspace->user->username : '') . ')';
-        }
-        return $array;
-    }
-
-    public function fileExists()
-    {
-        $path = realpath(Yii::$app->basePath . '/../data');
-        return file_exists($path . '/' . $this->name);
-    }
-
-    public function afterDelete()
-    {
-        $this->deleteFile($this->name);
-        return parent::afterDelete();
-    }
-
-
-
-    public function beforeSave($insert)
-    {
-        if (Yii::$app->workspace->checkOwner($this->id_workspace)) {
-            return parent::beforeSave($insert);
-        }
-        return false;
-    }
-
-    public function afterSave($insert, $changedAttributes)
-    {
-        if ($insert) {
-            $this->hash_file = md5_file(Yii::$app->basePath . '/../data/' . $this->name);
-            $this->save();
-        }
-        return parent::afterSave($insert, $changedAttributes);
-    }
-
-    public function afterFind()
-    {
-        if (!$this->hash_file) {
-            $file = realpath(Yii::$app->basePath . '/../data') . '/' . $this->name;
-            if (file_exists($file)) {
-                $this->hash_file = md5_file($file);
-                $this->save();
-            }
-        }
-        return parent::afterFind();
-    }
-    /**
-     * Dosya MIME tipine göre ikon URL'si döndürür
-     * @return string Dosya ikonu URL'si
-     */
     public function getIconUrl()
     {
         $mimeType = $this->mime_type;
@@ -410,6 +263,4 @@ class Storage extends \yii\db\ActiveRecord
             ];
         }
     }
-
-
 }
