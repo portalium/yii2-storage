@@ -7,13 +7,19 @@ use portalium\theme\widgets\ListView;
 use yii\helpers\Url;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-
+$isPicker = 0;
 echo ListView::widget([
     'dataProvider' => $dataProvider,
-    'itemView' => function ($model) {
+    'itemView' => function ($model) use ($isPicker) {
 
-        $content = Html::beginTag('span', ['class' => 'file-card col-md-2', 'style' => 'margin-left: 5px; margin-right: 7px;']);
+        $content = Html::beginTag('span', ['class' => 'file-card col-md-2', 'style' => 'margin-left: 5px; margin-right: 7px;', 'data-id' => $model->id_storage]);
         $content .= Html::beginTag('span', ['class' => 'card-header']);
+        if($isPicker)
+            $content .= Html::checkbox('selection', false, [
+                'class' => 'file-select-checkbox',
+                'value' => $model->id_storage,
+                'onclick' => 'selectFile(this, ' . $model->id_storage . ')',
+            ]);
         $title = $model->title ?: 'Başlık yok';
         $shortTitle = mb_strlen($title) > 15 ? mb_substr($title, 0, 10) . '..' : $title;
         $content .= $shortTitle;
@@ -90,7 +96,7 @@ echo ListView::widget([
         $iconUrlData = $model->getIconUrl();
         $content .= Html::img($iconUrlData['url'], [
             'alt' => $model->title,
-            'class' => 'file-icon ' . $iconUrlData['class'],
+            'class' => 'file-icon ' . $iconUrlData['class']
         ]);
         $content .= Html::endTag('span');
         return $content;

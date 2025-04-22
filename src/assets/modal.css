@@ -1,3 +1,4 @@
+/* Card Styling */
 .file-card {
     position: relative;
     border: 1px solid #ddd;
@@ -5,7 +6,7 @@
     padding: 20px;
     margin-bottom: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    height: 207px;
+    height: 218px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -13,32 +14,97 @@
     text-align: center;
     transition: transform 0.3s ease;
     cursor: pointer;
-
-
 }
-.file-card:hover {
-    transform: scale(1.05);
+
+.file-card-wrapper {
+    position: relative;
+    margin: 10px;
 }
-.file-card .card-header {
+
+.file-select-checkbox {
     position: absolute;
     top: 10px;
     left: 10px;
-    width: calc(100% - 20px);
+    z-index: 20;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+
+.file-select-checkbox:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.file-select-checkbox:checked::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.file-select-checkbox:hover {
+    border-color: #0d6efd;
+}
+
+.file-card.selected {
+    border: 2px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1);
+}
+
+.file-card:hover {
+    transform: scale(1.05);
+}
+
+.file-card .card-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 10px 15px;
     font-size: 14px;
-
-
+    background: rgba(250, 250, 250, 0.9);
+    border-radius: 8px 8px 0 0;
+    height: 40px;
+    z-index: 15;
+    padding-left: 35px;
 }
+
 .file-card .card-header .fa-ellipsis-h {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 10px;
+    right: 10px;
     font-size: 20px;
     cursor: pointer;
-    z-index: 1001;
+    z-index: 25; /* Artırılmış z-index */
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
 }
+
+.file-card .card-header .fa-ellipsis-h:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
 .file-card img.file-icon.image-file {
     max-width: 100%;
     max-height: 100%;
@@ -48,47 +114,65 @@
     padding-top: 30px;
     overflow: hidden;
     border-radius: 3px;
+    z-index: 5;
 }
+
 .file-card img.file-icon.non-image {
     width: 70px;
     height: 70px;
     margin-top: 20px;
+    z-index: 5;
 }
 
 .dropdown-menu {
     position: absolute;
     display: none;
     background-color: white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    padding: 5px 0;
-    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 8px 0;
+    z-index: 1050;
     min-width: 120px;
-    right: 0;
-    top: 50%;
+    max-height: 210px;
+    right: 5px;
+    top: 30px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    animation: fadeIn 0.2s ease;
 }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .dropdown-menu.show {
     display: block;
 }
+
 .dropdown-menu .menu-item {
     padding: 8px 15px;
     cursor: pointer;
     font-size: 13px;
 }
+
 .dropdown-menu .menu-item:hover {
     background-color: #f5f5f5;
 }
+
 .dropdown-menu .divider {
     height: 1px;
     background-color: #e5e5e5;
     margin: 5px 0;
 }
+
 #searchUser::placeholder {
     color: #adb5bd;
 }
-.form-select.form-select-lg.mt-4{
+
+.form-select.form-select-lg.mt-4 {
     background-color: #f5f7f9;
 }
+
 #copyLink {
     transition: all 0.3s ease;
 }

@@ -56,5 +56,3 @@ function handleCopyLink(button) {
         button.classList.add('btn-outline-secondary');
     }, 2000);
 }
-
-

@@ -63,6 +63,7 @@ Pjax::begin([
 ]);
 echo $this->render('_file-list', [
     'dataProvider' => $dataProvider,
+    'isPicker' => true
 ]);
 Pjax::end();
 
