@@ -83,6 +83,20 @@
     height: 40px;
     z-index: 15;
 }
+.file-title {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-title.picker {
+    max-width: 65px;
+}
+
+.file-title.normal {
+    max-width: 175px;
+}
 
 .file-card .card-header .fa-ellipsis-h {
     position: absolute;
@@ -90,7 +104,7 @@
     right: 10px;
     font-size: 20px;
     cursor: pointer;
-    z-index: 25; /* Artırılmış z-index */
+    z-index: 25;
     width: 28px;
     height: 28px;
     display: flex;

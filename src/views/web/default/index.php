@@ -8,7 +8,6 @@ use portalium\widgets\Pjax;
 use yii\helpers\Url;
 
 
-
 /* @var $this yii\web\View */
 /* @var $form portalium\theme\widgets\ActiveForm */
 /* @var $model portalium\storage\models\Storage */
@@ -18,12 +17,9 @@ StorageAsset::register($this);
 
 $this->title = Module::t('Storage');
 $this->params['breadcrumbs'][] = $this->title;
-
 ?>
 
-
 <?php
-
 echo Html::beginTag('span', ['class' => 'col-md-4 d-flex gap-2']);
 echo Html::tag(
     'span',
@@ -63,7 +59,7 @@ Pjax::begin([
 ]);
 echo $this->render('_file-list', [
     'dataProvider' => $dataProvider,
-    'isPicker' => true
+    'isPicker' => $isPicker ?? false
 ]);
 Pjax::end();
 
@@ -92,7 +88,26 @@ Pjax::begin([
 Pjax::end();
 
 ?>
-
+<?php
+$this->registerJs(<<<JS
+function openFilePickerModal() {
+    $.ajax({
+        url: '/storage/default/picker-modal',
+        type: 'GET',
+        success: function(data) {
+            $('#file-picker-modal-container').html(data);
+            setTimeout(function () {
+                var modalEl = document.getElementById('file-picker-modal');
+                if (modalEl) {
+                    var modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+            }, 1000);
+        }
+    });
+}
+JS, \yii\web\View::POS_END);
+?>
 <?php
 $this->registerJs(
     <<<JS
@@ -367,5 +382,4 @@ $this->registerJs(
 JS,
     \yii\web\View::POS_END
 );
-
 ?>

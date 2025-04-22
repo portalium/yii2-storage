@@ -6,14 +6,17 @@ use portalium\theme\widgets\Html;
 use portalium\theme\widgets\ListView;
 use yii\helpers\Url;
 /* @var $dataProvider yii\data\ActiveDataProvider */
+/* @var $isPicker bool */
 
-$isPicker = 0;
 echo ListView::widget([
     'dataProvider' => $dataProvider,
     'itemView' => function ($model) use ($isPicker) {
 
         $content = Html::beginTag('span', ['class' => 'file-card col-md-2', 'style' => 'margin-left: 5px; margin-right: 7px;', 'data-id' => $model->id_storage]);
-        $content .= Html::beginTag('span', ['class' => 'card-header']);
+        $cardHeaderStyle = '';
+        if ($isPicker)
+            $cardHeaderStyle = ' padding-left: 35px;';
+        $content .= Html::beginTag('span', ['class' => 'card-header', 'style' => $cardHeaderStyle]);
         if($isPicker)
             $content .= Html::checkbox('selection', false, [
                 'class' => 'file-select-checkbox',
@@ -21,8 +24,7 @@ echo ListView::widget([
                 'onclick' => 'selectFile(this, ' . $model->id_storage . ')',
             ]);
         $title = $model->title ?: 'Başlık yok';
-        $shortTitle = mb_strlen($title) > 15 ? mb_substr($title, 0, 10) . '..' : $title;
-        $content .= $shortTitle;
+        $content .= Html::tag('span', Html::encode($title), ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')]);
         $content .= Html::tag('i', '', [
             'class' => 'fa fa-ellipsis-h',
             'id' => 'menu-trigger-' . $model->id_storage,

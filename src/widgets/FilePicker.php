@@ -12,14 +12,6 @@ class FilePicker extends InputWidget
 {
     public function init()
     {
-        Yii::$app->view->registerCss(<<<CSS
-        .file-card.active {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            border: 2px solid #007bff;
-            transform: scale(1.05);
-            transition: all 0.3s ease;
-        }
-        CSS);
         parent::init();
     }
 
@@ -39,8 +31,22 @@ class FilePicker extends InputWidget
             'enablePushState' => false,
             'timeout' => 50000,
         ]);
-        
-        $js = <<< JS
+
+        $js = <<<JS
+        const updateFileCard = function(id_storage) {
+            $('.file-card.active').removeClass('active');
+            $('.file-card input[type="checkbox"]').prop('checked', false);
+            $('#file-picker-modal span[data-id="' + id_storage + '"]').addClass('active');
+            $('#file-picker-modal span[data-id="' + id_storage + '"] input[type="checkbox"]').prop('checked', true);
+        };
+
+        const showModal = function(id) {
+            setTimeout(function () {
+                var modal = new bootstrap.Modal(document.getElementById('file-picker-modal')); 
+                modal.show();
+                window.inputId = id;
+            }, 500);
+        };
 
         if (window.openFilePickerModal === undefined) {
             window.openFilePickerModal = function (id, id_storage) {
@@ -49,30 +55,14 @@ class FilePicker extends InputWidget
                         container: '#' + id + '-pjax',
                         url: '/storage/default/picker-modal',
                         type: 'GET',
-                        data: {
-                            id: id
-                        },
+                        data: { id: id }
                     }).done(function () {
-                        $('.file-card.active').removeClass('active');
-                        $('.file-card input[type="checkbox"]').prop('checked', false);
-                        $('#file-picker-modal span[data-id="' + id_storage + '"]').addClass('active');
-                        $('#file-picker-modal span[data-id="' + id_storage + '"] input[type="checkbox"]').prop('checked', true);
-                        setTimeout(function () {
-                            var modal = new bootstrap.Modal(document.getElementById('file-picker-modal')); // Initialize Bootstrap modal
-                            modal.show();
-                            window.inputId = id;
-                        }, 500);
+                        updateFileCard(id_storage); 
+                        showModal(id); 
                     });
                 } else {
-                    $('.file-card.active').removeClass('active');
-                    $('.file-card input[type="checkbox"]').prop('checked', false);
-                    $('#file-picker-modal span[data-id="' + id_storage + '"]').addClass('active');
-                    $('#file-picker-modal span[data-id="' + id_storage + '"] input[type="checkbox"]').prop('checked', true);
-                    setTimeout(function () {
-                        var modal = new bootstrap.Modal(document.getElementById('file-picker-modal')); // Initialize Bootstrap modal
-                        modal.show();
-                        window.inputId = id;
-                    }, 500);
+                    updateFileCard(id_storage); 
+                    showModal(id); 
                 }
             };
         }
@@ -96,7 +86,9 @@ class FilePicker extends InputWidget
                 $('#file-picker-modal').modal('hide');
             };
         }
+
         JS;
+
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
         Pjax::end();
     }
