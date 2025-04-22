@@ -205,5 +205,15 @@ class DefaultController extends Controller
                 Yii::$app->session->setFlash('error', Module::t('File not found!'));
         }
     }
+    public function actionPickerModal()
+    {
+        $searchModel = new StorageSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
+            'dataProvider' => $dataProvider
+        ]);
+    }
+
 
 }
