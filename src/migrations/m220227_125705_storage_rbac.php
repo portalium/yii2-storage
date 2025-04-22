@@ -16,6 +16,7 @@ class m220227_125705_storage_rbac extends Migration
             'storageApiDefaultIndex',
             'storageWebDefaultIndex',
             'storageWebDefaultView',
+            'storageWebDefaultGetFile',
             'storageWebDefaultCreate',
             'storageWebDefaultUpdate',
             'storageWebDefaultDelete',
@@ -42,6 +43,7 @@ class m220227_125705_storage_rbac extends Migration
         $auth->remove($auth->getPermission('storageWebDefaultUpdate'));
         $auth->remove($auth->getPermission('storageWebDefaultDelete'));
         $auth->remove($auth->getPermission('storageApiDefaultView'));
+        $auth->remove($auth->getPermission('storageWebDefaultGetFile'));
         $auth->remove($auth->getPermission('storageApiDefaultCreate'));
         $auth->remove($auth->getPermission('storageApiDefaultUpdate'));
         $auth->remove($auth->getPermission('storageApiDefaultDelete'));

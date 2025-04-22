@@ -3,208 +3,101 @@
 namespace portalium\storage\widgets;
 
 use Yii;
-use yii\base\Model;
-use yii\base\Widget;
-use yii\widgets\ListView;
-use kartik\file\FileInput;
+use portalium\widgets\Pjax;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
-use portalium\storage\models\Storage;
 use portalium\theme\widgets\InputWidget;
-use portalium\theme\widgets\Modal;
 
 class FilePicker extends InputWidget
 {
-
-    public $dataProvider;
-    public $selected;
-    public $multiple = 0;
-    public $attributes = ['id_storage'];
-    public $name = '';
-    public $isJson = 1;
-    public $isPicker = true;
-    public $callbackName = null;
-    public $fileExtensions = null;
-    public $manage = false;
-
     public function init()
     {
-
+        Yii::$app->view->registerCss(<<<CSS
+        .file-card.active {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 2px solid #007bff;
+            transform: scale(1.05);
+            transition: all 0.3s ease;
+        }
+        CSS);
         parent::init();
-        Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
-        $this->name = $this->generateHtmlId($this->name);
-        $this->options['id'] = 'file-picker-input-' . $this->name;
-        $this->options['id'] = 'file-picker-input-' . $this->name;
-
-        $attribute = $this->attribute;
-        try {
-            if (str_contains($attribute, "[")) {
-                $startPos = strpos($attribute, "[");
-                $endPos = strpos($attribute, "]");
-
-                $attribute = substr($attribute, 0, $startPos) . substr($attribute, $endPos + 1);
-            }
-        } catch (\Exception $e) {
-            // do nothing
-        }
-        if ($attribute) {
-            try {
-                $value = json_decode($this->model[$attribute], true);
-                if (isset($value['id_storage'])) {
-                    $storageModelForName = Storage::findOne($value['id_storage']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
-                } else if (isset($value['name'])) {
-                    $storageModelForName = Storage::findOne($value['name']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
-                } else {
-                    $storageModelForName = Storage::findOne($this->model[$attribute]);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : '';
-                }
-            } catch (\Exception $e) {
-                // do nothing
-            }
-        }
-
-        if (isset($this->options['multiple'])) {
-            $this->multiple = $this->options['multiple'];
-        }
-        if (isset($this->options['attributes'])) {
-            $this->attributes = $this->options['attributes'];
-        }
-        if (isset($this->options['isJson'])) {
-            $this->isJson = $this->options['isJson'];
-        }
-        if (isset($this->options['isPicker'])) {
-            $this->isPicker = $this->options['isPicker'];
-        }
-        if (isset($this->options['fileExtensions'])) {
-            $this->fileExtensions = $this->options['fileExtensions'];
-        }
-        if (isset($this->options['callbackName'])) {
-            $this->callbackName = $this->options['callbackName'];
-        }
     }
 
     public function run()
     {
-        $query = Storage::find();
-        if ($this->fileExtensions) {
-            foreach ($this->fileExtensions as $fileExtension) {
-                $query->orWhere(['like', 'name', $fileExtension]);
-            }
-        }
-        if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['id_workspace']) && Yii::$app->request->queryParams['StorageSearch']['id_workspace'] != '' && Yii::$app->request->queryParams['StorageSearch']['id_workspace'] != null) {
-            $query->andWhere(['id_workspace' => Yii::$app->request->queryParams['StorageSearch']['id_workspace']]);
-        }
-        if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-            $query->andWhere(['access' => Storage::ACCESS_PRIVATE]);
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PUBLIC) {
-            $query->andWhere(['access' => Storage::ACCESS_PUBLIC]);
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == '') {
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-            $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-            $query->andWhere(['access' => Storage::ACCESS_PRIVATE]);
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PUBLIC) {
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-            $query->andWhere(['access' => Storage::ACCESS_PUBLIC])->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == '') {
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-            $query->andWhere([
-                'OR',
-                ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
-                ['access' => Storage::ACCESS_PUBLIC, 'id_workspace' => Yii::$app->workspace->id]
-            ]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && (!isset(Yii::$app->request->queryParams['StorageSearch']['access']) || !isset(Yii::$app->request->queryParams['StorageSearch']['title']))) {
-            $query->andWhere([
-                'OR',
-                ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
-                ['access' => Storage::ACCESS_PUBLIC, 'id_workspace' => Yii::$app->workspace->id]
-            ]);
-        } else if ((isset($this->manage) && $this->manage) && (!isset(Yii::$app->request->queryParams['StorageSearch']['access']) || !isset(Yii::$app->request->queryParams['StorageSearch']['title']))) {
-        } else {
-            $query->andWhere([
-                1 => 0
-            ]);
-        }
-        $searchModel = new \portalium\storage\models\StorageSearch();
-        /* $query = $searchModel->search(Yii::$app->request->queryParams);
-        $query = $query->query;
-        if (isset(Yii::$app->request->queryParams['StorageSearch']['access'])) {
-            if (Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-                $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-            }
-        }
-        if ($this->fileExtensions) {
-            foreach ($this->fileExtensions as $fileExtension) {
-                $query->orWhere(['like', 'name', $fileExtension]);
-            }
-        }
-
-        if (Yii::$app->controller->action->id == 'manage' && Yii::$app->user->can('storageStorageFindAll') && $this->manage) {
-            $query = $searchModel->search(Yii::$app->request->queryParams);
-            $query = $query->query;
-        } else if (isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-            if ((!isset(Yii::$app->request->queryParams['StorageSearch']['title']) || Yii::$app->request->queryParams['StorageSearch']['title'] == ''))
-                $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE]]);
-            else
-                $query->orWhere(['and', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PRIVATE], ['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]]);
-        } else {
-            $query->andWhere(['or', ['id_workspace' => Yii::$app->workspace->id], ['access' => Storage::ACCESS_PUBLIC]]);
-        } */
-        $this->dataProvider = new \portalium\data\ActiveDataProvider([
-            'query' => $query,
-            'pagination' => [
-                'pageSize' => $this->isPicker ? 1 : (Yii::$app->session->get('theme::page_size') ? Yii::$app->session->get('theme::page_size') : 10),
-            ],
-            'sort' => [
-                'defaultOrder' => [
-                    'id_storage' => SORT_DESC,
-                ]
-            ],
-        ]);
-        if ($this->isPicker) {
-            if ($this->dataProvider->getCount() > 0) {
-                $this->dataProvider->setModels([array_values($this->dataProvider->getModels())[0]]);
-            }
-        }
         if ($this->hasModel()) {
-            $input = 'activeHiddenInput';
-            echo Html::$input($this->model, $this->attribute, $this->options);
+            echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         }
 
-        $model = new Storage();
-        if (Yii::$app->request->isGet) {
-            $id_storage = Yii::$app->request->get('id_storage');
-            if ($id_storage) {
-                $model = Storage::findOne($id_storage);
-            }
-        }
-
-        echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/file-browser/index.php', [
-            'model' => $this->model,
-            'attribute' => $this->attribute,
-            'multiple' => $this->multiple,
-            'dataProvider' => $this->dataProvider,
-            'isJson' => $this->isJson,
-            'storageModel' => $model,
-            'attributes' => $this->attributes,
-            'name' => $this->name,
-            'callbackName' => $this->callbackName,
-            'isPicker' => $this->isPicker,
-            'fileExtensions' => $this->fileExtensions,
-            'searchModel' => $searchModel,
-            'manage' => $this->manage,
+        echo Html::button(Module::t('Select File'), [
+            'class' => 'btn btn-primary',
+            'onclick' => 'openFilePickerModal("' . $this->options['id'] . '", "' . json_decode($this->model->{$this->attribute}, true)['id_storage'] . '")'
         ]);
-    }
 
-    function generateHtmlId($name)
-    {
-        $name = preg_replace('/[^a-zA-Z0-9]+/', ' ', $name);
-        $name = str_replace(' ', '-', strtolower(trim($name)));
-        return $name;
+        Pjax::begin([
+            'id' => $this->options['id'] . '-pjax',
+            'enablePushState' => false,
+            'timeout' => 50000,
+        ]);
+        
+        $js = <<< JS
+
+        if (window.openFilePickerModal === undefined) {
+            window.openFilePickerModal = function (id, id_storage) {
+                if ($('#file-picker-modal').length === 0) {
+                    $.pjax.reload({
+                        container: '#' + id + '-pjax',
+                        url: '/storage/default/picker-modal',
+                        type: 'GET',
+                        data: {
+                            id: id
+                        },
+                    }).done(function () {
+                        $('.file-card.active').removeClass('active');
+                        $('.file-card input[type="checkbox"]').prop('checked', false);
+                        $('#file-picker-modal span[data-id="' + id_storage + '"]').addClass('active');
+                        $('#file-picker-modal span[data-id="' + id_storage + '"] input[type="checkbox"]').prop('checked', true);
+                        setTimeout(function () {
+                            var modal = new bootstrap.Modal(document.getElementById('file-picker-modal')); // Initialize Bootstrap modal
+                            modal.show();
+                            window.inputId = id;
+                        }, 500);
+                    });
+                } else {
+                    $('.file-card.active').removeClass('active');
+                    $('.file-card input[type="checkbox"]').prop('checked', false);
+                    $('#file-picker-modal span[data-id="' + id_storage + '"]').addClass('active');
+                    $('#file-picker-modal span[data-id="' + id_storage + '"] input[type="checkbox"]').prop('checked', true);
+                    setTimeout(function () {
+                        var modal = new bootstrap.Modal(document.getElementById('file-picker-modal')); // Initialize Bootstrap modal
+                        modal.show();
+                        window.inputId = id;
+                    }, 500);
+                }
+            };
+        }
+
+        if (window.selectFile === undefined) {
+            window.selectFile = function (element, id_storage) {
+                $('.file-card.active').removeClass('active');
+                if ($(element).is(':checked')) {
+                    $('.file-card input[type="checkbox"]').not(element).prop('checked', false);
+                    $('.file-card[data-id="' + id_storage + '"]').addClass('active');
+                } else {
+                    $('.file-card[data-id="' + id_storage + '"]').removeClass('active');
+                }
+            };
+        }
+
+        if (window.saveSelect === undefined) {
+            window.saveSelect = function () {
+                var selectedFile = $('.file-card.active').data('id');
+                $('#' + window.inputId).val(JSON.stringify({id_storage: selectedFile}));
+                $('#file-picker-modal').modal('hide');
+            };
+        }
+        JS;
+        $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
+        Pjax::end();
     }
 }
