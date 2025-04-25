@@ -39,8 +39,6 @@ function handleAccessChange(selectElement) {
     text.innerText = isPublic ? text.dataset.public : text.dataset.private;
     desc.innerText = isPublic ? desc.dataset.public : desc.dataset.private;
 }
-
-
 function handleCopyLink(button) {
     const originalText = button.innerHTML;
     const copiedMessage = button.dataset.copied;
@@ -56,3 +54,4 @@ function handleCopyLink(button) {
         button.classList.add('btn-outline-secondary');
     }, 2000);
 }
+

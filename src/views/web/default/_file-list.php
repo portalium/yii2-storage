@@ -8,11 +8,40 @@ use yii\helpers\Url;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $isPicker bool */
 
+$this->registerJs("
+    if (typeof selectFile === 'undefined') {
+        window.selectFile = function (element, id_storage) {
+            $('.file-card.active').removeClass('active');
+            if ($(element).is(':checked')) {
+                $('.file-card input[type=\"checkbox\"]').not(element).prop('checked', false);
+                $('.file-card[data-id=\"' + id_storage + '\"]').addClass('active');
+            } else {
+                $('.file-card[data-id=\"' + id_storage + '\"]').removeClass('active');
+            }
+        };
+    }"
+);
+
 echo ListView::widget([
     'dataProvider' => $dataProvider,
     'itemView' => function ($model) use ($isPicker) {
 
-        $content = Html::beginTag('span', ['class' => 'file-card col-md-2', 'style' => 'margin-left: 5px; margin-right: 7px;', 'data-id' => $model->id_storage]);
+        $content = Html::beginTag('span', [
+            'class' => 'file-card col-md-2',
+            'style' => 'margin-left: 5px; margin-right: 7px;',
+            'data-id' => $model->id_storage,
+            'onclick' => $isPicker ? 'if(event.target === this || event.target.classList.contains("file-icon") || event.target.classList.contains("file-title")) { 
+                var checkbox = document.querySelector(".file-select-checkbox[value=\'' . $model->id_storage . '\']");
+                checkbox.checked = true;
+                if (typeof selectFile === "function") {
+                    selectFile(checkbox, ' . $model->id_storage . ');
+                } else {
+                    $(".file-card.active").removeClass("active");
+                    $(".file-card input[type=\"checkbox\"]").not(checkbox).prop("checked", false);
+                    $(".file-card[data-id=\"' . $model->id_storage . '\"]").addClass("active");
+                }
+            }' : null
+        ]);
         $cardHeaderStyle = '';
         if ($isPicker)
             $cardHeaderStyle = ' padding-left: 35px;';
@@ -23,12 +52,13 @@ echo ListView::widget([
                 'value' => $model->id_storage,
                 'onclick' => 'selectFile(this, ' . $model->id_storage . ')',
             ]);
+
         $title = $model->title ?: 'Başlık yok';
         $content .= Html::tag('span', Html::encode($title), ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')]);
         $content .= Html::tag('i', '', [
             'class' => 'fa fa-ellipsis-h',
             'id' => 'menu-trigger-' . $model->id_storage,
-            'data-title' => strtolower($model->title ?: 'Başlık yok'),
+            'data-title' => $model->title ?: 'Başlık yok',
             'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')'
         ]);
         $content .= Dropdown::widget([
