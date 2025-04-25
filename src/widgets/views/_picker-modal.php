@@ -31,5 +31,3 @@ echo $this->render('@portalium/storage/views/web/default/index', [
     'isPicker' => true
 ]);
 Modal::end();
-
-

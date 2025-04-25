@@ -8,19 +8,25 @@ use yii\helpers\Url;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $isPicker bool */
 
-$this->registerJs("
-    if (typeof selectFile === 'undefined') {
-        window.selectFile = function (element, id_storage) {
-            $('.file-card.active').removeClass('active');
-            if ($(element).is(':checked')) {
-                $('.file-card input[type=\"checkbox\"]').not(element).prop('checked', false);
-                $('.file-card[data-id=\"' + id_storage + '\"]').addClass('active');
+$this->registerJs(<<<JS
+if (typeof selectFile === 'undefined') {
+    window.selectFile = function (element, id_storage) {
+        if (window.multiple) {
+            if (\$(element).is(':checked')) {
+                \$('.file-card[data-id="' + id_storage + '"]').addClass('active');
             } else {
-                $('.file-card[data-id=\"' + id_storage + '\"]').removeClass('active');
+                \$('.file-card[data-id="' + id_storage + '"]').removeClass('active');
             }
-        };
-    }"
-);
+        } else {
+            \$('.file-card.active').removeClass('active');
+            \$('.file-card input[type="checkbox"]').not(element).prop('checked', false);
+            if (\$(element).is(':checked')) {
+                \$('.file-card[data-id="' + id_storage + '"]').addClass('active');
+            }
+        }
+    };
+}
+JS);
 
 echo ListView::widget([
     'dataProvider' => $dataProvider,
@@ -32,13 +38,9 @@ echo ListView::widget([
             'data-id' => $model->id_storage,
             'onclick' => $isPicker ? 'if(event.target === this || event.target.classList.contains("file-icon") || event.target.classList.contains("file-title")) { 
                 var checkbox = document.querySelector(".file-select-checkbox[value=\'' . $model->id_storage . '\']");
-                checkbox.checked = true;
+                checkbox.checked = !checkbox.checked;
                 if (typeof selectFile === "function") {
                     selectFile(checkbox, ' . $model->id_storage . ');
-                } else {
-                    $(".file-card.active").removeClass("active");
-                    $(".file-card input[type=\"checkbox\"]").not(checkbox).prop("checked", false);
-                    $(".file-card[data-id=\"' . $model->id_storage . '\"]").addClass("active");
                 }
             }' : null
         ]);
@@ -46,7 +48,7 @@ echo ListView::widget([
         if ($isPicker)
             $cardHeaderStyle = ' padding-left: 35px;';
         $content .= Html::beginTag('span', ['class' => 'card-header', 'style' => $cardHeaderStyle]);
-        if($isPicker)
+        if ($isPicker)
             $content .= Html::checkbox('selection', false, [
                 'class' => 'file-select-checkbox',
                 'value' => $model->id_storage,
