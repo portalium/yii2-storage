@@ -88,26 +88,7 @@ Pjax::begin([
 Pjax::end();
 
 ?>
-<?php
-$this->registerJs(<<<JS
-function openFilePickerModal() {
-    $.ajax({
-        url: '/storage/default/picker-modal',
-        type: 'GET',
-        success: function(data) {
-            $('#file-picker-modal-container').html(data);
-            setTimeout(function () {
-                var modalEl = document.getElementById('file-picker-modal');
-                if (modalEl) {
-                    var modal = new bootstrap.Modal(modalEl);
-                    modal.show();
-                }
-            }, 1000);
-        }
-    });
-}
-JS, \yii\web\View::POS_END);
-?>
+
 <?php
 $this->registerJs(
     <<<JS
