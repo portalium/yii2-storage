@@ -21,9 +21,11 @@ class FilePicker extends InputWidget
             echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         }
 
+        $id_storage = $this->model->{$this->attribute} ?? '';
+
         echo Html::button(Module::t('Select File'), [
             'class' => 'btn btn-primary',
-            'onclick' => 'openFilePickerModal("' . $this->options['id'] . '", "' . json_decode($this->model->{$this->attribute}, true)['id_storage'] . '")'
+            'onclick' => 'openFilePickerModal("' . $this->options['id'] . '", "' . $id_storage . '")'
         ]);
 
         Pjax::begin([
@@ -45,7 +47,7 @@ class FilePicker extends InputWidget
                 var modal = new bootstrap.Modal(document.getElementById('file-picker-modal')); 
                 modal.show();
                 window.inputId = id;
-            }, 500);
+            }, 1000);
         };
 
         if (window.openFilePickerModal === undefined) {
@@ -70,12 +72,12 @@ class FilePicker extends InputWidget
         if (window.saveSelect === undefined) {
             window.saveSelect = function () {
                 var selectedFile = $('.file-card.active').data('id');
-                $('#' + window.inputId).val(JSON.stringify({id_storage: selectedFile}));
+                $('#' + window.inputId).val(selectedFile); 
                 $('#file-picker-modal').modal('hide');
             };
         }
-
-        JS;
+        
+JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
         Pjax::end();
