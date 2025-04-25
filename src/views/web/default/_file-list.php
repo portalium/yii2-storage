@@ -89,7 +89,7 @@ echo ListView::widget([
                 ],
             ],
             'options' => [
-                'class' => 'dropdown-menu',
+                'class' => 'custom-dropdown-menu',
                 'id' => 'context-menu-' . $model->id_storage
             ],
         ]);

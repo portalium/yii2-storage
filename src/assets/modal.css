@@ -1,4 +1,3 @@
-/* Card Styling */
 .file-card {
     position: relative;
     border: 1px solid #ddd;
@@ -16,16 +15,48 @@
     cursor: pointer;
 }
 
-.file-card-wrapper {
-    position: relative;
-    margin: 10px;
+.file-card:hover {
+    transform: scale(1.05);
+}
+
+.file-card .card-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    font-size: 14px;
+    background: rgba(238, 238, 238, 0.9);
+    border-radius: 8px 8px 0 0;
+    height: 40px;
+}
+
+.file-card .card-header .fa-ellipsis-h {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.file-card .card-header .fa-ellipsis-h:hover {
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .file-select-checkbox {
     position: absolute;
     top: 10px;
     left: 10px;
-    z-index: 20;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -58,31 +89,20 @@
     border-color: #0d6efd;
 }
 
-.file-card.selected {
-    border: 2px solid #0d6efd;
-    background-color: rgba(13, 110, 253, 0.05);
-    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1);
+.file-card img.file-icon.image-file {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    padding-top: 30px;
+    border-radius: 3px;
 }
 
-.file-card:hover {
-    transform: scale(1.05);
+.file-card img.file-icon.non-image {
+    width: 70px;
+    height: 70px;
+    margin-top: 20px;
 }
 
-.file-card .card-header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    font-size: 14px;
-    background: rgba(250, 250, 250, 0.9);
-    border-radius: 8px 8px 0 0;
-    height: 40px;
-    z-index: 15;
-}
 .file-title {
     display: inline-block;
     white-space: nowrap;
@@ -98,53 +118,19 @@
     max-width: 175px;
 }
 
-.file-card .card-header .fa-ellipsis-h {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 25;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
+.file-card.selected {
+    border: 2px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1);
 }
 
-.file-card .card-header .fa-ellipsis-h:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-.file-card img.file-icon.image-file {
-    max-width: 100%;
-    max-height: 100%;
-    width: auto;
-    height: auto;
-    object-fit: contain;
-    padding-top: 30px;
-    overflow: hidden;
-    border-radius: 3px;
-    z-index: 5;
-}
-
-.file-card img.file-icon.non-image {
-    width: 70px;
-    height: 70px;
-    margin-top: 20px;
-    z-index: 5;
-}
-
-.dropdown-menu {
+.custom-dropdown-menu {
     position: absolute;
     display: none;
     background-color: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     padding: 8px 0;
-    z-index: 1050;
     min-width: 120px;
     max-height: 210px;
     right: 5px;
@@ -153,85 +139,31 @@
     animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.dropdown-menu.show {
+.custom-dropdown-menu.show {
     display: block;
 }
-
-.dropdown-menu .menu-item {
+.file-card-wrapper {
+    position: relative;
+    margin: 10px;
+}
+.custom-dropdown-menu .menu-item {
     padding: 8px 15px;
     cursor: pointer;
     font-size: 13px;
 }
 
-.dropdown-menu .menu-item:hover {
+.custom-dropdown-menu .menu-item:hover {
     background-color: #f5f5f5;
 }
 
-.dropdown-menu .divider {
+.custom-dropdown-menu .divider {
     height: 1px;
     background-color: #e5e5e5;
     margin: 5px 0;
 }
 
-#searchUser::placeholder {
-    color: #adb5bd;
-}
 
-.form-select.form-select-lg.mt-4 {
-    background-color: #f5f7f9;
-}
-
-#copyLink {
-    transition: all 0.3s ease;
-}
-
-#copyLink:hover {
-    background-color: #f8f9fa;
-}
-
-#userAccessList::-webkit-scrollbar {
-    width: 6px;
-}
-
-#userAccessList::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-#userAccessList::-webkit-scrollbar-thumb {
-    background: #c1c9d6;
-    border-radius: 10px;
-}
-
-#userAccessList::-webkit-scrollbar-thumb:hover {
-    background: #a8b2c1;
-}
-
-.user-avatar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-}
-
-@media (max-width: 576px) {
-    .user-avatar {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 14px !important;
-    }
-
-    .form-select {
-        width: 100px !important;
-        font-size: 0.75rem;
-    }
-
-    #copyLink, #doneButton {
-        width: 100%;
-    }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
