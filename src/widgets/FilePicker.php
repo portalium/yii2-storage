@@ -67,18 +67,6 @@ class FilePicker extends InputWidget
             };
         }
 
-        if (window.selectFile === undefined) {
-            window.selectFile = function (element, id_storage) {
-                $('.file-card.active').removeClass('active');
-                if ($(element).is(':checked')) {
-                    $('.file-card input[type="checkbox"]').not(element).prop('checked', false);
-                    $('.file-card[data-id="' + id_storage + '"]').addClass('active');
-                } else {
-                    $('.file-card[data-id="' + id_storage + '"]').removeClass('active');
-                }
-            };
-        }
-
         if (window.saveSelect === undefined) {
             window.saveSelect = function () {
                 var selectedFile = $('.file-card.active').data('id');
