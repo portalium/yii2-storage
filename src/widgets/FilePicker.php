@@ -41,15 +41,15 @@ class FilePicker extends InputWidget
             $('#file-picker-modal span[data-id="' + id_storage + '"]').addClass('active');
             $('#file-picker-modal span[data-id="' + id_storage + '"] input[type="checkbox"]').prop('checked', true);
         };
-
+        
         const showModal = function(id) {
             setTimeout(function () {
-                var modal = new bootstrap.Modal(document.getElementById('file-picker-modal')); 
+                var modal = new bootstrap.Modal(document.getElementById('file-picker-modal'));
                 modal.show();
                 window.inputId = id;
-            }, 1000);
+            }, 100);
         };
-
+        
         if (window.openFilePickerModal === undefined) {
             window.openFilePickerModal = function (id, id_storage) {
                 if ($('#file-picker-modal').length === 0) {
@@ -59,26 +59,55 @@ class FilePicker extends InputWidget
                         type: 'GET',
                         data: { id: id }
                     }).done(function () {
-                        updateFileCard(id_storage); 
-                        showModal(id); 
+                        updateFileCard(id_storage);
+                        showModal(id);
+                        bindModalEvents();
                     });
                 } else {
-                    updateFileCard(id_storage); 
-                    showModal(id); 
+                    updateFileCard(id_storage);
+                    showModal(id);
+                    bindModalEvents();
                 }
             };
         }
-
+        
         if (window.saveSelect === undefined) {
             window.saveSelect = function () {
                 var selectedFile = $('.file-card.active').data('id');
-                $('#' + window.inputId).val(selectedFile); 
+                $('#' + window.inputId).val(selectedFile);
                 $('#file-picker-modal').modal('hide');
             };
         }
         
-JS;
-
+        function bindModalEvents() {
+            $('#file-picker-modal').off('click', '.btn-save-select');
+            $('#file-picker-modal').off('click', '.btn-close-modal');
+        
+            $('#file-picker-modal').on('click', '.btn-save-select', function() {
+                var selectedFile = $('.file-card.active').data('id');
+                $('#' + window.inputId).val(selectedFile);
+                $('#file-picker-modal').modal('hide');
+            });
+        
+            $('#file-picker-modal').on('click', '.btn-close-modal', function() {
+                $('#file-picker-modal').modal('hide');
+            });
+        }
+        
+        $(document).on('pjax:end', function(event) {
+            if ($('#file-picker-modal').length > 0) {
+                var modal = new bootstrap.Modal(document.getElementById('file-picker-modal'));
+                modal.show();
+                bindModalEvents();
+            }
+        });
+        
+        $(document).on('hidden.bs.modal', '#file-picker-modal', function () {
+            $('body').removeClass('modal-open').css('overflow', 'auto'); 
+            $('.modal-backdrop').remove();
+        });
+        
+        JS;
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
         Pjax::end();
     }
