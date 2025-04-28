@@ -15,7 +15,7 @@ Yii::$app->view->registerCss("
 Modal::begin([
     'title' => Module::t('Select File'),
     'id' => 'file-picker-modal',
-    'size' => Modal::SIZE_LARGE,
+    'size' => Modal::SIZE_EXTRA_LARGE,
     'footer' => Html::button(Module::t('Close'), [
         'class' => 'btn btn-danger',
         'data-bs-dismiss' => 'modal',
@@ -23,13 +23,13 @@ Modal::begin([
         'class' => 'btn btn-success',
         'onclick' => 'saveSelect()',
     ]),
-]);
+]);?>
 
 
-echo $this->render('@portalium/storage/views/web/default/index', [
+<?php echo $this->render('@portalium/storage/views/web/default/index', [
     'dataProvider' => $dataProvider,
     'isPicker' => true
 ]);
-Modal::end();
+Modal::end(); ?>
 
 

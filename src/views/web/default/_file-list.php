@@ -19,6 +19,20 @@ $this->registerJs("
                 $('.file-card[data-id=\"' + id_storage + '\"]').removeClass('active');
             }
         };
+    }
+
+    window.handleFileCardClick = function(event, id_storage) {
+        if(event.target === this || event.target.classList.contains('file-icon') || event.target.classList.contains('file-title')) { 
+            var checkbox = document.querySelector(\".file-select-checkbox[value='\" + id_storage + \"']\");
+            checkbox.checked = true;
+            if (typeof selectFile === \"function\") {
+                selectFile(checkbox, id_storage);
+            } else {
+                $(\".file-card.active\").removeClass(\"active\");
+                $(\".file-card input[type=\\\"checkbox\\\"]\").not(checkbox).prop(\"checked\", false);
+                $(\".file-card[data-id=\\\"\" + id_storage + \"\\\"]\").addClass(\"active\");
+            }
+        }
     }"
 );
 
@@ -30,17 +44,7 @@ echo ListView::widget([
             'class' => 'file-card col-md-2',
             'style' => 'margin-left: 5px; margin-right: 7px;',
             'data-id' => $model->id_storage,
-            'onclick' => $isPicker ? 'if(event.target === this || event.target.classList.contains("file-icon") || event.target.classList.contains("file-title")) { 
-                var checkbox = document.querySelector(".file-select-checkbox[value=\'' . $model->id_storage . '\']");
-                checkbox.checked = true;
-                if (typeof selectFile === "function") {
-                    selectFile(checkbox, ' . $model->id_storage . ');
-                } else {
-                    $(".file-card.active").removeClass("active");
-                    $(".file-card input[type=\"checkbox\"]").not(checkbox).prop("checked", false);
-                    $(".file-card[data-id=\"' . $model->id_storage . '\"]").addClass("active");
-                }
-            }' : null
+            'onclick' => $isPicker ? 'handleFileCardClick.call(this, event, ' . $model->id_storage . ')' : null
         ]);
         $cardHeaderStyle = '';
         if ($isPicker)
@@ -141,3 +145,4 @@ echo ListView::widget([
     ],
     'layout' => "{items}\n{pager}",
 ]);
+?>
