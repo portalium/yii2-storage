@@ -47,6 +47,11 @@ class DefaultController extends Controller
         ]);
     }
 
+    public function actionNewFolder()
+    {
+        return $this->renderAjax('_new-folder');
+    }
+
     public function actionDownloadFile()
     {
         $id = Yii::$app->request->post('id');

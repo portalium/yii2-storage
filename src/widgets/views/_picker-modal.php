@@ -10,6 +10,7 @@ Modal::begin([
     'title' => Module::t('Select File'),
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_EXTRA_LARGE,
+    'closeButton' => false,
     'footer' => Html::button(Module::t('Close'), [
             'class' => 'btn btn-danger',
             'data-bs-dismiss' => 'modal',
@@ -19,6 +20,8 @@ Modal::begin([
             'disabled' => true,
             'id' => 'btn-select-file'
         ]),
+    'dialogOptions' => ['class' => 'modal-dialog-centered']
+
 ]); ?>
 
 

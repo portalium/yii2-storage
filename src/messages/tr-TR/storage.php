@@ -20,7 +20,7 @@ return [
     'Share' => 'Paylaş',
     'Make a Copy' => 'Kopyala',
     'Remove' => 'Kaldır',
-    'Save Changes' => 'Değişiklikleri Kaydet',
+    'Create' => 'Oluştur',
     'Add person or group' => 'Kişi veya grup ekle',
     'People with access' => 'Erişimi olan kişiler',
     'General Access' => 'Genel Erişim',
@@ -44,5 +44,9 @@ return [
     'File not found!' => 'Dosya Bulunamadı!',
     'File deleted successfully!' => 'Dosya başarıyla silindi!',
     'The file could not be deleted!' => 'Dosya silinemedi!',
-    'File not found!' => 'Dosya bulunamadı!'
+    'File not found!' => 'Dosya bulunamadı!',
+    'New Folder' => 'Yeni Klasör',
+    'Create New Folder' => 'Yeni Klasör Oluştur',
+    'Folder Name' => 'Klasör Adı',
+    'Select Directory' => 'Dizin Seçin'
 ];

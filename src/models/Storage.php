@@ -26,6 +26,7 @@ use portalium\workspace\models\Workspace;
 class Storage extends \yii\db\ActiveRecord
 {
     public $file;
+    public $id_directory;
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
     const MIME_TYPE = [
@@ -76,6 +77,7 @@ class Storage extends \yii\db\ActiveRecord
             [['title'], 'required'],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
+            [['id_directory'], 'integer'],
             [['file', 'access', 'hash_file', 'id_workspace'], 'safe'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE]
@@ -93,6 +95,7 @@ class Storage extends \yii\db\ActiveRecord
             'id_workspace' => Module::t('Workspace'),
             'access' => Module::t('Access'),
             'hash_file' => Module::t('Hash File'),
+            'id_directory' => Module::t('Id Directory'),
         ];
     }
 
@@ -115,15 +118,17 @@ class Storage extends \yii\db\ActiveRecord
                     $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
                     $this->id_workspace = Yii::$app->workspace->id;
                     $this->id_user = Yii::$app->user->id;
-                    if ($this->save()) {
+                    if ($this->id_directory === 'root')
+                        $this->id_directory = null;
+
+                    if ($this->save())
                         return true;
-                    } else {
+                    else
                         return false;
-                    }
                 }
-            } else {
-                return false;
             }
+            else
+                return false;
         }
         return false;
     }

@@ -20,7 +20,9 @@ $this->params['breadcrumbs'][] = $this->title;
 ?>
 
 <?php
-echo Html::beginTag('span', ['class' => 'col-md-4 d-flex gap-2']);
+echo Html::beginTag('span', [
+    'class' => 'col-md-5 d-flex gap-2']);
+
 echo Html::tag(
     'span',
     Html::textInput('file', '', [
@@ -28,13 +30,15 @@ echo Html::tag(
         'id' => 'searchFileInput',
         'placeholder' => Module::t('Search file..')
     ]) .
-        Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), ['class' => 'input-group-text']),
+    Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), [
+        'class' => 'input-group-text'
+    ]),
     ['class' => 'input-group']
 );
 
 echo Button::widget([
-    'label' => Html::tag('i', '', ['class' => 'fa fa-upload', 'aria-hidden' => 'true']) .
-        Html::tag('span', Module::t('Upload'), ['class' => 'ms-2']),
+    'label' => Html::tag('i', '', ['class' => 'fa fa-upload me-2', 'aria-hidden' => 'true']) .
+        Html::tag('span', Module::t('Upload')),
     'encodeLabel' => false,
     'options' => [
         'type' => 'button',
@@ -43,11 +47,31 @@ echo Button::widget([
     ],
 ]);
 
+echo Button::widget([
+    'label' => Html::tag('i', '', ['class' => 'fa fa-folder me-2', 'aria-hidden' => 'true']) .
+        Html::tag('span', Module::t('New Folder')),
+    'encodeLabel' => false,
+    'options' => [
+        'type' => 'button',
+        'class' => 'btn btn-primary btn-md d-flex',
+        'style' => 'min-width: 106px;',
+        'onclick' => 'openNewFolderModal()',
+    ],
+]);
+
 echo Html::endTag('span');
 echo html::tag('br');
 
 Pjax::begin([
     'id' => 'upload-file-pjax',
+    'history' => false,
+    'timeout' => false,
+    'enablePushState' => false,
+]);
+Pjax::end();
+
+Pjax::begin([
+    'id' => 'new-folder-pjax',
     'history' => false,
     'timeout' => false,
     'enablePushState' => false,
@@ -128,6 +152,54 @@ $this->registerJs(
         });
     });
 JS,
+    \yii\web\View::POS_END
+);
+
+$this->registerJs(
+    <<<JS
+    function openNewFolderModal() {
+        event.preventDefault();
+
+        $.pjax.reload({
+            container: '#new-folder-pjax',
+            type: 'GET',
+            url: '/storage/default/new-folder'
+        }).done(function() {
+            setTimeout(function () {
+                if ($('#newFolderModal').length) {
+                    $('#newFolderModal').modal('show');
+                } else {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});
+                    });
+                }
+            }, 1000);
+        }).fail(function(e) {
+            console.log('Error Modal:', e);
+        });
+    }
+
+    $(document).on('click', '#createFolderButton', function(e) {
+        e.preventDefault();
+
+        var form = $('#newFolderForm');
+
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            complete: function() {
+                $('#newFolderModal').modal('hide');
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            }
+        });
+    });
+    JS,
     \yii\web\View::POS_END
 );
 
