@@ -158,11 +158,11 @@ if (!window.openFilePickerModal) {
 
 if (!window.saveSelect) {
     window.saveSelect = function () {
-        let selectedFiles = window.multiple
-            ? $('.file-card input[type="checkbox"]:checked').map(function () {
+        let selectedFiles = window.multiple ?
+            $('.file-card input[type="checkbox"]:checked').map(function () {
                 return $(this).closest('.file-card').data('id');
-            }).get()
-            : $('.file-card.active').data('id');
+            }).get() :
+            $('.file-card.active').data('id');
 
         let value = window.isJson
             ? (window.multiple
@@ -182,7 +182,6 @@ if (!window.saveSelect) {
     };
 }
 JS;
-
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
     }
 }

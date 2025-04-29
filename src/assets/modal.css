@@ -5,7 +5,7 @@
     padding: 20px;
     margin-bottom: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    height: 218px;
+    height: 210px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -13,6 +13,18 @@
     text-align: center;
     transition: transform 0.3s ease;
     cursor: pointer;
+    margin-bottom: 20px;
+    margin-right: 10px;
+}
+.files-container {
+    gap: 4px;
+    padding-left: 15px;
+}
+
+.file-select-checkbox:checked ~ .file-card,
+.file-card:has(.file-select-checkbox:checked) {
+    border: 2px solid #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
 }
 
 .file-card:hover {
@@ -118,12 +130,6 @@
     max-width: 175px;
 }
 
-.file-card.selected {
-    border: 2px solid #0d6efd;
-    background-color: rgba(13, 110, 253, 0.05);
-    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1);
-}
-
 .custom-dropdown-menu {
     position: absolute;
     display: none;
@@ -166,4 +172,13 @@
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
+}
+#file-picker-modal .panel-footer {
+    border-top: none !important;
+}
+#btn-select-file:disabled {
+    background-color: #e0e0e0 !important;
+    color: #555 !important;
+    border-color: #ccc !important;
+    opacity: 1 !important;
 }
