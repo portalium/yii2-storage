@@ -1,5 +1,4 @@
 <?php
-
 namespace portalium\storage\widgets;
 
 use Yii;
@@ -18,10 +17,11 @@ class FilePicker extends InputWidget
     public $callbackName = null;
     public $fileExtensions = null;
     public $manage = false;
-
+    
     public function init()
     {
         parent::init();
+        Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
 
         if (isset($this->options['multiple'])) {
             $this->multiple = $this->options['multiple'];
@@ -39,49 +39,53 @@ class FilePicker extends InputWidget
             $this->fileExtensions = $this->options['fileExtensions'];
         }
     }
-
+    
     public function run()
-    {
-        $query = Storage::find();
-        if ($this->fileExtensions) {
-            foreach ($this->fileExtensions as $ext) {
-                $query->orWhere(['like', 'name', $ext]);
-            }
+{
+    $query = Storage::find();
+    if ($this->fileExtensions) {
+        foreach ($this->fileExtensions as $ext) {
+            $query->orWhere(['like', 'name', $ext]);
         }
+    }
 
-        $this->dataProvider = new ActiveDataProvider([
-            'query' => $query,
-            'pagination' => [
-                'pageSize' => 12,
-            ],
-        ]);
+    $this->dataProvider = new ActiveDataProvider([
+        'query' => $query,
+        'pagination' => [
+            'pageSize' => 12, 
+        ],
+    ]);
 
-        if ($this->hasModel()) {
-            echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
-        }
+    if ($this->hasModel()) {
+        echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
+    }
 
-        $value = $this->model->{$this->attribute} ?? '';
-        $decoded = [];
+    $value = $this->model->{$this->attribute} ?? '';
+    $decoded = [];
 
-        if (!empty($value)) {
-            $decoded = json_decode($value, true);
-        }
+    if (!empty($value)) {
+        $decoded = json_decode($value, true);
+    }
 
-        if ($this->multiple && is_array($decoded)) {
-            $first = reset($decoded);
-            $idStorage = is_array($first) ? ($first['id_storage'] ?? '') : $first;
-        } else {
-            $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
-        }
+    if ($this->multiple && is_array($decoded)) {
+        $first = reset($decoded);
+        $idStorage = is_array($first) ? ($first['id_storage'] ?? '') : $first;
+    } else {
+        $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
+    }
 
-        echo Html::button(Module::t('Select File'), [
-            'class' => 'btn btn-primary',
-            'onclick' => 'openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . $this->multiple . ', ' . $this->isJson . ', "' . ($this->callbackName ?? '') . '")'
-        ]);
+    echo Html::button(Module::t('Select File'), [
+        'class' => 'btn btn-primary',
+        'onclick' => 'openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . $this->multiple . ', ' . $this->isJson . ', "' . ($this->callbackName ?? '') . '")'
+    ]);
 
-        echo '<div id="' . $this->options['id'] . '-container"></div>';
+    Pjax::begin([
+        'id' => $this->options['id'] . '-pjax',
+        'enablePushState' => false,
+        'timeout' => 50000,
+    ]);
 
-        $js = <<<JS
+    $js = <<<JS
 const updateFileCard = function(id_storage) {
     $('.file-card.active').removeClass('active');
     $('.file-card input[type="checkbox"]').prop('checked', false);
@@ -99,58 +103,105 @@ const updateFileCard = function(id_storage) {
     }
 };
 
-const getSelectedIds = function() {
-    let val = $('#' + window.inputId).val();
-    if (val && window.isJson) {
-        let parsed = JSON.parse(val);
-        return parsed.map(item => item.id_storage);
-    } else if (val) {
-        return val.split(',');
-    }
-    return [];
-};
-
-const getSelectedId = function() {
-    let val = $('#' + window.inputId).val();
-    if (val && window.isJson) {
-        let parsed = JSON.parse(val);
-        return parsed.id_storage;
-    } else {
-        return val;
-    }
+const showModal = function(id) {
+    setTimeout(function () {
+        var modal = new bootstrap.Modal(document.getElementById('file-picker-modal'));
+        modal.show();
+        window.inputId = id;
+        
+        
+        $(document).on('click', '#file-picker-modal .pagination a', function(e) {
+            e.preventDefault();
+            let url = $(this).attr('href');
+            
+            $.pjax.reload({
+                container: '#' + id + '-pjax',
+                url: url,
+                type: 'GET',
+                data: { 
+                    id: id,
+                    multiple: window.multiple,
+                    isJson: window.isJson
+                },
+                push: false,
+                replace: false
+            }).done(function() {
+                
+                setTimeout(function() {
+                    let modal = new bootstrap.Modal(document.getElementById('file-picker-modal'));
+                    modal.show();
+                    
+                    
+                    if (window.multiple) {
+                        let selectedIds = [];
+                        $('#' + window.inputId).val().then(function(val) {
+                            if (val && window.isJson) {
+                                let parsed = JSON.parse(val);
+                                selectedIds = parsed.map(item => item.id_storage);
+                            } else if (val) {
+                                selectedIds = val.split(',');
+                            }
+                            updateFileCard(selectedIds);
+                        });
+                    } else {
+                        let selectedId = null;
+                        $('#' + window.inputId).val().then(function(val) {
+                            if (val && window.isJson) {
+                                let parsed = JSON.parse(val);
+                                selectedId = parsed.id_storage;
+                            } else {
+                                selectedId = val;
+                            }
+                            updateFileCard(selectedId);
+                        });
+                    }
+                }, 200);
+            });
+        });
+    }, 500);
 };
 
 if (window.openFilePickerModal === undefined) {
     window.openFilePickerModal = function (id, id_storage, multiple, isJson, callbackName) {
-        window.inputId = id;
         window.multiple = multiple;
         window.isJson = isJson;
         window.callbackName = callbackName;
+        
+        
+        $(document).off('click', '#file-picker-modal .pagination a');
 
-        $.get('/storage/default/picker-modal', { 
-            id: id,
-            multiple: multiple,
-            isJson: isJson
-        }, function(data) {
-            $('#' + id + '-container').html(data);
-
-            var modal = new bootstrap.Modal(document.getElementById('file-picker-modal'));
-            modal.show();
-
-            $(document).off('click', '#file-picker-modal .pagination a');
-            $(document).on('click', '#file-picker-modal .pagination a', function(e) {
-                e.preventDefault();
-                var url = $(this).attr('href');
-                $.get(url, function(content) {
-                    $('#file-picker-modal .modal-body').html($(content).find('.modal-body').html());
-                    updateFileCard(window.multiple ? getSelectedIds() : getSelectedId());
-                });
+        if ($('#file-picker-modal').length === 0) {
+            $.pjax.reload({
+                container: '#' + id + '-pjax',
+                url: '/storage/default/picker-modal',
+                type: 'GET',
+                data: { 
+                    id: id,
+                    multiple: multiple,
+                    isJson: isJson
+                }
+            }).done(function () {
+                updateFileCard(id_storage);
+                showModal(id);
             });
-
+        } else {
             updateFileCard(id_storage);
-        });
+            showModal(id);
+        }
     };
 }
+
+
+$(document).on('pjax:complete', function() {
+    if ($('#file-picker-modal').length > 0) {
+        
+        if ($('#file-picker-modal').hasClass('show')) {
+           
+        } else {
+            
+        }
+    }
+});
 
 if (window.saveSelect === undefined) {
     window.saveSelect = function () {
@@ -188,16 +239,14 @@ if (window.saveSelect === undefined) {
             }
         }
 
-        var modalEl = document.getElementById('file-picker-modal');
-        var modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if (modalInstance) {
-            modalInstance.hide();
-        }
+        $('#file-picker-modal').modal('hide');
     };
 }
 JS;
 
-        $this->view->registerJs($js, \yii\web\View::POS_END);
-    }
+    $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
+
+    Pjax::end();
+}
 }
 
