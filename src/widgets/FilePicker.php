@@ -1,4 +1,5 @@
 <?php
+
 namespace portalium\storage\widgets;
 
 use Yii;
@@ -7,7 +8,7 @@ use portalium\storage\Module;
 use portalium\storage\models\Storage;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\InputWidget;
-use portalium\data\ActiveDataProvider; 
+use portalium\data\ActiveDataProvider;
 
 class FilePicker extends InputWidget
 {
@@ -31,7 +32,7 @@ class FilePicker extends InputWidget
 
     public function run()
     {
-        
+
         $query = Storage::find();
 
         if (is_array($this->fileExtensions) && !empty($this->fileExtensions)) {
@@ -42,18 +43,18 @@ class FilePicker extends InputWidget
             $query->andWhere($orConditions);
         }
 
-      
+
         $this->dataProvider = new ActiveDataProvider([
             'query' => $query,
             'pagination' => ['pageSize' => 12],
         ]);
 
-        
+
         if ($this->hasModel()) {
             echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         }
 
-      
+
         $value = $this->model->{$this->attribute} ?? '';
         $decoded = json_decode($value, true);
         $idStorage = '';
@@ -65,16 +66,16 @@ class FilePicker extends InputWidget
             $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
         }
 
-       
+
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
 
-        
+
         echo Html::button(Module::t('Select File'), [
             'class' => 'btn btn-primary',
             'onclick' => 'openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '")'
         ]);
 
-        
+
         Pjax::begin([
             'id' => $this->options['id'] . '-pjax',
             'enablePushState' => false,
