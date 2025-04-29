@@ -10,6 +10,8 @@ use Yii;
 use yii\web\NotFoundHttpException;
 use yii\web\UploadedFile;
 
+use portalium\data\ActiveDataProvider;
+
 
 class DefaultController extends Controller
 {
@@ -206,14 +208,30 @@ class DefaultController extends Controller
         }
     }
     public function actionPickerModal()
-    {
-        $searchModel = new StorageSearch();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+{
+    $query = Storage::find();
 
-        return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
-            'dataProvider' => $dataProvider
-        ]);
+    $extensions = Yii::$app->request->get('fileExtensions', []);
+    if (!empty($extensions) && is_array($extensions)) {
+        $orConditions = ['or'];
+        foreach ($extensions as $extension) {
+            $orConditions[] = ['like', 'name', $extension];
+        }
+        $query->andWhere($orConditions);
     }
+
+    $dataProvider = new ActiveDataProvider([
+        'query' => $query,
+        'pagination' => ['pageSize' => 10],
+        'sort' => [
+            'defaultOrder' => ['id_storage' => SORT_DESC],
+        ],
+    ]);
+
+    return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
+        'dataProvider' => $dataProvider
+    ]);
+}
 
 
 
