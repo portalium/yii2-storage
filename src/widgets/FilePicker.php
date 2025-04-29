@@ -41,7 +41,7 @@ class FilePicker extends InputWidget
             $('#file-picker-modal span[data-id="' + id_storage + '"]').addClass('active');
             $('#file-picker-modal span[data-id="' + id_storage + '"] input[type="checkbox"]').prop('checked', true);
         };
-        
+
         const showModal = function(id) {
             setTimeout(function () {
                 var modal = new bootstrap.Modal(document.getElementById('file-picker-modal'));
@@ -88,9 +88,15 @@ class FilePicker extends InputWidget
                 $('#' + window.inputId).val(selectedFile);
                 $('#file-picker-modal').modal('hide');
             });
-        
             $('#file-picker-modal').on('click', '.btn-close-modal', function() {
                 $('#file-picker-modal').modal('hide');
+            });
+            $('#file-picker-modal').off('click', '.file-card').on('click', '.file-card', function () {
+                $('.file-card').removeClass('active');
+                $('.file-card input[type="checkbox"]').prop('checked', false);
+                $(this).addClass('active');
+                $(this).find('input[type="checkbox"]').prop('checked', true);
+                $('#btn-select-file').prop('disabled', false);
             });
         }
         
@@ -103,6 +109,7 @@ class FilePicker extends InputWidget
         });
         
         $(document).on('hidden.bs.modal', '#file-picker-modal', function () {
+            $('#btn-select-file').prop('disabled', true);
             $('body').removeClass('modal-open').css('overflow', 'auto'); 
             $('.modal-backdrop').remove();
         });

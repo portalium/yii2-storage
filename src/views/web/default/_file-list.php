@@ -8,34 +8,6 @@ use yii\helpers\Url;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $isPicker bool */
 
-$this->registerJs("
-    if (typeof selectFile === 'undefined') {
-        window.selectFile = function (element, id_storage) {
-            $('.file-card.active').removeClass('active');
-            if ($(element).is(':checked')) {
-                $('.file-card input[type=\"checkbox\"]').not(element).prop('checked', false);
-                $('.file-card[data-id=\"' + id_storage + '\"]').addClass('active');
-            } else {
-                $('.file-card[data-id=\"' + id_storage + '\"]').removeClass('active');
-            }
-        };
-    }
-
-    window.handleFileCardClick = function(event, id_storage) {
-        if(event.target === this || event.target.classList.contains('file-icon') || event.target.classList.contains('file-title')) { 
-            var checkbox = document.querySelector(\".file-select-checkbox[value='\" + id_storage + \"']\");
-            checkbox.checked = true;
-            if (typeof selectFile === \"function\") {
-                selectFile(checkbox, id_storage);
-            } else {
-                $(\".file-card.active\").removeClass(\"active\");
-                $(\".file-card input[type=\\\"checkbox\\\"]\").not(checkbox).prop(\"checked\", false);
-                $(\".file-card[data-id=\\\"\" + id_storage + \"\\\"]\").addClass(\"active\");
-            }
-        }
-    }"
-);
-
 echo ListView::widget([
     'dataProvider' => $dataProvider,
     'itemView' => function ($model) use ($isPicker) {
@@ -145,4 +117,33 @@ echo ListView::widget([
     ],
     'layout' => "{items}\n{pager}",
 ]);
+?>
+<?php
+$this->registerJs("
+    if (typeof selectFile === 'undefined') {
+        window.selectFile = function (element, id_storage) {
+            $('.file-card.active').removeClass('active');
+            if ($(element).is(':checked')) {
+                $('.file-card input[type=\"checkbox\"]').not(element).prop('checked', false);
+                $('.file-card[data-id=\"' + id_storage + '\"]').addClass('active');
+            } else {
+                $('.file-card[data-id=\"' + id_storage + '\"]').removeClass('active');
+            }
+        };
+    }
+
+    window.handleFileCardClick = function(event, id_storage) {
+        if(event.target === this || event.target.classList.contains('file-icon') || event.target.classList.contains('file-title')) { 
+            var checkbox = document.querySelector(\".file-select-checkbox[value='\" + id_storage + \"']\");
+            checkbox.checked = true;
+            if (typeof selectFile === \"function\") {
+                selectFile(checkbox, id_storage);
+            } else {
+                $(\".file-card.active\").removeClass(\"active\");
+                $(\".file-card input[type=\\\"checkbox\\\"]\").not(checkbox).prop(\"checked\", false);
+                $(\".file-card[data-id=\\\"\" + id_storage + \"\\\"]\").addClass(\"active\");
+            }
+        }
+    }"
+);
 ?>
