@@ -17,11 +17,11 @@ Modal::begin([
     'title' => Module::t('Select File'),
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_LARGE,
-    'footer' => 
-        Html::button(Module::t('Close'), [
-            'class' => 'btn btn-danger filepicker-close', 
-            'data-bs-dismiss' => 'modal',
-        ]) . 
+    'footer' =>
+    Html::button(Module::t('Close'), [
+        'class' => 'btn btn-danger filepicker-close',
+        'data-bs-dismiss' => 'modal',
+    ]) .
         Html::button(Module::t('Select'), [
             'class' => 'btn btn-success btn-select',
             'onclick' => 'saveSelect()',
@@ -32,5 +32,6 @@ echo $this->render('@portalium/storage/views/web/default/index', [
     'dataProvider' => $dataProvider,
     'isPicker' => true,
 ]);
+//
 
 Modal::end();

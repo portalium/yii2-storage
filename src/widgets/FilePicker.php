@@ -101,17 +101,34 @@ const updateFileCard = function(id_storage) {
     }
 };
 
-const bindModalButtons = function() {
-    $(document).off('click.btn-select').on('click.btn-select', '#file-picker-modal .btn-select', window.saveSelect);
-    $(document).off('click.btn-close').on('click.btn-close', '#file-picker-modal .btn-close', function () {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('file-picker-modal'));
+const cleanupModal = function() {
+    
+    const modalEl = document.getElementById('file-picker-modal');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open').css('padding-right', '');
+    }
+    
+    
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open').css('padding-right', '');
+};
+
+const bindModalButtons = function() {
+    $(document).off('click.btn-select').on('click.btn-select', '#file-picker-modal .btn-select', function() {
+        window.saveSelect();
+        cleanupModal(); 
+    });
+    
+    $(document).off('click.btn-close').on('click.btn-close', '#file-picker-modal .btn-close', function () {
+        cleanupModal(); 
     });
 };
 
 const showModal = function(id) {
+    
+    cleanupModal();
+    
     setTimeout(() => {
         window.inputId = id;
         bindModalButtons();
@@ -128,8 +145,13 @@ const showModal = function(id) {
 
         modal.show();
 
+       
         $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
             e.preventDefault();
+            
+           
+            cleanupModal();
+            
             $.pjax.reload({
                 container: '#' + id + '-pjax',
                 url: $(this).attr('href'),
@@ -146,7 +168,7 @@ const showModal = function(id) {
                 showModal(id); 
             });
         });
-    }, 500);
+    }, 300); 
 };
 
 if (!window.openFilePickerModal) {
@@ -154,6 +176,9 @@ if (!window.openFilePickerModal) {
         window.multiple = multiple;
         window.isJson = isJson;
         window.callbackName = callbackName;
+
+        
+        cleanupModal();
 
         if ($('#file-picker-modal').length === 0) {
             $.pjax.reload({
@@ -199,13 +224,20 @@ if (!window.saveSelect) {
             window[window.callbackName](selectedFiles);
         }
 
-        $('#file-picker-modal').modal('hide');
-
-        
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open').css('padding-right', '');
+     
+        cleanupModal();
     };
 }
+
+
+$(document).on('pjax:complete', function() {
+    cleanupModal();
+});
+
+
+$(document).ready(function() {
+    cleanupModal();
+});
 JS;
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
     }
