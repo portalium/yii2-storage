@@ -81,8 +81,8 @@ class FilePicker extends InputWidget
     }
 
     protected function registerJsScript()
-    {
-        $js = <<<JS
+{
+    $js = <<<JS
 const updateFileCard = function(id_storage) {
     $('.file-card.active').removeClass('active');
     $('.file-card input[type="checkbox"]').prop('checked', false);
@@ -102,14 +102,12 @@ const updateFileCard = function(id_storage) {
 };
 
 const cleanupModal = function() {
-    
     const modalEl = document.getElementById('file-picker-modal');
     if (modalEl) {
         const modal = bootstrap.Modal.getInstance(modalEl);
         if (modal) modal.hide();
     }
-    
-    
+
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open').css('padding-right', '');
 };
@@ -117,18 +115,17 @@ const cleanupModal = function() {
 const bindModalButtons = function() {
     $(document).off('click.btn-select').on('click.btn-select', '#file-picker-modal .btn-select', function() {
         window.saveSelect();
-        cleanupModal(); 
+        cleanupModal();
     });
-    
+
     $(document).off('click.btn-close').on('click.btn-close', '#file-picker-modal .btn-close', function () {
-        cleanupModal(); 
+        cleanupModal();
     });
 };
 
 const showModal = function(id) {
-    
     cleanupModal();
-    
+
     setTimeout(() => {
         window.inputId = id;
         bindModalButtons();
@@ -145,13 +142,9 @@ const showModal = function(id) {
 
         modal.show();
 
-       
         $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
             e.preventDefault();
-            
-           
-            cleanupModal();
-            
+
             $.pjax.reload({
                 container: '#' + id + '-pjax',
                 url: $(this).attr('href'),
@@ -165,10 +158,10 @@ const showModal = function(id) {
                 push: false,
                 replace: false
             }).done(() => {
-                showModal(id); 
+                showModal(id);
             });
         });
-    }, 300); 
+    }, 300);
 };
 
 if (!window.openFilePickerModal) {
@@ -177,7 +170,6 @@ if (!window.openFilePickerModal) {
         window.isJson = isJson;
         window.callbackName = callbackName;
 
-        
         cleanupModal();
 
         if ($('#file-picker-modal').length === 0) {
@@ -224,21 +216,23 @@ if (!window.saveSelect) {
             window[window.callbackName](selectedFiles);
         }
 
-     
         cleanupModal();
     };
 }
 
-
-$(document).on('pjax:complete', function() {
-    cleanupModal();
+$(document).on('pjax:complete', function(event, xhr, options) {
+    const url = options && options.url ? options.url : '';
+    if (url.includes('picker-modal') && url.includes('page=')) {
+        cleanupModal();
+    }
 });
-
 
 $(document).ready(function() {
     cleanupModal();
 });
 JS;
-        $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
-    }
+
+    $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
+}
+
 }
