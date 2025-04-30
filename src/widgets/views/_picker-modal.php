@@ -6,25 +6,29 @@ use portalium\theme\widgets\Modal;
 
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
+Yii::$app->view->registerCss("
+    #file-picker-modal .panel-footer {
+    border-top: none !important;
+}
+");
+
 Modal::begin([
     'title' => Module::t('Select File'),
     'id' => 'file-picker-modal',
-    'size' => Modal::SIZE_EXTRA_LARGE,
+    'size' => Modal::SIZE_LARGE,
     'footer' => Html::button(Module::t('Close'), [
-            'class' => 'btn btn-danger',
-            'data-bs-dismiss' => 'modal',
-        ]) . Html::button(Module::t('Select'), [
-            'class' => 'btn btn-success',
-            'onclick' => 'saveSelect()',
-            'disabled' => true,
-            'id' => 'btn-select-file'
-        ]),
-]); ?>
+        'class' => 'btn btn-danger',
+        'data-bs-dismiss' => 'modal',
+    ]) . Html::button(Module::t('Select'), [
+        'class' => 'btn btn-success',
+        'onclick' => 'saveSelect()',
+    ]),
+]);
 
 
-<?php echo $this->render('@portalium/storage/views/web/default/index', [
+echo $this->render('@portalium/storage/views/web/default/index', [
     'dataProvider' => $dataProvider,
     'isPicker' => true
 ]);
-Modal::end(); ?>
 
+Modal::end();
