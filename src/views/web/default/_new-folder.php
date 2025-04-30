@@ -5,6 +5,10 @@ use portalium\theme\widgets\ActiveForm;
 use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Modal;
 
+/* @var $this yii\web\View */
+/* @var $model portalium\storage\models\StorageDirectory */
+/* @var $form yii\widgets\ActiveForm */
+
 Modal::begin([
     'id' => 'newFolderModal',
     'title' => Module::t('Create New Folder'),
@@ -33,22 +37,11 @@ Modal::begin([
 $form = ActiveForm::begin([
     'id' => 'newFolderForm',
     'options' => ['data-pjax' => true],
-    'method' => 'post'
+    'method' => 'post',
+    'action' => ['/storage/default/new-folder']
 ]);
+echo $form->field($model, 'name')->textInput(['required' => true]);
 
-echo '<div class="mb-3">
-        <label for="folderName" class="form-label">' . Module::t('Folder Name') . '</label>
-        <input type="text" class="form-control" id="folderName" name="folderName" placeholder="' . Module::t('Enter folder name') . '">
-      </div>';
-
-echo '<div class="mb-3">
-        <label for="folderType" class="form-label">' . Module::t('Select Directory') . '</label>
-        <select class="form-select" id="folderType" name="folderType">
-            <option selected disabled>' . Module::t('Select folder type') . '</option>
-            <option value="default">' . Module::t('Root') . '</option>
-            <option value="shared">' . Module::t('ExampleDirectory1') . '</option>
-        </select>
-      </div>';
 
 ActiveForm::end();
 Modal::end();

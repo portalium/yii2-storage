@@ -57,7 +57,10 @@ class StorageDirectory extends \yii\db\ActiveRecord
             'date_update' => 'Date Update',
         ];
     }
-
+    public function createDirectory()
+    {
+        return $this->save();
+    }
     /**
      * Gets query for [[Parent]].
      *

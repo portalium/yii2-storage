@@ -10,8 +10,8 @@ use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $form portalium\theme\widgets\ActiveForm */
-/* @var $model portalium\storage\models\Storage */
-/* @var $dataProvider yii\data\ActiveDataProvider */
+/* @var $directoryDataProvider yii\data\ActiveDataProvider */
+/* @var $fileDataProvider yii\data\ActiveDataProvider */
 
 StorageAsset::register($this);
 
@@ -81,8 +81,11 @@ Pjax::end();
 Pjax::begin([
     'id' => 'list-file-pjax'
 ]);
+echo $this->render('_folder-list', [
+    'dataProvider' => $directoryDataProvider
+]);
 echo $this->render('_file-list', [
-    'dataProvider' => $dataProvider,
+    'dataProvider' => $fileDataProvider,
     'isPicker' => $isPicker ?? false
 ]);
 Pjax::end();

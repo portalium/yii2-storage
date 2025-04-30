@@ -9,7 +9,6 @@ use yii\helpers\Url;
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $isPicker bool */
 
-// selectFile fonksiyonu
 $this->registerJs(<<<JS
 if (typeof selectFile === 'undefined') {
     window.selectFile = function (element, id_storage) {
@@ -29,7 +28,6 @@ if (typeof selectFile === 'undefined') {
     };
 }
 
-// handleFileCardClick fonksiyonu
 window.handleFileCardClick = function(event, id_storage) {
     if (event.target === this || event.target.classList.contains('file-icon') || event.target.classList.contains('file-title')) { 
         var checkbox = document.querySelector(".file-select-checkbox[value='" + id_storage + "']");
@@ -42,7 +40,6 @@ window.handleFileCardClick = function(event, id_storage) {
 JS
 );
 
-// ListView
 echo ListView::widget([
     'dataProvider' => $dataProvider,
     'itemView' => function ($model) use ($isPicker) {
@@ -139,7 +136,7 @@ echo ListView::widget([
             ],
         ]);
 
-        $content .= Html::endTag('span'); // end card-header
+        $content .= Html::endTag('span');
 
         $iconUrlData = $model->getIconUrl();
         $content .= Html::img($iconUrlData['url'], [
@@ -147,7 +144,7 @@ echo ListView::widget([
             'class' => 'file-icon ' . $iconUrlData['class']
         ]);
 
-        $content .= Html::endTag('span'); // end file-card
+        $content .= Html::endTag('span');
 
         return $content;
     },

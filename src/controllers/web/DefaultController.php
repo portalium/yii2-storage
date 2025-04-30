@@ -2,6 +2,7 @@
 
 namespace portalium\storage\controllers\web;
 
+use portalium\storage\models\StorageDirectory;
 use portalium\storage\Module;
 use portalium\web\Controller;
 use portalium\storage\models\Storage;
@@ -19,11 +20,23 @@ class DefaultController extends Controller
     {
         $model = new Storage();
         $searchModel = new StorageSearch();
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        $fileDataProvider = $searchModel->search($this->request->queryParams);
+
+        $directoryDataProvider = new \yii\data\ActiveDataProvider([
+            'query' => StorageDirectory::find(),
+            'pagination' => false
+        ]);
+
+        $id_directory = $this->request->get('id_directory');
+        if ($id_directory) {
+            $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
+        }
 
         return $this->render('index', [
             'model' => $model,
-            'dataProvider' => $dataProvider,
+            'fileDataProvider' => $fileDataProvider,
+            'directoryDataProvider' => $directoryDataProvider,
+            'isPicker' => $this->request->get('isPicker', false),
         ]);
     }
 
@@ -51,8 +64,31 @@ class DefaultController extends Controller
 
     public function actionNewFolder()
     {
-        return $this->renderAjax('_new-folder');
+        $model = new StorageDirectory();
+
+        if (Yii::$app->request->isPost) {
+            $activeDirectory = Yii::$app->session->get('active_directory', null);
+            $model->id_parent = $activeDirectory;
+
+            if ($model->load(Yii::$app->request->post()))
+                if ($model->save())
+                    Yii::$app->session->setFlash('success', Module::t('Folder created successfully!'));
+                else
+                    Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
+            else
+                Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
+        }
+
+        return $this->renderAjax('_new-folder', [
+            'model' => $model
+        ]);
     }
+    public function actionSetActiveDirectory()
+    {
+        $id = Yii::$app->request->post('id');
+        Yii::$app->session->set('active_directory', $id);
+    }
+
 
     public function actionDownloadFile()
     {
@@ -236,7 +272,4 @@ class DefaultController extends Controller
             'dataProvider' => $dataProvider
         ]);
     }
-
-
-    // deneme 
 }
