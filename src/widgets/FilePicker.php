@@ -101,13 +101,34 @@ const updateFileCard = function(id_storage) {
     }
 };
 
+const bindModalButtons = function() {
+    $(document).off('click.btn-select').on('click.btn-select', '#file-picker-modal .btn-select', window.saveSelect);
+    $(document).off('click.btn-close').on('click.btn-close', '#file-picker-modal .btn-close', function () {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('file-picker-modal'));
+        if (modal) modal.hide();
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
+    });
+};
+
 const showModal = function(id) {
     setTimeout(() => {
-        let modal = new bootstrap.Modal(document.getElementById('file-picker-modal'));
-        modal.show();
         window.inputId = id;
+        bindModalButtons();
 
-        $(document).on('click', '#file-picker-modal .pagination a', function(e) {
+        const modalEl = document.getElementById('file-picker-modal');
+        let modal = bootstrap.Modal.getInstance(modalEl);
+
+        if (!modal) {
+            modal = new bootstrap.Modal(modalEl, {
+                backdrop: true,
+                keyboard: true
+            });
+        }
+
+        modal.show();
+
+        $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
             e.preventDefault();
             $.pjax.reload({
                 container: '#' + id + '-pjax',
@@ -122,7 +143,7 @@ const showModal = function(id) {
                 push: false,
                 replace: false
             }).done(() => {
-                showModal(id);
+                showModal(id); 
             });
         });
     }, 500);
@@ -179,6 +200,10 @@ if (!window.saveSelect) {
         }
 
         $('#file-picker-modal').modal('hide');
+
+        
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
     };
 }
 JS;
