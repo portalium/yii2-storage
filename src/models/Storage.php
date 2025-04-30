@@ -95,7 +95,7 @@ class Storage extends \yii\db\ActiveRecord
             'id_workspace' => Module::t('Workspace'),
             'access' => Module::t('Access'),
             'hash_file' => Module::t('Hash File'),
-            'id_directory' => Module::t('Id Directory'),
+            'id_directory' => Module::t('Directory'),
         ];
     }
 
@@ -118,7 +118,7 @@ class Storage extends \yii\db\ActiveRecord
                     $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
                     $this->id_workspace = Yii::$app->workspace->id;
                     $this->id_user = Yii::$app->user->id;
-                    if ($this->id_directory === 'root')
+                    if ($this->id_directory == 0)
                         $this->id_directory = null;
 
                     if ($this->save())

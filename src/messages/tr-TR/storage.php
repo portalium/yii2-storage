@@ -48,5 +48,6 @@ return [
     'New Folder' => 'Yeni Klasör',
     'Create New Folder' => 'Yeni Klasör Oluştur',
     'Folder Name' => 'Klasör Adı',
-    'Select Directory' => 'Dizin Seçin'
+    'Directory' => 'Dizin',
+    'File' => 'Dosya'
 ];

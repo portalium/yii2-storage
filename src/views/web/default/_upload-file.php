@@ -6,10 +6,14 @@ use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Modal;
 use portalium\theme\widgets\Html;
 use yii\helpers\ArrayHelper;
+use portalium\storage\models\StorageDirectory;
 
 /* @var $this yii\web\View */
 /* @var $model portalium\storage\models\Storage */
 /* @var $form yii\widgets\ActiveForm */
+
+// Directory verilerini çekiyoruz
+$directories = ArrayHelper::map(StorageDirectory::find()->all(), 'id_directory', 'name');
 
 Modal::begin([
     'id' => 'uploadModal',
@@ -41,7 +45,15 @@ $form = ActiveForm::begin([
     'method' => 'post',
     'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true]
 ]);
+
 echo $form->field($model, 'title')->textInput(['required' => true]);
+
+$directories = ['0' => Module::t('Root')] + ArrayHelper::map(
+        StorageDirectory::find()->all(),
+        'id_directory',
+        'name'
+    );
+echo $form->field($model, 'id_directory')->dropDownList($directories);
 echo $form->field($model, 'file')->fileInput(['required' => true]);
 
 ActiveForm::end();
