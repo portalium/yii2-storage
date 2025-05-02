@@ -1,9 +1,17 @@
+.container-fluid {
+    padding: 5px;
+}
+
+.file-card-wrapper {
+    position: relative;
+    margin-bottom: 15px;
+}
+
 .file-card {
     position: relative;
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 20px;
-    margin-bottom: 15px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     height: 210px;
     display: flex;
@@ -13,25 +21,16 @@
     text-align: center;
     transition: transform 0.3s ease;
     cursor: pointer;
-    margin-bottom: 20px;
-    margin-right: 10px;
-}
-.files-container {
-    gap: 4px;
-    padding-left: 15px;
-}
-.file-card-wrapper {
-    position: relative;
-    margin: 10px;
-}
-.file-select-checkbox:checked ~ .file-card,
-.file-card:has(.file-select-checkbox:checked) {
-    border: 2px solid #0d6efd;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
 }
 
 .file-card:hover {
-    transform: scale(1.05);
+    transform: scale(1.03);
+}
+
+.file-card.active,
+.file-card:has(.file-select-checkbox:checked) {
+    border: 2px solid #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
 }
 
 .file-card .card-header {
@@ -50,10 +49,7 @@
 }
 
 .file-card .card-header .fa-ellipsis-h {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 20px;
+    font-size: 18px;
     cursor: pointer;
     width: 28px;
     height: 28px;
@@ -69,9 +65,7 @@
 }
 
 .file-select-checkbox {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+    position: relative;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
@@ -81,6 +75,7 @@
     border-radius: 4px;
     background-color: white;
     transition: all 0.2s ease;
+    margin-right: 10px;
 }
 
 .file-select-checkbox:checked {
@@ -105,8 +100,8 @@
 }
 
 .file-card img.file-icon.image-file {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 90%;
+    max-height: 90%;
     object-fit: contain;
     padding-top: 30px;
     border-radius: 3px;
@@ -123,27 +118,16 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 160px;
 }
 
 .file-title.picker {
-    max-width: 65px;
+    max-width: 100px;
 }
 
-.file-title.normal {
-    max-width: 175px;
-}
 .custom-dropdown-menu {
-    position: absolute;
-    display: none;
-    background-color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    padding: 8px 0;
-    min-width: 120px;
-    max-height: 210px;
-    right: 5px;
+    right: 10px;
     top: 30px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
     animation: fadeIn 0.2s ease;
 }
 
@@ -167,11 +151,78 @@
     margin: 5px 0;
 }
 
+.folder-container {
+    position: relative;
+    max-width: 120px;
+    height: 100px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    transition: transform 0.3s ease;
+    margin: 0 auto 20px;
+}
+
+.folder-container:hover {
+    transform: translateY(-3px);
+}
+
+.folder {
+    position: absolute;
+    width: 90px;
+    height: 75px;
+    background-color: #ffca28;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 211, 89, 0.8);
+    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 25%);
+    top: 0;
+    left: 15px;
+}
+
+.folder-notch {
+    position: absolute;
+    width: 30px;
+    height: 10px;
+    border-top-right-radius: 3px;
+    top: -5px;
+    left: 15px;
+    border-top: 1px solid rgba(255, 211, 89, 0.8);
+    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 100%);
+}
+
+.folder-title {
+    position: absolute;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100px;
+    font-size: 14px;
+    padding-left: 25px;
+}
+
+.folder-ellipsis {
+    position: absolute;
+    top: -15px;
+    left: 100px;
+    z-index: 10;
+    cursor: pointer;
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.folder-ellipsis:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+}
 
 .folder-dropdown-menu {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-height: 210px;
-    right: -50px;
     top: 5px;
     animation: fadeIn 0.2s ease;
 }
@@ -180,103 +231,29 @@
     display: block;
 }
 
-.folder-dropdown-menu .menu-item {
-    padding: 8px 15px;
-    cursor: pointer;
-    font-size: 13px;
-}
-
-.folder-dropdown-menu .menu-item:hover {
-    background-color: #f5f5f5;
-}
-
-.folder-dropdown-menu .divider {
-    height: 1px;
-    background-color: #e5e5e5;
-    margin: 5px 0;
-}
-
-
-.folder-container {
-    position: relative;
-    width: 90px;
-    height: 80px;
-    cursor: pointer;
-    display: flex;
-    display: inline-block;
-    margin: 1.9rem;
-}
-.folder {
-    position: absolute;
-    width: 120px;
-    height: 100px;
-    background-color: #ffca28;
-    border-radius: 5px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 211, 89, 0.8);
-    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 25%);
-}
-.folder-notch {
-    position: absolute;
-    width: 50px;
-    height: 15px;
-    border-top-right-radius: 5px;
-    top: -9px;
-    border-top: 1px solid rgba(255, 211, 89, 0.8);
-    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 100%);
-}
-.folder-ellipsis {
-    position: absolute;
-    top: -20px;
-    right: -40px;
-    cursor: pointer;
-    font-size: 20px !important;
-}
-.folder-ellipsis:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 7px;
-}
-.folder-container:hover {
-    transform: translateY(-3px) scale(1.03);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background-color: rgba(255, 255, 255, 0.4);
-}
-.folder-container::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    border-radius: 12px;
-    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.25), transparent);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-}
-.folder:after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 60%);
-    border-radius: 12px;
-}
-.folder-title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100px;
-    margin-top: 100px;
-    font-size: 14px;
-    padding: 3px;
-}
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
-#file-picker-modal .panel-footer {
-    border-top: none !important;
-}
-#btn-select-file:disabled {
-    background-color: #e0e0e0 !important;
-    color: #555 !important;
-    border-color: #ccc !important;
-    opacity: 1 !important;
+
+@media (max-width: 767px) {
+    .file-card {
+        height: 180px;
+    }
+
+    .folder-container {
+        width: 100px;
+        height: 90px;
+    }
+
+    .folder {
+        width: 80px;
+        height: 65px;
+        left: 10px;
+    }
+
+    .folder-title {
+        width: 90px;
+        font-size: 12px;
+    }
 }

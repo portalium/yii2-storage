@@ -20,13 +20,17 @@ class DefaultController extends Controller
     {
         $model = new Storage();
         $searchModel = new StorageSearch();
+
         $fileDataProvider = $searchModel->search($this->request->queryParams);
+        $fileDataProvider->pagination->pageParam = 'filePage';
 
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
-            'query' => StorageDirectory::find(),
-            'pagination' => false
+            'query' => StorageDirectory::find()->orderBy(['id_directory' => SORT_DESC]),
+            'pagination' => [
+                'pageSize' => 12,
+            ]
         ]);
-
+        $directoryDataProvider->pagination->pageParam = 'folderPage';
         $id_directory = $this->request->get('id_directory');
         if ($id_directory) {
             $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);

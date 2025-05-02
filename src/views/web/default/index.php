@@ -81,11 +81,10 @@ Pjax::end();
 Pjax::begin([
     'id' => 'list-file-pjax'
 ]);
-echo $this->render('_folder-list', [
-    'dataProvider' => $directoryDataProvider
-]);
-echo $this->render('_file-list', [
-    'dataProvider' => $fileDataProvider,
+
+echo $this->render('_item-list', [
+    'directoryDataProvider' => $directoryDataProvider,
+    'fileDataProvider' => $fileDataProvider,
     'isPicker' => $isPicker ?? false
 ]);
 Pjax::end();
