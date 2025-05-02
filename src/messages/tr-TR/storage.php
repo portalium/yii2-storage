@@ -49,5 +49,17 @@ return [
     'Create New Folder' => 'Yeni Klasör Oluştur',
     'Folder Name' => 'Klasör Adı',
     'Directory' => 'Dizin',
-    'File' => 'Dosya'
+    'File' => 'Dosya',
+    "Folders" => 'Klasörler',
+    'Files' => 'Dosyalar',
+    'New Folder' => 'Yeni Klasör',
+    'Name' => 'İsim',
+    'Folder and its contents deleted successfully!' => 'Klasör ve içeriği başarıyla silindi.',
+    'Folder not found!' => 'Klasör bulunamadı!',
+    'Folder name could not be changed!' => 'Klasör adı değiştirilemedi!',
+    'No changes were made to the folder name!' => 'Klasör adında herhangi bir değişiklik yapılmadı!',
+    'Folder name could not be changed in the database!' => 'Veritabanında klasör adı değiştirilemedi!',
+    'Folder renamed successfully!' => 'Klasör başarıyla yeniden adlandırıldı!',
+    'Folder created successfully!' => 'Klasör başarıyla oluşturuldu!',
+    'Failed to create folder!' => 'Klasör oluşturulamadı!'
 ];

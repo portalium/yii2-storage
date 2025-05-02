@@ -40,8 +40,7 @@ $form = ActiveForm::begin([
     'method' => 'post',
     'action' => ['/storage/default/new-folder']
 ]);
-echo $form->field($model, 'name')->textInput(['required' => true]);
-
+echo $form->field($model, 'name')->textInput(['required' => true])->label(Module::t('Name'));
 
 ActiveForm::end();
 Modal::end();

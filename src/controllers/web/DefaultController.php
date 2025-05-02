@@ -74,25 +74,98 @@ class DefaultController extends Controller
             $activeDirectory = Yii::$app->session->get('active_directory', null);
             $model->id_parent = $activeDirectory;
 
-            if ($model->load(Yii::$app->request->post()))
-                if ($model->save())
+            if ($model->load(Yii::$app->request->post())) {
+                $baseName = trim($model->name) !== '' ? $model->name : Module::t('New Folder');
+                $name = $baseName;
+                $counter = 1;
+
+                while (StorageDirectory::find()
+                    ->where(['id_parent' => $model->id_parent, 'name' => $name])
+                    ->exists()) {
+                    $name = $baseName . ' (' . $counter . ')';
+                    $counter++;
+                }
+
+                $model->name = $name;
+
+                if ($model->save()) {
                     Yii::$app->session->setFlash('success', Module::t('Folder created successfully!'));
-                else
+                } else {
                     Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
-            else
+                }
+
+            } else {
                 Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
+            }
         }
 
         return $this->renderAjax('_new-folder', [
             'model' => $model
         ]);
     }
+
     public function actionSetActiveDirectory()
     {
         $id = Yii::$app->request->post('id');
         Yii::$app->session->set('active_directory', $id);
     }
 
+    public function actionRenameFolder($id)
+    {
+        $model = StorageDirectory::findOne($id);
+        if (!$model) {
+            Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
+            return '';
+        }
+
+        if (Yii::$app->request->isPost) {
+            $oldName = $model->name;
+            if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+                if ($oldName !== $model->name) {
+                    if ($model->save())
+                        Yii::$app->session->setFlash('success', Module::t('Folder renamed successfully!'));
+                    else
+                        Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed in the database!'));
+                }
+                else
+                    Yii::$app->session->setFlash('error', Module::t('No changes were made to the folder name!'));
+            }
+            else
+                Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed!'));
+        }
+
+        return $this->renderAjax('_rename-folder', ['model' => $model]);
+    }
+    public function actionDeleteFolder()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $id = Yii::$app->request->post('id');
+        $folder = StorageDirectory::findOne($id);
+
+        if (!$folder)
+            Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
+        $this->deleteFolderRecursive($folder);
+
+        Yii::$app->session->setFlash('success', Module::t('Folder and its contents deleted successfully!'));
+    }
+
+    protected function deleteFolderRecursive($folder)
+    {
+        $subFolders = StorageDirectory::findAll(['id_parent' => $folder->id_directory]);
+        foreach ($subFolders as $subFolder) {
+            $this->deleteFolderRecursive($subFolder);
+        }
+
+        $files = Storage::findAll(['id_directory' => $folder->id_directory]);
+        foreach ($files as $file) {
+            $filePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+            if (file_exists($filePath))
+                @unlink($filePath);
+            $file->delete();
+        }
+        $folder->delete();
+    }
 
     public function actionDownloadFile()
     {
@@ -110,8 +183,6 @@ class DefaultController extends Controller
         }
         Yii::$app->session->setFlash('error', Module::t('File not found!'));
     }
-
-
 
     public function actionRenameFile($id)
     {

@@ -11,7 +11,7 @@ use portalium\theme\widgets\ListView;
 
 echo Html::beginTag('div', ['class' => 'container-fluid']);
 echo Html::beginTag('div', ['class' => 'row mb-4']);
-echo Html::tag('h4', 'Klasörler', ['class' => 'col-12 mb-3']);
+    echo Html::tag('h4', Module::t('Folders'), ['class' => 'col-12 mb-3']);
 
 echo ListView::widget([
     'dataProvider' => $directoryDataProvider,
@@ -57,7 +57,10 @@ echo ListView::widget([
                     'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
                     'url' => '#',
                     'encode' => false,
-                    'linkOptions' => ['onclick' => 'deleteFolder(' . $folderId . '); return false;'],
+                    'linkOptions' => [
+                        'onclick' => 'deleteFolder(' . $folderId . '); return false;',
+                        'data-id' => $folderId,
+                        ],
                 ],
             ],
             'options' => [
@@ -83,7 +86,7 @@ echo ListView::widget([
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'row mt-4']);
-echo Html::tag('h4', 'Dosyalar', ['class' => 'col-12 mb-3']);
+echo Html::tag('h4', Module::t('Files'), ['class' => 'col-12 mb-3']);
 
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,

@@ -79,9 +79,16 @@ Pjax::begin([
 Pjax::end();
 
 Pjax::begin([
-    'id' => 'list-file-pjax'
+    'id' => 'rename-folder-pjax',
+    'history' => false,
+    'timeout' => false,
+    'enablePushState' => false,
 ]);
+Pjax::end();
 
+Pjax::begin([
+    'id' => 'list-item-pjax'
+]);
 echo $this->render('_item-list', [
     'directoryDataProvider' => $directoryDataProvider,
     'fileDataProvider' => $fileDataProvider,
@@ -95,8 +102,6 @@ Pjax::begin([
     'timeout' => false,
     'enablePushState' => false
 ]);
-
-
 Pjax::end();
 
 Pjax::begin([
@@ -148,7 +153,7 @@ $this->registerJs(
             complete: function() {
                 $('#uploadModal').modal('hide');
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         });
@@ -172,7 +177,7 @@ $this->registerJs(
                     $('#newFolderModal').modal('show');
                 } else {
                     $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-file-pjax'});
+                        $.pjax.reload({container: '#list-item-pjax'});
                     });
                 }
             }, 1000);
@@ -196,7 +201,7 @@ $this->registerJs(
             complete: function() {
                 $('#newFolderModal').modal('hide');
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         });
@@ -204,6 +209,72 @@ $this->registerJs(
     JS,
     \yii\web\View::POS_END
 );
+
+$this->registerJs(
+    <<<JS
+    function openRenameFolderModal(id) {
+        event.preventDefault();
+        $.pjax.reload({
+            container: '#rename-folder-pjax',
+            type: 'GET',
+            url: '/storage/default/rename-folder',
+            data: { id: id },
+        }).done(function() {
+            setTimeout(function () {
+                if ($('#renameFolderModal').length) {
+                    $('#renameFolderModal').modal('show');
+                } else {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-item-pjax'});
+                    });
+                }
+            }, 1000);
+        }).fail(function(e) {
+            console.log('Error Modal:', e);
+        });
+    }
+
+    $(document).on('click', '#renameFolderButton', function(e) {
+        e.preventDefault();
+
+        var form = $('#renameFolderForm');
+        
+        $.ajax({
+            url: form.attr('action') + "?id="+$("#renameFolderButton").data("id"),
+            type: 'POST',
+            data: form.serialize(),
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            complete: function() {
+                $('#renameFolderModal').modal('hide');
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-item-pjax'});
+                });
+            }
+        });
+    });
+    JS,
+    \yii\web\View::POS_END
+);
+$this->registerJs(<<<JS
+function deleteFolder(id) {
+    $.ajax({
+        url: '/storage/default/delete-folder',
+        type: 'POST',
+        data: { id: id },
+        headers: {
+            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+        },
+        complete: function() {
+            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                $.pjax.reload({container: '#list-item-pjax'});
+            });
+        }
+    });
+}
+JS, \yii\web\View::POS_END);
+
 
 $this->registerJs(
     <<<JS
@@ -231,13 +302,13 @@ function downloadFile(id) {
                 URL.revokeObjectURL(blobUrl);
             } else {
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         },
         error: function() {
            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-               $.pjax.reload({container: '#list-file-pjax'});
+               $.pjax.reload({container: '#list-item-pjax'});
            });
         }
     });
@@ -262,7 +333,7 @@ $this->registerJs(
                     $('#renameModal').modal('show');
                 } else {
                     $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-file-pjax'});
+                        $.pjax.reload({container: '#list-item-pjax'});
                     });
                 }
             }, 1000);
@@ -286,7 +357,7 @@ $this->registerJs(
             complete: function() {
                 $('#renameModal').modal('hide');
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         });
@@ -311,7 +382,7 @@ $this->registerJs(
                 $('#updateModal').modal('show');
             } else {
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         }, 1000); 
@@ -338,7 +409,7 @@ $this->registerJs(
             complete: function() {
                 $('#updateModal').modal('hide');
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         });
@@ -378,7 +449,7 @@ $this->registerJs(
             complete: function() {
                 $('#shareModal').modal('hide');
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         });
@@ -401,12 +472,12 @@ $this->registerJs(
             },
             success: function(response) {   
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             },
             error: function() {
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         });
@@ -429,7 +500,7 @@ $this->registerJs(
             },
             complete: function() {
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
+                    $.pjax.reload({container: '#list-item-pjax'});
                 });
             }
         });
