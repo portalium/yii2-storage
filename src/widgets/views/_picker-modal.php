@@ -6,29 +6,32 @@ use portalium\theme\widgets\Modal;
 
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
+// Modal içi özel stil (isteğe bağlı)
 Yii::$app->view->registerCss("
     #file-picker-modal .panel-footer {
-    border-top: none !important;
-}
+        border-top: none !important;
+    }
 ");
 
 Modal::begin([
     'title' => Module::t('Select File'),
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_LARGE,
-    'footer' => Html::button(Module::t('Close'), [
-        'class' => 'btn btn-danger',
+    'footer' =>
+    Html::button(Module::t('Close'), [
+        'class' => 'btn btn-danger filepicker-close',
         'data-bs-dismiss' => 'modal',
-    ]) . Html::button(Module::t('Select'), [
-        'class' => 'btn btn-success',
-        'onclick' => 'saveSelect()',
-    ]),
+    ]) .
+        Html::button(Module::t('Select'), [
+            'class' => 'btn btn-success btn-select',
+            'onclick' => 'saveSelect()',
+        ]),
 ]);
-
 
 echo $this->render('@portalium/storage/views/web/default/index', [
     'dataProvider' => $dataProvider,
-    'isPicker' => true
+    'isPicker' => true,
 ]);
+
 
 Modal::end();
