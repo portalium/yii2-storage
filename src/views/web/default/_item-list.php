@@ -143,6 +143,11 @@ echo ListView::widget([
                     'linkOptions' => ['onclick' => 'openUpdateModal(' . $model->id_storage . ')'],
                 ],
                 [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
+                    'url' => '#',
+                    'encode' => false,
+                ],
+                [
                     'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
                     'url' => '#',
                     'encode' => false,
