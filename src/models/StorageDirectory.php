@@ -2,7 +2,11 @@
 
 namespace portalium\storage\models;
 
+use portalium\helpers\FileHelper;
+use portalium\storage\Module;
 use Yii;
+use portalium\storage\models\Storage;
+use yii\web\UploadedFile;
 
 /**
  * This is the model class for table "{{%storage_storage_directory}}".
@@ -19,7 +23,7 @@ use Yii;
  */
 class StorageDirectory extends \yii\db\ActiveRecord
 {
-
+    public $type;
 
     /**
      * {@inheritdoc}
@@ -57,10 +61,6 @@ class StorageDirectory extends \yii\db\ActiveRecord
             'date_update' => 'Date Update',
         ];
     }
-    public function createDirectory()
-    {
-        return $this->save();
-    }
     /**
      * Gets query for [[Parent]].
      *
@@ -74,8 +74,105 @@ class StorageDirectory extends \yii\db\ActiveRecord
     /**
      * Gets query for [[StorageDirectories]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return true
      */
+
+
+
+    public function uploadFolder($uploadedFiles)
+    {
+        if (empty($uploadedFiles)) {
+            $this->addError('file', Module::t('No files were uploaded'));
+            return false;
+        }
+
+        $userId = Yii::$app->user->id;
+        $workspaceId = $this->id_workspace ?? 0;
+
+        $allowed = Storage::$allowExtensions;
+        $validFiles = [];
+        foreach ($uploadedFiles as $file) {
+            $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
+            if (in_array($ext, $allowed)) {
+                $validFiles[] = $file;
+            }
+        }
+
+        if (empty($validFiles)) {
+            $this->addError('file', Module::t('No valid files to upload.'));
+            return false;
+        }
+
+        $directories = [];
+        $success = true;
+
+        foreach ($validFiles as $file) {
+            $fullPath = $file->fullPath ?? $file->name;
+            $pathParts = explode('/', $fullPath);
+
+            $fileName = array_pop($pathParts);
+            $currentPath = '';
+            $parentDirectoryId = null;
+
+            foreach ($pathParts as $depth => $folderName) {
+                $currentPath = $depth === 0 ? $folderName : $currentPath . '/' . $folderName;
+
+                if (!isset($directories[$currentPath])) {
+                    $dir = new StorageDirectory();
+                    $dir->name = $folderName;
+                    $dir->id_parent = $directories[dirname($currentPath)] ?? null;
+
+                    if (!$dir->save()) {
+                        foreach ($dir->errors as $attribute => $errors) {
+                            foreach ($errors as $error) {
+                                $this->addError($attribute, $error);
+                            }
+                        }
+                        return false;
+                    }
+                    $directories[$currentPath] = $dir->id_directory;
+                }
+                $parentDirectoryId = $directories[$currentPath];
+            }
+            if (!empty($fileName)) {
+                $storage = new Storage();
+                $storage->title = pathinfo($fileName, PATHINFO_FILENAME);
+                $storage->name = $fileName;
+                $storage->id_directory = $parentDirectoryId;
+                $storage->id_user = $userId;
+                $storage->id_workspace = $workspaceId;
+                $storage->file = $file;
+                $storage->type = 'file';
+
+                $mimeType = $storage->getMIMEType($fileName);
+                $storage->mime_type = Storage::MIME_TYPE[$mimeType] ?? count(Storage::MIME_TYPE);
+
+                if (!$storage->upload()) {
+                    foreach ($storage->errors as $attribute => $errors) {
+                        foreach ($errors as $error) {
+                            $this->addError($attribute, $error);
+                        }
+                    }
+                    $success = false;
+                }
+            }
+        }
+
+        return $success;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
     public function getStorageDirectories()
     {
         return $this->hasMany(StorageDirectory::class, ['id_parent' => 'id_directory']);

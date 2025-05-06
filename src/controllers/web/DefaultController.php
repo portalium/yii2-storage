@@ -46,25 +46,60 @@ class DefaultController extends Controller
 
     public function actionUploadFile()
     {
-        $model = new Storage();
+        $post = Yii::$app->request->post();
+        $type = $post['Storage']['type'] ?? 'file';
+        $model = ($type === 'folder') ? new StorageDirectory() : new Storage();
 
         if (Yii::$app->request->isPost) {
-            $model->load(Yii::$app->request->post());
-            $model->file = UploadedFile::getInstance($model, 'file');
-            $success = ($model->file && $model->upload());
+            $model->load($post);
+            $uploadedFiles = UploadedFile::getInstancesByName('Storage[file]');
+            $success = false;
 
+            if ($type === 'folder') {
+                if (!empty($uploadedFiles)) {
+                    if (empty($model->name)) {
+                        $firstFile = $uploadedFiles[0];
+                        $fullPath = $firstFile->name;
+                        $pathParts = explode('/', $fullPath);
+                        $model->name = !empty($pathParts[0]) ? $pathParts[0] : 'Uploaded Folder';
+                    }
+
+                    $success = $model->uploadFolder($uploadedFiles);
+                } else {
+                    $model->addError('file', Module::t('No files were uploaded'));
+                }
+
+            } else {
+                if (!empty($uploadedFiles)) {
+                    $model->file = $uploadedFiles[0] ?? null;
+                    if ($model->file)
+                        $success = $model->upload();
+                } else {
+                    $model->addError('file', Module::t('No files were uploaded'));
+                }
+            }
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-                if (!$success)
+                if (!$success) {
                     Yii::$app->session->setFlash('error', Module::t('File could not be loaded!'));
-                else
+                    return [
+                        'success' => false,
+                        'errors' => $model->errors
+                    ];
+                } else {
                     Yii::$app->session->setFlash('success', Module::t('File uploaded successfully!'));
+                    return [
+                        'success' => true
+                    ];
+                }
             }
         }
+
         return $this->renderAjax('_upload-file', [
             'model' => $model,
         ]);
     }
+
 
     public function actionNewFolder()
     {
