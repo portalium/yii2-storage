@@ -67,7 +67,6 @@ class DefaultController extends Controller
     }
 
 
-
     public function actionRenameFile($id)
     {
         $model = Storage::findOne($id);
@@ -232,6 +231,52 @@ class DefaultController extends Controller
         ]);
     }
 
+
+   public function actionFileList()
+{
+    $query = Storage::find();
+    $dataProvider = new \portalium\data\ActiveDataProvider([
+        'query' => $query,
+        'pagination' => ['pageSize' => 10],
+        'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
+    ]);
+
+    return $this->renderPartial('_file-list', [
+        'dataProvider' => $dataProvider,
+        'isPicker' => true,
+    ]);
+}
+
+public function actionSearch($q = null, $fileExtensions = null, $isPicker = false)
+{
+    $query = \portalium\storage\models\Storage::find();
+
+   
+    if ($q) {
+        $query->andFilterWhere(['like', 'title', $q]);
+    }
+
+   
+    if ($isPicker && $fileExtensions) {
+        $extensions = is_array($fileExtensions) ? $fileExtensions : explode(',', $fileExtensions);
+        $orConditions = ['or'];
+        foreach ($extensions as $ext) {
+            $orConditions[] = ['like', 'name', '.' . ltrim($ext, '.')]; 
+        }
+        $query->andWhere($orConditions);
+    }
+
+    $dataProvider = new \portalium\data\ActiveDataProvider([
+        'query' => $query,
+        'pagination' => ['pageSize' => 12],
+        'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
+    ]);
+
+    return $this->renderPartial('_file-list', [
+        'dataProvider' => $dataProvider,
+        'isPicker' => $isPicker,
+    ]);
+}    
 
     // deneme 
 }

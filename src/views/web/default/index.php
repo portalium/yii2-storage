@@ -5,18 +5,16 @@ use portalium\storage\Module;
 use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Html;
 use portalium\widgets\Pjax;
-use yii\helpers\Url;
-
-
-/* @var $this yii\web\View */
-/* @var $form portalium\theme\widgets\ActiveForm */
-/* @var $model portalium\storage\models\Storage */
-/* @var $dataProvider yii\data\ActiveDataProvider */
 
 StorageAsset::register($this);
-
 $this->title = Module::t('Storage');
 $this->params['breadcrumbs'][] = $this->title;
+
+$fileExtensions = Yii::$app->request->get('fileExtensions') ?? ($fileExtensions ?? []);
+$isPicker = $isPicker ?? false;
+
+$this->registerJs("window.isPicker = " . ($isPicker ? 'true' : 'false') . ";", \yii\web\View::POS_HEAD);
+$this->registerJs("window.fileExtensions = " . json_encode($fileExtensions) . ";", \yii\web\View::POS_HEAD);
 ?>
 
 <?php
@@ -28,7 +26,7 @@ echo Html::tag(
         'id' => 'searchFileInput',
         'placeholder' => Module::t('Search file..')
     ]) .
-        Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), ['class' => 'input-group-text']),
+    Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), ['class' => 'input-group-text']),
     ['class' => 'input-group']
 );
 
@@ -44,186 +42,48 @@ echo Button::widget([
 ]);
 
 echo Html::endTag('span');
-echo html::tag('br');
-
-Pjax::begin([
-    'id' => 'upload-file-pjax',
-    'history' => false,
-    'timeout' => false,
-    'enablePushState' => false,
-]);
-Pjax::end();
-
-Pjax::begin([
-    'id' => 'list-file-pjax'
-]);
-echo $this->render('_file-list', [
-    'dataProvider' => $dataProvider,
-    'isPicker' => $isPicker ?? false
-]);
-Pjax::end();
-
-Pjax::begin([
-    'id' => 'rename-file-pjax',
-    'history' => false,
-    'timeout' => false,
-    'enablePushState' => false
-]);
-
-
-Pjax::end();
-
-Pjax::begin([
-    'id' => 'update-file-pjax',
-    'history' => false,
-    'timeout' => false,
-    'enablePushState' => false
-]);
-
-Pjax::end();
-
-Pjax::begin([
-    'id' => 'share-file-pjax',
-]);
-Pjax::end();
-
+echo Html::tag('br');
 ?>
 
+<?php Pjax::begin(['id' => 'upload-file-pjax', 'enablePushState' => false, 'timeout' => false]); Pjax::end(); ?>
+
+<?php Pjax::begin(['id' => 'list-file-pjax']); ?>
+<?= $this->render('_file-list', [
+    'dataProvider' => $dataProvider,
+    'isPicker' => $isPicker
+]) ?>
+<?php Pjax::end(); ?>
+
+<?php Pjax::begin(['id' => 'rename-file-pjax', 'enablePushState' => false]); Pjax::end(); ?>
+<?php Pjax::begin(['id' => 'update-file-pjax', 'enablePushState' => false]); Pjax::end(); ?>
+<?php Pjax::begin(['id' => 'share-file-pjax']); Pjax::end(); ?>
+
 <?php
-$this->registerJs(
-    <<<JS
-    function openUploadModal() {
-        event.preventDefault();
-        $.pjax.reload({
-            container: '#upload-file-pjax',
-            type: 'GET',
-            url: '/storage/default/upload-file',
-        }).done(function() {
-            setTimeout(function() {
-                $('#uploadModal').modal('show');
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
-        });
-    }
+$this->registerJs(<<<JS
+function getFileExtensionsFromUrl() {
+    let urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('fileExtensions');
+}
 
-    $(document).on('click', '#uploadButton', function(e) {
-        e.preventDefault();
-    
-        var form = document.getElementById('uploadForm');
-        var formData = new FormData(form);
-    
-        $.ajax({
-            url: form.action,
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            complete: function() {
-                $('#uploadModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
-                });
-            }
-        });
-    });
-JS,
-    \yii\web\View::POS_END
-);
+function refreshFileListDirect() {
+    const fileExtensions = getFileExtensionsFromUrl();
+    const pickerParam = window.isPicker ? '&isPicker=1' : '&isPicker=0';
+    const url = '/storage/default/file-list' +
+        (fileExtensions ? '?fileExtensions=' + encodeURIComponent(fileExtensions) + pickerParam : pickerParam ? '?' + pickerParam.substring(1) : '');
 
-$this->registerJs(
-    <<<JS
-function downloadFile(id) {
-    event.preventDefault();
-
-    $.post({
-        url: '/storage/default/download-file',
-        data: { id: id },
-        xhrFields: { responseType: 'blob' },
-        headers: {
-            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(html) {
+            $('#list-file-pjax').html(html);
         },
-        success: function(data, status, xhr) {
-            const disposition = xhr.getResponseHeader('Content-Disposition');
-            if (disposition && disposition.indexOf('attachment') !== -1) {
-                const filename = disposition.split('filename=')[1]?.replace(/["']/g, '') || 'downloaded_file';
-                const blobUrl = URL.createObjectURL(data);
-                const a = document.createElement('a');
-                a.href = blobUrl;
-                a.download = decodeURIComponent(filename);
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(blobUrl);
-            } else {
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
-                });
-            }
-        },
-        error: function() {
-           $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-               $.pjax.reload({container: '#list-file-pjax'});
-           });
+        error: function(e) {
+            console.error("Liste g\u00fcncellenirken hata olu\u015ftu:", e);
         }
     });
 }
-JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
-    function openRenameModal(id) {
-        event.preventDefault();
-
-        $.pjax.reload({
-            container: '#rename-file-pjax',
-            type: 'GET',
-            url: '/storage/default/rename-file',
-            data: { id: id },
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#renameModal').length) {
-                    $('#renameModal').modal('show');
-                } else {
-                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-file-pjax'});
-                    });
-                }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
-        });
-    }
-
-    $(document).on('click', '#renameButton', function(e) {
-        e.preventDefault();
-
-        var form = $('#renameForm');
-
-        $.ajax({
-            url: form.attr('action'),
-            type: 'POST',
-            data: form.serialize(),
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            complete: function() {
-                $('#renameModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
-                });
-            }
-        });
-    });
-    JS,
-    \yii\web\View::POS_END
-);
-
-$this->registerJs(
-    <<<JS
-    function openUpdateModal(id) {
+function openUpdateModal(id) {
     event.preventDefault();
 
     $.pjax.reload({
@@ -269,12 +129,48 @@ $this->registerJs(
             }
         });
     });
-    JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
+    function copyFile(id) {
+        event.preventDefault();
+        
+        $.ajax({
+            url: '/storage/default/copy-file',
+            type: 'POST',
+            data: { id: id },
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {   
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            },
+            error: function() {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            }
+        });
+    }
+
+    function deleteFile(id) {
+        event.preventDefault();
+
+        $.ajax({
+            url: '/storage/default/delete-file',
+            type: 'POST',
+            data: { id: id },
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            complete: function() {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            }
+        });
+    }
+
     function openShareModal(id) {
         event.preventDefault();
         $.pjax.reload({
@@ -309,60 +205,158 @@ $this->registerJs(
             }
         });
     });
-JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
-    function copyFile(id) {
+function openUploadModal() {
         event.preventDefault();
-        
-        $.ajax({
-            url: '/storage/default/copy-file',
-            type: 'POST',
-            data: { id: id },
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {   
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
-                });
-            },
-            error: function() {
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-file-pjax'});
-                });
-            }
+        $.pjax.reload({
+            container: '#upload-file-pjax',
+            type: 'GET',
+            url: '/storage/default/upload-file',
+        }).done(function() {
+            setTimeout(function() {
+                $('#uploadModal').modal('show');
+            }, 1000);
+        }).fail(function(e) {
+            console.log('Error Modal:', e);
         });
     }
-    JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
-    function deleteFile(id) {
+  
+
+
+function openRenameModal(id) {
         event.preventDefault();
 
-        $.ajax({
-            url: '/storage/default/delete-file',
-            type: 'POST',
+        $.pjax.reload({
+            container: '#rename-file-pjax',
+            type: 'GET',
+            url: '/storage/default/rename-file',
             data: { id: id },
+        }).done(function() {
+            setTimeout(function () {
+                if ($('#renameModal').length) {
+                    $('#renameModal').modal('show');
+                } else {
+                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                        $.pjax.reload({container: '#list-file-pjax'});
+                    });
+                }
+            }, 1000);
+        }).fail(function(e) {
+            console.log('Error Modal:', e);
+        });
+    }
+
+    $(document).on('click', '#renameButton', function(e) {
+        e.preventDefault();
+
+        var form = $('#renameForm');
+
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
             headers: {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
+                $('#renameModal').modal('hide');
                 $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
                     $.pjax.reload({container: '#list-file-pjax'});
                 });
             }
         });
-    }
-JS,
-    \yii\web\View::POS_END
-);
-//
-?>
+    });
 
+
+function downloadFile(id) {
+    event.preventDefault();
+
+    $.post({
+        url: '/storage/default/download-file',
+        data: { id: id },
+        xhrFields: { responseType: 'blob' },
+        headers: {
+            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(data, status, xhr) {
+            const disposition = xhr.getResponseHeader('Content-Disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filename = disposition.split('filename=')[1]?.replace(/["']/g, '') || 'downloaded_file';
+                const blobUrl = URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = decodeURIComponent(filename);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            } else {
+                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+                    $.pjax.reload({container: '#list-file-pjax'});
+                });
+            }
+        },
+        error: function() {
+           $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
+               $.pjax.reload({container: '#list-file-pjax'});
+           });
+        }
+    });
+}
+
+
+
+
+$(document).on('click', '#uploadButton', function(e) {
+    e.preventDefault();
+    var form = document.getElementById('uploadForm');
+    var formData = new FormData(form);
+
+    $.ajax({
+        url: form.action,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(response) {
+            $('#uploadModal').modal('hide');
+            refreshFileListDirect();
+            $.pjax.reload({container: "#pjax-flash-message"});
+        },
+        error: function(error) {
+            console.error("Upload error:", error);
+            $('#uploadModal').modal('hide');
+            $.pjax.reload({container: "#pjax-flash-message"});
+        }
+    });
+});
+
+
+
+$(document).ready(function () {
+    $('#searchFileInput').on('keyup', function () {
+        var q = $(this).val().trim();
+        var isPicker = window.isPicker || false;
+        var fileExtensions = window.fileExtensions || [];
+
+        let url = '/storage/default/search?q=' + encodeURIComponent(q);
+
+        if (isPicker && fileExtensions.length > 0) {
+            url += '&fileExtensions=' + encodeURIComponent(fileExtensions.join(','));
+        }
+
+        url += '&isPicker=' + (isPicker ? '1' : '0');
+
+        $.pjax.reload({
+            container: '#list-file-pjax',
+            url: url,
+            timeout: false
+        });
+    });
+});
+
+//deneme
+
+JS, \yii\web\View::POS_END);
+?>
