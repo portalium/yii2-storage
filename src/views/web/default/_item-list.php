@@ -1,16 +1,79 @@
 <?php
 
+use portalium\storage\models\StorageDirectory;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Dropdown;
 use portalium\theme\widgets\ListView;
+use yii\helpers\Url;
 
 /** @var yii\data\ActiveDataProvider $directoryDataProvider */
 /** @var yii\data\ActiveDataProvider $fileDataProvider */
 /** @var bool $isPicker */
 
-echo Html::tag('h5', Module::t('/Home'), ['class' => ' mb-5']);
+$id_directory = Yii::$app->request->get('id_directory', null);
+$parentDirectory = null;
+
+if ($id_directory !== null) {
+    $parentDirectory = StorageDirectory::findOne($id_directory);
+}
+
 echo Html::beginTag('div', ['class' => 'container-fluid']);
+
+echo Html::beginTag('div', ['class' => 'row mb-3']);
+echo Html::beginTag('div', ['class' => 'col-12']);
+
+if ($id_directory !== null) {
+    echo Html::a(
+        Html::tag('i', '', ['class' => 'fa fa-chevron-left']) . ' ' ,
+        ['index', 'id_directory' => $parentDirectory ? $parentDirectory->id_parent : null],
+        ['class' => 'btn btn-lg', 'data-pjax' => true]
+    );
+
+    $pathItems = [];
+    $currentDir = $parentDirectory;
+
+    while ($currentDir !== null) {
+        array_unshift($pathItems, [
+            'name' => $currentDir->name,
+            'id' => $currentDir->id_directory
+        ]);
+
+        if ($currentDir->id_parent === null) {
+            break;
+        }
+
+        $currentDir = StorageDirectory::findOne($currentDir->id_parent);
+    }
+
+    echo Html::beginTag('nav', ['class' => 'ml-3 d-inline-block']);
+    echo Html::beginTag('ol', ['class' => 'breadcrumb d-inline-flex mb-0']);
+
+    echo Html::tag('li',
+        Html::a(Module::t('Home'), ['index'], ['data-pjax' => true]),
+        ['class' => 'breadcrumb-item']
+    );
+
+    foreach ($pathItems as $i => $item) {
+        if ($i === count($pathItems) - 1) {
+            echo Html::tag('li', Html::encode($item['name']), ['class' => 'breadcrumb-item active']);
+        } else {
+            echo Html::tag('li',
+                Html::a(Html::encode($item['name']), ['index', 'id_directory' => $item['id']], ['data-pjax' => true]),
+                ['class' => 'breadcrumb-item']
+            );
+        }
+    }
+
+    echo Html::endTag('ol');
+    echo Html::endTag('nav');
+} else {
+    echo Html::tag('h5', Module::t('Home'), ['class' => 'd-inline-block']);
+}
+
+echo Html::endTag('div');
+echo Html::endTag('div');
+
 echo Html::beginTag('div', ['class' => 'row']);
 
 echo ListView::widget([
@@ -24,12 +87,13 @@ echo ListView::widget([
 
         $content = Html::beginTag('div', [
             'class' => 'col-md-1 mb-6',
+            'id' => 'folder-' . $folderId,
         ]);
 
         $content .= Html::beginTag('div', [
             'class' => 'folder-container',
+            'data-id' => $folderId,
             'onclick' => "openFolder($folderId, event)",
-
         ]);
 
         $content .= Html::tag('i', '', [
@@ -64,7 +128,7 @@ echo ListView::widget([
                     'linkOptions' => [
                         'onclick' => 'deleteFolder(' . $folderId . '); return false;',
                         'data-id' => $folderId,
-                        ],
+                    ],
                 ],
             ],
             'options' => [
@@ -81,6 +145,7 @@ echo ListView::widget([
         return $content;
     }
 ]);
+
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'row']);
@@ -190,24 +255,24 @@ echo Html::endTag('div');
 echo Html::endTag('div');
 
 $this->registerJs(<<<JS
-
 if (typeof selectFile === 'undefined') {
     window.selectFile = function (element, id_storage) {
         if (window.multiple) {
-            if (\$(element).is(':checked')) {
-                \$('.file-card[data-id="' + id_storage + '"]').addClass('active');
+            if ($(element).is(':checked')) {
+                $('.file-card[data-id="' + id_storage + '"]').addClass('active');
             } else {
-                \$('.file-card[data-id="' + id_storage + '"]').removeClass('active');
+                $('.file-card[data-id="' + id_storage + '"]').removeClass('active');
             }
         } else {
-            \$('.file-card.active').removeClass('active');
-            \$('.file-select-checkbox').not(element).prop('checked', false);
-            if (\$(element).is(':checked')) {
-                \$('.file-card[data-id="' + id_storage + '"]').addClass('active');
+            $('.file-card.active').removeClass('active');
+            $('.file-select-checkbox').not(element).prop('checked', false);
+            if ($(element).is(':checked')) {
+                $('.file-card[data-id="' + id_storage + '"]').addClass('active');
             }
         }
     };
 }
+
 window.handleFileCardClick = function(event, id_storage) {
     if (event.target === this || 
         event.target.classList.contains('file-icon') || 
@@ -218,6 +283,22 @@ window.handleFileCardClick = function(event, id_storage) {
             selectFile(checkbox, id_storage);
         }
     }
+};
+
+window.openFolder = function(id_directory, event) {
+    if (event.target.classList.contains('folder-ellipsis') || 
+        $(event.target).closest('.folder-dropdown-menu').length) {
+        return;
+    }
+    
+    $.pjax.reload({
+        container: '#list-item-pjax',
+        url: 'http://portalium/storage/default/index',
+        data: { id_directory: id_directory },
+        push: true,
+        replace: false,
+        timeout: 10000
+    });
 };
 JS
 );

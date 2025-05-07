@@ -88,15 +88,17 @@ Pjax::begin([
 Pjax::end();
 
 Pjax::begin([
-    'id'               => 'list-item-pjax',
-    'timeout'          => false,
-    'enablePushState'  => false,
+    'id' => 'list-item-pjax',
+    'timeout' => false,
+    'enablePushState' => true,
+    'enableReplaceState' => false,
+    'clientOptions' => ['push' => true, 'replace' => false, 'history' => true],
 ]);
 
 echo $this->render('_item-list', [
     'directoryDataProvider' => $directoryDataProvider,
-    'fileDataProvider'      => $fileDataProvider,
-    'isPicker'              => $isPicker ?? false
+    'fileDataProvider' => $fileDataProvider,
+    'isPicker' => $isPicker ?? false
 ]);
 Pjax::end();
 

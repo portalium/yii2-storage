@@ -21,23 +21,33 @@ class DefaultController extends Controller
         $model = new Storage();
         $searchModel = new StorageSearch();
 
-        $id_directory = $this->request->get('id_directory');
-        $fileDataProvider = $searchModel->search($this->request->queryParams);
+        $id_directory = Yii::$app->request->get('id_directory');
+
+        $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
-        $directoryDataProvider = new \yii\data\ActiveDataProvider([
+
+        $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
-                ->orderBy(['id_directory' => SORT_DESC]),
+                ->orderBy(['name' => SORT_DESC]),
             'pagination' => [
                 'pageSize' => 11,
             ],
         ]);
 
+        if (Yii::$app->request->isPjax) {
+            return $this->renderAjax('_item-list', [
+                'directoryDataProvider' => $directoryDataProvider,
+                'fileDataProvider' => $fileDataProvider,
+                'isPicker' => Yii::$app->request->get('isPicker', false),
+            ]);
+        }
+
         return $this->render('index', [
             'model' => $model,
             'fileDataProvider' => $fileDataProvider,
             'directoryDataProvider' => $directoryDataProvider,
-            'isPicker' => $this->request->get('isPicker', false),
+            'isPicker' => Yii::$app->request->get('isPicker', false),
         ]);
     }
 
