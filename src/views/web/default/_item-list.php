@@ -9,12 +9,15 @@ use portalium\theme\widgets\ListView;
 /** @var yii\data\ActiveDataProvider $fileDataProvider */
 /** @var bool $isPicker */
 
+echo Html::tag('h5', Module::t('/Home'), ['class' => ' mb-5']);
 echo Html::beginTag('div', ['class' => 'container-fluid']);
-echo Html::beginTag('div', ['class' => 'row mb-4']);
-    echo Html::tag('h4', Module::t('Folders'), ['class' => 'col-12 mb-3']);
+echo Html::beginTag('div', ['class' => 'row']);
 
 echo ListView::widget([
     'dataProvider' => $directoryDataProvider,
+    'options' => ['class' => 'd-flex flex-wrap'],
+    'itemOptions' => ['tag' => false],
+    'layout' => "{items}",
     'itemView' => function ($model) {
         $folderId = $model->id_directory;
         $folderName = Html::encode($model->name);
@@ -25,7 +28,8 @@ echo ListView::widget([
 
         $content .= Html::beginTag('div', [
             'class' => 'folder-container',
-            'onclick' => "openFolder($folderId)"
+            'onclick' => "openFolder($folderId, event)",
+
         ]);
 
         $content .= Html::tag('i', '', [
@@ -72,24 +76,20 @@ echo ListView::widget([
         $content .= Html::tag('div', '', ['class' => 'folder']);
         $content .= Html::tag('div', '', ['class' => 'folder-notch']);
         $content .= Html::tag('div', $folderName, ['class' => 'folder-title']);
-
         $content .= Html::endTag('div');
         $content .= Html::endTag('div');
-
         return $content;
-    },
-    'options' => ['class' => 'row w-100'],
-    'itemOptions' => ['tag' => false],
-    'layout' => "{items}\n{pager}",
+    }
 ]);
-
 echo Html::endTag('div');
 
-echo Html::beginTag('div', ['class' => 'row mt-4']);
-echo Html::tag('h4', Module::t('Files'), ['class' => 'col-12 mb-3']);
+echo Html::beginTag('div', ['class' => 'row']);
 
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
+    'options' => ['class' => 'row mt-4'],
+    'itemOptions' => ['tag' => false],
+    'layout' => "{items}\n{pager}",
     'itemView' => function ($model) use ($isPicker) {
         $content = Html::beginTag('div', ['class' => 'col-md-2 col-sm-3 col-6 mb-3']);
 
@@ -183,10 +183,7 @@ echo ListView::widget([
         $content .= Html::endTag('div');
 
         return $content;
-    },
-    'options' => ['class' => 'row w-100'],
-    'itemOptions' => ['tag' => false],
-    'layout' => "{items}\n{pager}",
+    }
 ]);
 
 echo Html::endTag('div');

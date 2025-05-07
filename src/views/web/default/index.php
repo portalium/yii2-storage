@@ -10,8 +10,9 @@ use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $form portalium\theme\widgets\ActiveForm */
-/* @var $directoryDataProvider yii\data\ActiveDataProvider */
-/* @var $fileDataProvider yii\data\ActiveDataProvider */
+/* @var yii\data\ActiveDataProvider $directoryDataProvider */
+/* @var yii\data\ActiveDataProvider $fileDataProvider */
+/* @var bool $isPicker */
 
 StorageAsset::register($this);
 
@@ -87,12 +88,15 @@ Pjax::begin([
 Pjax::end();
 
 Pjax::begin([
-    'id' => 'list-item-pjax'
+    'id'               => 'list-item-pjax',
+    'timeout'          => false,
+    'enablePushState'  => false,
 ]);
+
 echo $this->render('_item-list', [
     'directoryDataProvider' => $directoryDataProvider,
-    'fileDataProvider' => $fileDataProvider,
-    'isPicker' => $isPicker ?? false
+    'fileDataProvider'      => $fileDataProvider,
+    'isPicker'              => $isPicker ?? false
 ]);
 Pjax::end();
 
@@ -508,6 +512,5 @@ $this->registerJs(
 JS,
     \yii\web\View::POS_END
 );
-//
 ?>
 
