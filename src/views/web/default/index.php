@@ -22,7 +22,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <?php
 echo Html::beginTag('span', [
-    'class' => 'col-md-5 d-flex gap-2']);
+    'class' => 'col-md-5 d-flex gap-2 mb-3']);
 
 echo Html::tag(
     'span',
@@ -59,9 +59,7 @@ echo Button::widget([
         'onclick' => 'openNewFolderModal()',
     ],
 ]);
-
 echo Html::endTag('span');
-echo html::tag('br');
 
 Pjax::begin([
     'id' => 'upload-file-pjax',
@@ -131,6 +129,8 @@ $this->registerJs(
     <<<JS
     function openUploadModal() {
         event.preventDefault();
+        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
+
         $.pjax.reload({
             container: '#upload-file-pjax',
             type: 'GET',
@@ -158,9 +158,7 @@ $this->registerJs(
             processData: false,
             complete: function() {
                 $('#uploadModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
@@ -172,7 +170,7 @@ $this->registerJs(
     <<<JS
     function openNewFolderModal() {
         event.preventDefault();
-
+        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.pjax.reload({
             container: '#new-folder-pjax',
             type: 'GET',
@@ -182,9 +180,7 @@ $this->registerJs(
                 if ($('#newFolderModal').length) {
                     $('#newFolderModal').modal('show');
                 } else {
-                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-item-pjax'});
-                    });
+                    $.pjax.reload({container: "#list-item-pjax"});
                 }
             }, 1000);
         }).fail(function(e) {
@@ -206,9 +202,7 @@ $this->registerJs(
             },
             complete: function() {
                 $('#newFolderModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
@@ -220,6 +214,7 @@ $this->registerJs(
     <<<JS
     function openRenameFolderModal(id) {
         event.preventDefault();
+        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.pjax.reload({
             container: '#rename-folder-pjax',
             type: 'GET',
@@ -230,9 +225,7 @@ $this->registerJs(
                 if ($('#renameFolderModal').length) {
                     $('#renameFolderModal').modal('show');
                 } else {
-                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-item-pjax'});
-                    });
+                    $.pjax.reload({container: "#list-item-pjax"});
                 }
             }, 1000);
         }).fail(function(e) {
@@ -254,9 +247,7 @@ $this->registerJs(
             },
             complete: function() {
                 $('#renameFolderModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
@@ -265,6 +256,7 @@ $this->registerJs(
 );
 $this->registerJs(<<<JS
 function deleteFolder(id) {
+    const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
     $.ajax({
         url: '/storage/default/delete-folder',
         type: 'POST',
@@ -273,9 +265,7 @@ function deleteFolder(id) {
             'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
         },
         complete: function() {
-            $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                $.pjax.reload({container: '#list-item-pjax'});
-            });
+            $.pjax.reload({container: "#list-item-pjax"});
         }
     });
 }
@@ -286,7 +276,7 @@ $this->registerJs(
     <<<JS
 function downloadFile(id) {
     event.preventDefault();
-
+    const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
     $.post({
         url: '/storage/default/download-file',
         data: { id: id },
@@ -307,15 +297,11 @@ function downloadFile(id) {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(blobUrl);
             } else {
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         },
         error: function() {
-           $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-               $.pjax.reload({container: '#list-item-pjax'});
-           });
+           $.pjax.reload({container: "#list-item-pjax"});
         }
     });
 }
@@ -327,7 +313,7 @@ $this->registerJs(
     <<<JS
     function openRenameModal(id) {
         event.preventDefault();
-
+        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.pjax.reload({
             container: '#rename-file-pjax',
             type: 'GET',
@@ -338,9 +324,7 @@ $this->registerJs(
                 if ($('#renameModal').length) {
                     $('#renameModal').modal('show');
                 } else {
-                    $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                        $.pjax.reload({container: '#list-item-pjax'});
-                    });
+                    $.pjax.reload({container: "#list-item-pjax"});
                 }
             }, 1000);
         }).fail(function(e) {
@@ -350,7 +334,7 @@ $this->registerJs(
 
     $(document).on('click', '#renameButton', function(e) {
         e.preventDefault();
-
+    
         var form = $('#renameForm');
 
         $.ajax({
@@ -362,9 +346,7 @@ $this->registerJs(
             },
             complete: function() {
                 $('#renameModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
@@ -376,7 +358,7 @@ $this->registerJs(
     <<<JS
     function openUpdateModal(id) {
     event.preventDefault();
-
+    const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
     $.pjax.reload({
         container: '#update-file-pjax',
         type: 'GET',
@@ -387,9 +369,7 @@ $this->registerJs(
             if ($('#updateModal').length > 0) {
                 $('#updateModal').modal('show');
             } else {
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         }, 1000); 
     }).fail(function(e) {
@@ -414,9 +394,7 @@ $this->registerJs(
             },
             complete: function() {
                 $('#updateModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
@@ -428,6 +406,7 @@ $this->registerJs(
     <<<JS
     function openShareModal(id) {
         event.preventDefault();
+        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.pjax.reload({
             container: '#share-file-pjax',
             type: 'GET',
@@ -454,9 +433,7 @@ $this->registerJs(
             },
             complete: function() {
                 $('#shareModal').modal('hide');
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
@@ -468,7 +445,7 @@ $this->registerJs(
     <<<JS
     function copyFile(id) {
         event.preventDefault();
-        
+        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.ajax({
             url: '/storage/default/copy-file',
             type: 'POST',
@@ -477,14 +454,10 @@ $this->registerJs(
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {   
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             },
             error: function() {
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     }
@@ -496,7 +469,7 @@ $this->registerJs(
     <<<JS
     function deleteFile(id) {
         event.preventDefault();
-
+        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.ajax({
             url: '/storage/default/delete-file',
             type: 'POST',
@@ -505,9 +478,7 @@ $this->registerJs(
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
-                $.pjax.reload({container: "#pjax-flash-message"}).done(function() {
-                    $.pjax.reload({container: '#list-item-pjax'});
-                });
+                $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     }
@@ -515,4 +486,3 @@ JS,
     \yii\web\View::POS_END
 );
 ?>
-

@@ -50,8 +50,6 @@ function toggleFolderMenu(e, id) {
         }, 0);
     }
 }
-
-
 function handleAccessChange(selectElement) {
     const isPublic = selectElement.value === 'public';
     const container = selectElement.closest('.file-access');
@@ -81,4 +79,3 @@ function handleCopyLink(button) {
         button.classList.add('btn-outline-secondary');
     }, 2000);
 }
-

@@ -113,8 +113,8 @@ class DefaultController extends Controller
         $model = new StorageDirectory();
 
         if (Yii::$app->request->isPost) {
-            $activeDirectory = Yii::$app->session->get('active_directory', null);
-            $model->id_parent = $activeDirectory;
+            // Session yerine doğrudan GET parametresini kullan
+            $model->id_parent = Yii::$app->request->get('id_directory');
 
             if ($model->load(Yii::$app->request->post())) {
                 $baseName = trim($model->name) !== '' ? $model->name : Module::t('New Folder');
@@ -145,13 +145,6 @@ class DefaultController extends Controller
             'model' => $model
         ]);
     }
-
-    public function actionSetActiveDirectory()
-    {
-        $id = Yii::$app->request->post('id');
-        Yii::$app->session->set('active_directory', $id);
-    }
-
     public function actionRenameFolder($id)
     {
         $model = StorageDirectory::findOne($id);

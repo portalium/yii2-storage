@@ -68,7 +68,7 @@ if ($id_directory !== null) {
     echo Html::endTag('ol');
     echo Html::endTag('nav');
 } else {
-    echo Html::tag('h5', Module::t('Home'), ['class' => 'd-inline-block']);
+    echo Html::tag('h5', Module::t('\\'), ['class' => 'd-inline-block']);
 }
 
 echo Html::endTag('div');
@@ -291,11 +291,14 @@ window.openFolder = function(id_directory, event) {
         return;
     }
     
+    let url = '/storage/default/index';
+    if (id_directory) {
+        url += '?id_directory=' + id_directory;
+    }
     $.pjax.reload({
         container: '#list-item-pjax',
-        url: 'http://portalium/storage/default/index',
-        data: { id_directory: id_directory },
-        push: true,
+        url: url,
+        push: true, 
         replace: false,
         timeout: 10000
     });
