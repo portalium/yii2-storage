@@ -8,17 +8,19 @@ class StorageAsset extends AssetBundle
 {
     public $sourcePath = '@vendor/portalium/yii2-storage/src/assets/';
 
+    public $depends = [
+        'portal
+        '
+    ];
+
     public $css = [
         'modal.css'
     ];
     public $js = [
         'storage.js'
     ];
-    public $depends = [
-        'yii\web\JqueryAsset',
-    ];
+
     public $cssOptions = [
         'appendTimestamp' => true,
     ];
-
 }

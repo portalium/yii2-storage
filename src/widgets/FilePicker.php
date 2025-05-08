@@ -66,23 +66,15 @@ class FilePicker extends InputWidget
 
         echo Html::button(Module::t('Select File'), [
             'class' => 'btn btn-primary',
-            'onclick' => 'openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '")'
-        ]);
-
-        Pjax::begin([
-            'id' => $this->options['id'] . '-pjax',
-            'enablePushState' => false,
-            'timeout' => 50000,
+            'onclick' => 'window.openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '")'
         ]);
 
         $this->registerJsScript();
-
-        Pjax::end();
     }
 
     protected function registerJsScript()
-{
-    $js = <<<JS
+    {
+        $js = <<<JS
 const updateFileCard = function(id_storage) {
     $('.file-card.active').removeClass('active');
     $('.file-card input[type="checkbox"]').prop('checked', false);
@@ -101,13 +93,23 @@ const updateFileCard = function(id_storage) {
     }
 };
 
+const forceReflow = function() {
+    const container = document.querySelector('#file-picker-modal .files-container');
+    if (container) {
+        container.classList.remove('d-none');
+        void container.offsetWidth;
+        container.classList.add('d-flex');
+    }
+};
+
 const cleanupModal = function() {
     const modalEl = document.getElementById('file-picker-modal');
     if (modalEl) {
         const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
+        if (modal) {
+            modal.hide();
+        }
     }
-
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open').css('padding-right', '');
 };
@@ -115,53 +117,11 @@ const cleanupModal = function() {
 const bindModalButtons = function() {
     $(document).off('click.btn-select').on('click.btn-select', '#file-picker-modal .btn-select', function() {
         window.saveSelect();
-        cleanupModal();
     });
 
-    $(document).off('click.btn-close').on('click.btn-close', '#file-picker-modal .btn-close', function () {
+    $(document).off('click.btn-close').on('click.btn-close', '#file-picker-modal .btn-close, #file-picker-modal .close', function() {
         cleanupModal();
     });
-};
-
-const showModal = function(id) {
-    cleanupModal();
-
-    setTimeout(() => {
-        window.inputId = id;
-        bindModalButtons();
-
-        const modalEl = document.getElementById('file-picker-modal');
-        let modal = bootstrap.Modal.getInstance(modalEl);
-
-        if (!modal) {
-            modal = new bootstrap.Modal(modalEl, {
-                backdrop: true,
-                keyboard: true
-            });
-        }
-
-        modal.show();
-
-        $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
-            e.preventDefault();
-
-            $.pjax.reload({
-                container: '#' + id + '-pjax',
-                url: $(this).attr('href'),
-                type: 'GET',
-                data: {
-                    id: id,
-                    multiple: window.multiple,
-                    isJson: window.isJson,
-                    fileExtensions: window.fileExtensions
-                },
-                push: false,
-                replace: false
-            }).done(() => {
-                showModal(id);
-            });
-        });
-    }, 300);
 };
 
 if (!window.openFilePickerModal) {
@@ -169,35 +129,79 @@ if (!window.openFilePickerModal) {
         window.multiple = multiple;
         window.isJson = isJson;
         window.callbackName = callbackName;
+        window.inputId = id;
 
         cleanupModal();
 
-        if ($('#file-picker-modal').length === 0) {
-            $.pjax.reload({
-                container: '#' + id + '-pjax',
-                url: '/storage/default/picker-modal',
-                type: 'GET',
-                data: {
-                    id: id,
-                    multiple: multiple,
-                    isJson: isJson,
-                    fileExtensions: window.fileExtensions
-                }
-            }).done(() => {
-                updateFileCard(id_storage);
-                showModal(id);
-            });
-        } else {
-            updateFileCard(id_storage);
-            showModal(id);
-        }
+        $.ajax({
+            url: '/storage/default/picker-modal',
+            type: 'GET',
+            data: {
+                id: id,
+                multiple: multiple,
+                isJson: isJson,
+                fileExtensions: window.fileExtensions
+            },
+            success: function(response) {
+                $('#file-picker-modal').remove();
+                $('body').append(response);
+
+                requestAnimationFrame(() => {
+                    const modalEl = document.getElementById('file-picker-modal');
+                    const modal = new bootstrap.Modal(modalEl, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                    document.body.classList.add('modal-open');
+                    document.body.style.paddingRight = '0px';
+                    modal.show();
+
+                    updateFileCard(id_storage);
+                    bindModalButtons();
+                    forceReflow();
+                });
+
+                $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
+                    e.preventDefault();
+                    $('#file-picker-modal .modal-content').append('<div class="loading-overlay"><div class="spinner"></div></div>');
+
+                    $.ajax({
+                        url: $(this).attr('href'),
+                        type: 'GET',
+                        data: {
+                            id: window.inputId,
+                            multiple: window.multiple,
+                            isJson: window.isJson,
+                            fileExtensions: window.fileExtensions
+                        },
+                        success: function(newContent) {
+                            const \$temp = $('<div></div>').append(newContent);
+                            const newGrid = \$temp.find('.files-container').html();
+                            const newPagination = \$temp.find('.pagination-container').html();
+                            $('#file-picker-modal .files-container').html(newGrid);
+                            $('#file-picker-modal .pagination-container').html(newPagination);
+                            $('.loading-overlay').remove();
+                            updateFileCard(id_storage);
+                            forceReflow();
+                        },
+                        error: function() {
+                            $('.loading-overlay').remove();
+                            alert('Sayfa yüklenirken bir hata oluştu.');
+                        }
+                    });
+                });
+            },
+            error: function() {
+                alert('Modal yüklenirken bir hata oluştu.');
+            }
+        });
     };
 }
 
 if (!window.saveSelect) {
-    window.saveSelect = function () {
+    window.saveSelect = function() {
         let selectedFiles = window.multiple ?
-            $('.file-card input[type="checkbox"]:checked').map(function () {
+            $('.file-card input[type="checkbox"]:checked').map(function() {
                 return $(this).closest('.file-card').data('id');
             }).get() :
             $('.file-card.active').data('id');
@@ -219,20 +223,8 @@ if (!window.saveSelect) {
         cleanupModal();
     };
 }
-
-$(document).on('pjax:complete', function(event, xhr, options) {
-    const url = options && options.url ? options.url : '';
-    if (url.includes('picker-modal') && url.includes('page=')) {
-        cleanupModal();
-    }
-});
-
-$(document).ready(function() {
-    cleanupModal();
-});
 JS;
 
-    $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
-}
-
+        $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
+    }
 }

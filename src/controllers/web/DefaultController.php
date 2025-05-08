@@ -49,6 +49,8 @@ class DefaultController extends Controller
         ]);
     }
 
+    
+
     public function actionDownloadFile()
     {
         $id = Yii::$app->request->post('id');
