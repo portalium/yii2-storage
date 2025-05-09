@@ -67,8 +67,6 @@ if ($id_directory !== null) {
 
     echo Html::endTag('ol');
     echo Html::endTag('nav');
-} else {
-    echo Html::tag('h5', Module::t('\\'), ['class' => 'd-inline-block']);
 }
 
 echo Html::endTag('div');
@@ -81,6 +79,7 @@ echo ListView::widget([
     'options' => ['class' => 'd-flex flex-wrap'],
     'itemOptions' => ['tag' => false],
     'layout' => "{items}",
+    'emptyText' => '',
     'itemView' => function ($model) {
         $folderId = $model->id_directory;
         $folderName = Html::encode($model->name);
@@ -152,9 +151,10 @@ echo Html::beginTag('div', ['class' => 'row']);
 
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
-    'options' => ['class' => 'row mt-4'],
+    'options' => ['class' => 'row'],
     'itemOptions' => ['tag' => false],
     'layout' => "{items}\n{pager}",
+    'emptyText' => '',
     'itemView' => function ($model) use ($isPicker) {
         $content = Html::beginTag('div', ['class' => 'col-md-2 col-sm-3 col-6 mb-3']);
 
