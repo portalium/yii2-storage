@@ -127,54 +127,101 @@ Pjax::end();
 <?php
 $this->registerJs(
     <<<JS
-    function openUploadModal() {
-        event.preventDefault();
-        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
-
-        $.pjax.reload({
-            container: '#upload-file-pjax',
-            type: 'GET',
-            url: '/storage/default/upload-file',
-        }).done(function() {
-            setTimeout(function() {
-                $('#uploadModal').modal('show');
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
-        });
+    let currentDirectoryId = null;
+    window.openFolder = function(id_directory, event) {
+    if (event.target.classList.contains('folder-ellipsis') || 
+        $(event.target).closest('.folder-dropdown-menu').length) {
+        return;
     }
+    currentDirectoryId = (id_directory === null || id_directory === undefined) ? null : id_directory; 
 
-    $(document).on('click', '#uploadButton', function(e) {
-        e.preventDefault();
-    
-        var form = document.getElementById('uploadForm');
-        var formData = new FormData(form);
-    
-        $.ajax({
-            url: form.action,
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            complete: function() {
-                $('#uploadModal').modal('hide');
-                $.pjax.reload({container: "#list-item-pjax"});
-            }
-        });
+    let url = '/storage/default/index';
+    if (id_directory) {
+        url += '?id_directory=' + id_directory;
+    }   
+    $.pjax.reload({
+        container: '#list-item-pjax',
+        url: url,
+        push: true, 
+        replace: false,
+        timeout: 10000,
+        complete: function (){
+            if (!url.includes('id_directory=')) 
+                currentDirectoryId = null;
+        }
     });
-JS,
-    \yii\web\View::POS_END
-);
+};
+    
+function openUploadModal() {
+    event.preventDefault();
+    let url = '/storage/default/upload-file';
+    if (currentDirectoryId) {
+        url += '?id_directory=' + currentDirectoryId;
+    }
+    else {
+        url += '?id_directory=null';
+    }
+    $.pjax.reload({
+        container: '#upload-file-pjax',
+        type: 'GET',
+        url: url,
+    }).done(function() {
+        setTimeout(function() {
+            $('#uploadModal').modal('show');
+        }, 1000);
+    }).fail(function(e) {
+        console.log('Error Modal:', e);
+    });
+}
 
-$this->registerJs(
-    <<<JS
+$(document).on('click', '#uploadButton', function(e) {
+    e.preventDefault();
+
+    var form = document.getElementById('uploadForm');
+    var formData = new FormData(form);
+    
+    if (currentDirectoryId !== null) 
+        formData.append('id_directory', currentDirectoryId);
+    else
+        formData.append('id_directory', '');
+    
+    $.ajax({
+        url: form.action,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function() {
+            $('#uploadModal').modal('hide');
+            if (currentDirectoryId) {
+                $.pjax.reload({
+                    container: "#list-item-pjax",
+                    url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                    replace: false,
+                    push: false,
+                });
+            } else {
+                $.pjax.reload({
+                container: "#list-item-pjax",
+                url: '/storage/default/index',
+                replace: false,
+                push: false
+                });
+            }
+        }
+    });
+});
+
     function openNewFolderModal() {
         event.preventDefault();
-        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
+        let url = '/storage/default/new-folder';
+        if (currentDirectoryId) {
+            url += '?id_directory=' + currentDirectoryId;
+        }
         $.pjax.reload({
             container: '#new-folder-pjax',
             type: 'GET',
-            url: '/storage/default/new-folder'
+            url: url,
         }).done(function() {
             setTimeout(function () {
                 if ($('#newFolderModal').length) {
@@ -187,34 +234,48 @@ $this->registerJs(
             console.log('Error Modal:', e);
         });
     }
-
     $(document).on('click', '#createFolderButton', function(e) {
-        e.preventDefault();
+    e.preventDefault();
 
-        var form = $('#newFolderForm');
+    var form = document.getElementById('newFolderForm');
+    var formData = new FormData(form);
+    
+    if (currentDirectoryId) {
+        formData.append('id_directory', currentDirectoryId); 
+    } else {
+        formData.append('id_directory', null); 
+    }
 
-        $.ajax({
-            url: form.attr('action'),
-            type: 'POST',
-            data: form.serialize(),
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            complete: function() {
-                $('#newFolderModal').modal('hide');
-                $.pjax.reload({container: "#list-item-pjax"});
+    $.ajax({
+        url: form.action,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        complete: function() {
+            $('#newFolderModal').modal('hide');
+            if (currentDirectoryId) {
+                $.pjax.reload({
+                    container: "#list-item-pjax",
+                    url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                    replace: false,
+                    push: false,
+                });
+            } else {
+                $.pjax.reload({
+                container: "#list-item-pjax",
+                url: '/storage/default/index',
+                replace: false,
+                push: false
+                });
             }
-        });
+        }
     });
-    JS,
-    \yii\web\View::POS_END
-);
+});
 
-$this->registerJs(
-    <<<JS
+
     function openRenameFolderModal(id) {
         event.preventDefault();
-        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.pjax.reload({
             container: '#rename-folder-pjax',
             type: 'GET',
@@ -251,12 +312,8 @@ $this->registerJs(
             }
         });
     });
-    JS,
-    \yii\web\View::POS_END
-);
-$this->registerJs(<<<JS
+
 function deleteFolder(id) {
-    const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
     $.ajax({
         url: '/storage/default/delete-folder',
         type: 'POST',
@@ -269,14 +326,9 @@ function deleteFolder(id) {
         }
     });
 }
-JS, \yii\web\View::POS_END);
 
-
-$this->registerJs(
-    <<<JS
 function downloadFile(id) {
     event.preventDefault();
-    const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
     $.post({
         url: '/storage/default/download-file',
         data: { id: id },
@@ -305,15 +357,9 @@ function downloadFile(id) {
         }
     });
 }
-JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
     function openRenameModal(id) {
         event.preventDefault();
-        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.pjax.reload({
             container: '#rename-file-pjax',
             type: 'GET',
@@ -350,15 +396,9 @@ $this->registerJs(
             }
         });
     });
-    JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
     function openUpdateModal(id) {
     event.preventDefault();
-    const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
     $.pjax.reload({
         container: '#update-file-pjax',
         type: 'GET',
@@ -398,15 +438,9 @@ $this->registerJs(
             }
         });
     });
-    JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
     function openShareModal(id) {
         event.preventDefault();
-        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.pjax.reload({
             container: '#share-file-pjax',
             type: 'GET',
@@ -437,15 +471,9 @@ $this->registerJs(
             }
         });
     });
-JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
     function copyFile(id) {
         event.preventDefault();
-        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.ajax({
             url: '/storage/default/copy-file',
             type: 'POST',
@@ -461,15 +489,9 @@ $this->registerJs(
             }
         });
     }
-    JS,
-    \yii\web\View::POS_END
-);
 
-$this->registerJs(
-    <<<JS
     function deleteFile(id) {
         event.preventDefault();
-        const idDirectory = new URLSearchParams(window.location.search).get('id_directory') || '';
         $.ajax({
             url: '/storage/default/delete-file',
             type: 'POST',

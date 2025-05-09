@@ -56,6 +56,11 @@ class DefaultController extends Controller
         $post = Yii::$app->request->post();
         $type = $post['Storage']['type'] ?? 'file';
         $model = ($type === 'folder') ? new StorageDirectory() : new Storage();
+        $id_directory = Yii::$app->request->post('id_directory');
+        if (empty($id_directory))
+            $model->id_directory = null;
+        else
+            $model->id_directory = $id_directory;
 
         if (Yii::$app->request->isPost) {
             $model->load($post);
@@ -70,8 +75,8 @@ class DefaultController extends Controller
                         $pathParts = explode('/', $fullPath);
                         $model->name = !empty($pathParts[0]) ? $pathParts[0] : 'Uploaded Folder';
                     }
+                    $success = $model->uploadFolder($uploadedFiles, $id_directory);
 
-                    $success = $model->uploadFolder($uploadedFiles);
                 } else {
                     $model->addError('file', Module::t('No files were uploaded'));
                 }
@@ -79,12 +84,14 @@ class DefaultController extends Controller
             } else {
                 if (!empty($uploadedFiles)) {
                     $model->file = $uploadedFiles[0] ?? null;
-                    if ($model->file)
+                    if ($model->file) {
                         $success = $model->upload();
+                    }
                 } else {
                     $model->addError('file', Module::t('No files were uploaded'));
                 }
             }
+
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
                 if (!$success) {
@@ -108,15 +115,19 @@ class DefaultController extends Controller
     }
 
 
+
     public function actionNewFolder()
     {
         $model = new StorageDirectory();
 
         if (Yii::$app->request->isPost) {
-            // Session yerine doğrudan GET parametresini kullan
-            $model->id_parent = Yii::$app->request->get('id_directory');
-
             if ($model->load(Yii::$app->request->post())) {
+                $id_directory = Yii::$app->request->post('id_directory');
+                Yii::warning($id_directory);
+                if ($id_directory === 'null' || $id_directory == 0)
+                    $model->id_parent = null;
+                 else
+                    $model->id_parent = $id_directory;
                 $baseName = trim($model->name) !== '' ? $model->name : Module::t('New Folder');
                 $name = $baseName;
                 $counter = 1;

@@ -42,7 +42,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
             [['id_parent'], 'default', 'value' => null],
             [['id_parent'], 'integer'],
             [['name'], 'required'],
-            [['date_create', 'date_update'], 'safe'],
+            [['date_create', 'date_update', 'id_parent'], 'safe'],
             [['name'], 'string', 'max' => 256],
             [['id_parent'], 'exist', 'skipOnError' => true, 'targetClass' => StorageDirectory::class, 'targetAttribute' => ['id_parent' => 'id_directory']],
         ];
@@ -79,7 +79,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
 
 
-    public function uploadFolder($uploadedFiles)
+    public function uploadFolder($uploadedFiles, $initialParentId = null)
     {
         if (empty($uploadedFiles)) {
             $this->addError('file', Module::t('No files were uploaded'));
@@ -88,9 +88,9 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
         $userId = Yii::$app->user->id;
         $workspaceId = $this->id_workspace ?? 0;
-
         $allowed = Storage::$allowExtensions;
         $validFiles = [];
+
         foreach ($uploadedFiles as $file) {
             $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
             if (in_array($ext, $allowed)) {
@@ -112,7 +112,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
             $fileName = array_pop($pathParts);
             $currentPath = '';
-            $parentDirectoryId = null;
+            $parentDirectoryId = $initialParentId;
 
             foreach ($pathParts as $depth => $folderName) {
                 $currentPath = $depth === 0 ? $folderName : $currentPath . '/' . $folderName;
@@ -120,7 +120,12 @@ class StorageDirectory extends \yii\db\ActiveRecord
                 if (!isset($directories[$currentPath])) {
                     $dir = new StorageDirectory();
                     $dir->name = $folderName;
-                    $dir->id_parent = $directories[dirname($currentPath)] ?? null;
+
+                    if ($depth === 0 && $initialParentId !== null) {
+                        $dir->id_parent = $initialParentId;
+                    } else {
+                        $dir->id_parent = $directories[dirname($currentPath)] ?? null;
+                    }
 
                     if (!$dir->save()) {
                         foreach ($dir->errors as $attribute => $errors) {
@@ -134,6 +139,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
                 }
                 $parentDirectoryId = $directories[$currentPath];
             }
+
             if (!empty($fileName)) {
                 $storage = new Storage();
                 $storage->title = pathinfo($fileName, PATHINFO_FILENAME);
@@ -160,6 +166,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
         return $success;
     }
+
 
 
 

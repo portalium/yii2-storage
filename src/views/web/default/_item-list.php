@@ -50,7 +50,7 @@ if ($id_directory !== null) {
     echo Html::beginTag('ol', ['class' => 'breadcrumb d-inline-flex mb-0']);
 
     echo Html::tag('li',
-        Html::a(Module::t('Home'), ['index'], ['data-pjax' => true]),
+        Html::a(Module::t('Home'), ['index',], ['data-pjax' => true]),
         ['class' => 'breadcrumb-item']
     );
 
@@ -283,25 +283,6 @@ window.handleFileCardClick = function(event, id_storage) {
             selectFile(checkbox, id_storage);
         }
     }
-};
-
-window.openFolder = function(id_directory, event) {
-    if (event.target.classList.contains('folder-ellipsis') || 
-        $(event.target).closest('.folder-dropdown-menu').length) {
-        return;
-    }
-    
-    let url = '/storage/default/index';
-    if (id_directory) {
-        url += '?id_directory=' + id_directory;
-    }
-    $.pjax.reload({
-        container: '#list-item-pjax',
-        url: url,
-        push: true, 
-        replace: false,
-        timeout: 10000
-    });
 };
 JS
 );

@@ -36,7 +36,7 @@ Modal::begin([
 
 $form = ActiveForm::begin([
     'id' => 'newFolderForm',
-    'options' => ['data-pjax' => true],
+    'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true],
     'method' => 'post',
     'action' => ['/storage/default/new-folder']
 ]);
