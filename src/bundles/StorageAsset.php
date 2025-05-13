@@ -8,10 +8,7 @@ class StorageAsset extends AssetBundle
 {
     public $sourcePath = '@vendor/portalium/yii2-storage/src/assets/';
 
-    public $depends = [
-        'portal
-        '
-    ];
+    
 
     public $css = [
         'modal.css'
@@ -22,5 +19,11 @@ class StorageAsset extends AssetBundle
 
     public $cssOptions = [
         'appendTimestamp' => true,
+    ];
+//
+
+    public $depends = [
+        'portalium\theme\bundles\AppAsset',
+             
     ];
 }
