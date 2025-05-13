@@ -153,7 +153,7 @@ class DefaultController extends Controller
                 Yii::$app->session->setFlash('error', Module::t('File name could not be changed!'));
         }
 
-        return $this->renderAjax('_rename', ['model' => $model]);
+        return $this->renderAjax('_rename-file', ['model' => $model]);
     }
 
     public function actionUpdateFile($id)
@@ -347,7 +347,6 @@ class DefaultController extends Controller
         if (Yii::$app->request->isPost) {
             if ($model->load(Yii::$app->request->post())) {
                 $id_directory = Yii::$app->request->post('id_directory');
-                Yii::warning($id_directory);
                 if ($id_directory === 'null' || $id_directory == 0)
                     $model->id_parent = null;
                 else
@@ -390,21 +389,31 @@ class DefaultController extends Controller
 
         if (Yii::$app->request->isPost) {
             $oldName = $model->name;
+            $id_directory = Yii::$app->request->post('id_directory');
+
             if ($model->load(Yii::$app->request->post()) && $model->validate()) {
                 if ($oldName !== $model->name) {
-                    if ($model->save())
+                    if ($model->save()) {
                         Yii::$app->session->setFlash('success', Module::t('Folder renamed successfully!'));
-                    else
+
+                        if ($id_directory !== null && $id_directory !== 'null') {
+                            $model->parent_id = $id_directory;
+                            $model->save();
+                        }
+                    } else {
                         Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed in the database!'));
-                }
-                else
+                    }
+                } else {
                     Yii::$app->session->setFlash('error', Module::t('No changes were made to the folder name!'));
-            }
-            else
+                }
+            } else {
                 Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed!'));
+            }
         }
 
-        return $this->renderAjax('_rename-folder', ['model' => $model]);
+        return $this->renderAjax('_rename-folder', [
+            'model' => $model,
+        ]);
     }
     public function actionDeleteFolder()
     {

@@ -277,44 +277,76 @@ $(document).on('click', '#uploadButton', function(e) {
 });
 
 
-    function openRenameFolderModal(id) {
-        event.preventDefault();
-        $.pjax.reload({
-            container: '#rename-folder-pjax',
-            type: 'GET',
-            url: '/storage/default/rename-folder',
-            data: { id: id },
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#renameFolderModal').length) {
-                    $('#renameFolderModal').modal('show');
-                } else {
-                    $.pjax.reload({container: "#list-item-pjax"});
-                }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
-        });
+   function openRenameFolderModal(id) {
+    event.preventDefault();
+    let url = '/storage/default/rename-folder?id=' + id;
+     if (currentDirectoryId) {
+        url += '&id_directory=' + currentDirectoryId;
     }
-
-    $(document).on('click', '#renameFolderButton', function(e) {
-        e.preventDefault();
-
-        var form = $('#renameFolderForm');
-        
-        $.ajax({
-            url: form.attr('action') + "?id="+$("#renameFolderButton").data("id"),
-            type: 'POST',
-            data: form.serialize(),
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            complete: function() {
-                $('#renameFolderModal').modal('hide');
+    else {
+        url += '&id_directory=null';
+    }
+    $.pjax.reload({
+        container: '#rename-folder-pjax',
+        type: 'GET',
+        url: url,
+        data: { id: id },
+    }).done(function() {
+        setTimeout(function () {
+            if ($('#renameFolderModal').length) {
+                $('#renameFolderModal').modal('show');
+            } else {
                 $.pjax.reload({container: "#list-item-pjax"});
             }
-        });
+        }, 1000);
+    }).fail(function(e) {
+        console.log('Error Modal:', e);
     });
+}
+
+$(document).on('click', '#renameFolderButton', function(e) {
+    e.preventDefault();
+    
+    var form = document.getElementById('renameFolderForm');
+    var formData = new FormData(form);
+    
+    if (currentDirectoryId) {
+        formData.append('id_directory', currentDirectoryId); 
+    } else {
+        formData.append('id_directory', 'null'); 
+    }
+    
+    var folderId = $('#renameFolderForm').data('folder-id');
+    if (folderId) {
+        formData.append('id', folderId); 
+    }
+    
+    $.ajax({
+        url: form.action,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        complete: function() {
+            $('#renameFolderModal').modal('hide');
+            if (currentDirectoryId) {
+                $.pjax.reload({
+                    container: "#list-item-pjax",
+                    url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                    replace: false,
+                    push: false,
+                });
+            } else {
+                $.pjax.reload({
+                    container: "#list-item-pjax",
+                    url: '/storage/default/index',
+                    replace: false,
+                    push: false
+                });
+            }
+        }
+    });
+});
 
 function deleteFolder(id) {
     $.ajax({
