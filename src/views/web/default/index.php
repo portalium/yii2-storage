@@ -507,6 +507,141 @@ function downloadFile(id) {
             }
         });
     }
+
+    
+    async function refreshFileList() {
+        return await new Promise((resolve, reject) => {
+            if ($('#list-file-pjax').length) {
+                $.pjax.reload({
+                    container: '#list-file-pjax',
+                    timeout: false,
+                    url: '/storage/default/file-list',
+                });
+            } else {
+                reject('File picker modal not found');
+            }
+        });
+    }
+      function rebindSearchEvent() {
+        $('#searchFileInput').off('keyup').on('keyup', function () {
+            const q = $(this).val().trim();
+            const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
+            const isPicker = window.isPicker ? 1 : 0;
+            let baseUrl = '/storage/default/search?q=' + encodeURIComponent(q);
+            if (fileExtensions) {
+                baseUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+            }
+            baseUrl += '&isPicker=' + isPicker;
+            $.pjax.reload({
+                container: '#list-file-pjax',
+                url: baseUrl,
+                timeout: false
+            });
+        });
+
+        
+        $('#searchFileInput').trigger('keyup');
+    }
+    $(document).off('click.rename').on('click.rename', '#renameButton', function(e) {
+        e.preventDefault();
+        const form = $('#renameForm');
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function () {
+                bootstrap.Modal.getInstance(document.getElementById('renameModal')).hide();
+                refreshFileList();
+                rebindSearchEvent(); 
+            }
+        });
+    });
+
+    $(document).off('click.update').on('click.update', '#updateButton', function(e) {
+        e.preventDefault();
+        const form = document.getElementById('updateForm');
+        const formData = new FormData(form);
+        $.ajax({
+            url: $(form).attr('action'),
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function () {
+                bootstrap.Modal.getInstance(document.getElementById('updateModal')).hide();
+                refreshFileList();
+                rebindSearchEvent(); 
+            },
+            error: function (xhr, status, error) {
+                alert('An error occurred while updating the file. Please try again.');
+                console.error('Error:', error);
+            }
+        });
+    });
+
+    $(document).off('click.share').on('click.share', '#shareButton', function(e) {
+        e.preventDefault();
+        const form = $('#shareForm');
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function () {
+                bootstrap.Modal.getInstance(document.getElementById('shareModal')).hide();
+                refreshFileList();
+                rebindSearchEvent();
+            }
+        });
+    });
+     $(document).off('click.copy').on('click.copy', '.file-card .fa-copy', function(e) {
+        e.preventDefault();
+        const id = $(this).closest('.file-card').data('id');
+        copyFile(id);
+    });
+
+    $(document).off('click.remove').on('click.remove', '.file-card .fa-trash', function(e) {
+        e.preventDefault();
+        const id = $(this).closest('.file-card').data('id');
+        deleteFile(id);
+    });
+
+    $(document).off('click.download').on('click.download', '.file-card .fa-download', function(e) {
+        e.preventDefault();
+        const id = $(this).closest('.file-card').data('id');
+        downloadFile(id);
+    });
+
+    $(document).ready(function () {
+        let searchTimer;
+        $('#searchFileInput').on('keyup', function () {
+            clearTimeout(searchTimer);
+            const q = $(this).val().trim();
+            const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
+            const isPicker = window.isPicker ? 1 : 0;
+            let baseUrl = '/storage/default/search?q=' + encodeURIComponent(q);
+            if (fileExtensions) {
+                baseUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+            }
+            baseUrl += '&isPicker=' + isPicker;
+            searchTimer = setTimeout(function () {
+                $.pjax.reload({
+                    container: '#list-file-pjax',
+                    url: baseUrl,
+                    timeout: false
+                });
+            }, 500);
+        });
+    });
+
 JS,
     \yii\web\View::POS_END
 );

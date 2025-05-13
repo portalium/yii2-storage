@@ -153,7 +153,7 @@ class DefaultController extends Controller
                 Yii::$app->session->setFlash('error', Module::t('File name could not be changed!'));
         }
 
-        return $this->renderAjax('_rename', ['model' => $model]);
+        return $this->renderAjax('_rename-file', ['model' => $model]);
     }
 
     public function actionUpdateFile($id)
@@ -269,30 +269,57 @@ class DefaultController extends Controller
     }
 
     public function actionPickerModal()
-    {
-        $query = Storage::find();
+{
+    // Başlangıçta veritabanı sorgusu
+    $query = Storage::find();
+            $searchModel = new StorageSearch();
+         $id_directory = Yii::$app->request->get('id_directory');
+        $dataProvider = $searchModel->search($this->request->queryParams);
+        $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
 
-        $extensions = Yii::$app->request->get('fileExtensions', []);
-        if (!empty($extensions) && is_array($extensions)) {
-            $orConditions = ['or'];
-            foreach ($extensions as $extension) {
-                $orConditions[] = ['like', 'name', $extension];
-            }
-            $query->andWhere($orConditions);
+    // 'fileExtensions' parametresini almak
+    $extensions = Yii::$app->request->get('fileExtensions', []);
+
+    if (!empty($extensions) && is_array($extensions)) {
+        $orConditions = ['or'];  // 'OR' koşulu ile sorgu oluşturacağız
+
+        // Her bir extension için sorgu koşulu ekle
+        foreach ($extensions as $extension) {
+            // Dosya uzantısı başındaki "." karakterini ekliyoruz, örneğin ".jpg"
+            $orConditions[] = ['like', 'name', '.' . ltrim($extension, '.')];
         }
+        
+        // 'andWhere' yerine 'andWhere' kullanarak koşulları ekliyoruz
+        $query->andWhere($orConditions);
+    }
 
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-            'pagination' => ['pageSize' => 10],
-            'sort' => [
-                'defaultOrder' => ['id_storage' => SORT_DESC],
+    // DataProvider oluşturuyoruz
+    $dataProvider = new ActiveDataProvider([
+        'query' => $query,  // Bu query artık tüm dosya uzantılarını filtreleyecek
+        'pagination' => [
+            'pageSize' => 10,  // Sayfa başına 10 dosya
+        ],
+        'sort' => [
+            'defaultOrder' => ['id_storage' => SORT_DESC],  // Sıralama yapılıyor
+        ],
+    ]);
+    $directoryDataProvider = new ActiveDataProvider([
+            'query' => StorageDirectory::find()
+                ->andWhere(['id_parent' => $id_directory])
+                ->orderBy(['id_directory' => SORT_DESC]),
+            'pagination' => [
+                'pageSize' => 11,
             ],
         ]);
 
-        return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
-            'dataProvider' => $dataProvider
-        ]);
-    }
+    // DataProvider ile '_picker-modal' view'ını render ediyoruz
+    return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
+        'dataProvider' => $dataProvider,  // Veriyi gönderiyoruz
+        'directoryDataProvider' => $directoryDataProvider,  // Veriyi gönderiyoruz
+    ]);
+}
+
 
 
     public function actionFileList()
@@ -436,5 +463,7 @@ class DefaultController extends Controller
         }
         $folder->delete();
     }
+
+    
 
 }
