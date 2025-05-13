@@ -2,6 +2,7 @@
 
 namespace portalium\storage\controllers\web;
 
+use portalium\storage\models\StorageDirectory;
 use portalium\storage\Module;
 use portalium\web\Controller;
 use portalium\storage\models\Storage;
@@ -19,37 +20,96 @@ class DefaultController extends Controller
     {
         $model = new Storage();
         $searchModel = new StorageSearch();
+        $id_directory = Yii::$app->request->get('id_directory');
         $dataProvider = $searchModel->search($this->request->queryParams);
-
+        $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
+        $directoryDataProvider = new ActiveDataProvider([
+            'query' => StorageDirectory::find()
+                ->andWhere(['id_parent' => $id_directory])
+                ->orderBy(['id_directory' => SORT_DESC]),
+            'pagination' => [
+                'pageSize' => 11,
+            ],
+        ]);
+        if (Yii::$app->request->isPjax) {
+            return $this->renderAjax('_item-list', [
+                'directoryDataProvider' => $directoryDataProvider,
+                'fileDataProvider' => $fileDataProvider,
+                'isPicker' => Yii::$app->request->get('isPicker', false),
+            ]);
+        }
         return $this->render('index', [
             'model' => $model,
             'dataProvider' => $dataProvider,
+            'fileDataProvider' => $fileDataProvider,
+            'directoryDataProvider' => $directoryDataProvider,
+            'isPicker' => Yii::$app->request->get('isPicker', false)
         ]);
     }
 
     public function actionUploadFile()
     {
-        $model = new Storage();
+        $post = Yii::$app->request->post();
+        $type = $post['Storage']['type'] ?? 'file';
+        $model = ($type === 'folder') ? new StorageDirectory() : new Storage();
+        $id_directory = Yii::$app->request->post('id_directory');
+        if (empty($id_directory))
+            $model->id_directory = null;
+        else
+            $model->id_directory = $id_directory;
 
         if (Yii::$app->request->isPost) {
-            $model->load(Yii::$app->request->post());
-            $model->file = UploadedFile::getInstance($model, 'file');
-            $success = ($model->file && $model->upload());
+            $model->load($post);
+            $uploadedFiles = UploadedFile::getInstancesByName('Storage[file]');
+            $success = false;
+
+            if ($type === 'folder') {
+                if (!empty($uploadedFiles)) {
+                    if (empty($model->name)) {
+                        $firstFile = $uploadedFiles[0];
+                        $fullPath = $firstFile->name;
+                        $pathParts = explode('/', $fullPath);
+                        $model->name = !empty($pathParts[0]) ? $pathParts[0] : 'Uploaded Folder';
+                    }
+                    $success = $model->uploadFolder($uploadedFiles, $id_directory);
+
+                } else {
+                    $model->addError('file', Module::t('No files were uploaded'));
+                }
+
+            } else {
+                if (!empty($uploadedFiles)) {
+                    $model->file = $uploadedFiles[0] ?? null;
+                    if ($model->file) {
+                        $success = $model->upload();
+                    }
+                } else {
+                    $model->addError('file', Module::t('No files were uploaded'));
+                }
+            }
 
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-                if (!$success)
+                if (!$success) {
                     Yii::$app->session->setFlash('error', Module::t('File could not be loaded!'));
-                else
+                    return [
+                        'success' => false,
+                        'errors' => $model->errors
+                    ];
+                } else {
                     Yii::$app->session->setFlash('success', Module::t('File uploaded successfully!'));
+                    return [
+                        'success' => true
+                    ];
+                }
             }
         }
+
         return $this->renderAjax('_upload-file', [
             'model' => $model,
         ]);
     }
-
-    
 
     public function actionDownloadFile()
     {
@@ -175,7 +235,7 @@ class DefaultController extends Controller
         if (!file_exists($filePath)) {
             Storage::deleteAll(['id_storage' => $sourceModel->id_storage]);
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return  '';
+            return '';
         }
         $newModel = $sourceModel->copyFile();
 
@@ -207,6 +267,7 @@ class DefaultController extends Controller
                 Yii::$app->session->setFlash('error', Module::t('File not found!'));
         }
     }
+
     public function actionPickerModal()
     {
         $query = Storage::find();
@@ -234,51 +295,146 @@ class DefaultController extends Controller
     }
 
 
-   public function actionFileList()
-{
-    $query = Storage::find();
-    $dataProvider = new \portalium\data\ActiveDataProvider([
-        'query' => $query,
-        'pagination' => ['pageSize' => 10],
-        'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
-    ]);
+    public function actionFileList()
+    {
+        $query = Storage::find();
+        $dataProvider = new \portalium\data\ActiveDataProvider([
+            'query' => $query,
+            'pagination' => ['pageSize' => 10],
+            'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
+        ]);
 
-    return $this->renderPartial('_file-list', [
-        'dataProvider' => $dataProvider,
-        'isPicker' => true,
-    ]);
-}
-
-public function actionSearch($q = null, $fileExtensions = null, $isPicker = false)
-{
-    $query = \portalium\storage\models\Storage::find();
-
-   
-    if ($q) {
-        $query->andFilterWhere(['like', 'title', $q]);
+        return $this->renderPartial('_file-list', [
+            'dataProvider' => $dataProvider,
+            'isPicker' => true,
+        ]);
     }
 
-   
-    if ($isPicker && $fileExtensions) {
-        $extensions = is_array($fileExtensions) ? $fileExtensions : explode(',', $fileExtensions);
-        $orConditions = ['or'];
-        foreach ($extensions as $ext) {
-            $orConditions[] = ['like', 'name', '.' . ltrim($ext, '.')]; 
+    public function actionSearch($q = null, $fileExtensions = null, $isPicker = false)
+    {
+        $query = \portalium\storage\models\Storage::find();
+
+
+        if ($q) {
+            $query->andFilterWhere(['like', 'title', $q]);
         }
-        $query->andWhere($orConditions);
+
+
+        if ($isPicker && $fileExtensions) {
+            $extensions = is_array($fileExtensions) ? $fileExtensions : explode(',', $fileExtensions);
+            $orConditions = ['or'];
+            foreach ($extensions as $ext) {
+                $orConditions[] = ['like', 'name', '.' . ltrim($ext, '.')];
+            }
+            $query->andWhere($orConditions);
+        }
+
+        $dataProvider = new \portalium\data\ActiveDataProvider([
+            'query' => $query,
+            'pagination' => ['pageSize' => 12],
+            'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
+        ]);
+
+        return $this->renderPartial('_file-list', [
+            'dataProvider' => $dataProvider,
+            'isPicker' => $isPicker,
+        ]);
+    }
+    public function actionNewFolder()
+    {
+        $model = new StorageDirectory();
+
+        if (Yii::$app->request->isPost) {
+            if ($model->load(Yii::$app->request->post())) {
+                $id_directory = Yii::$app->request->post('id_directory');
+                Yii::warning($id_directory);
+                if ($id_directory === 'null' || $id_directory == 0)
+                    $model->id_parent = null;
+                else
+                    $model->id_parent = $id_directory;
+                $baseName = trim($model->name) !== '' ? $model->name : Module::t('New Folder');
+                $name = $baseName;
+                $counter = 1;
+
+                while (StorageDirectory::find()
+                    ->where(['id_parent' => $model->id_parent, 'name' => $name])
+                    ->exists()) {
+                    $name = $baseName . ' (' . $counter . ')';
+                    $counter++;
+                }
+
+                $model->name = $name;
+
+                if ($model->save()) {
+                    Yii::$app->session->setFlash('success', Module::t('Folder created successfully!'));
+                } else {
+                    Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
+                }
+
+            } else {
+                Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
+            }
+        }
+
+        return $this->renderAjax('_new-folder', [
+            'model' => $model
+        ]);
+    }
+    public function actionRenameFolder($id)
+    {
+        $model = StorageDirectory::findOne($id);
+        if (!$model) {
+            Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
+            return '';
+        }
+
+        if (Yii::$app->request->isPost) {
+            $oldName = $model->name;
+            if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+                if ($oldName !== $model->name) {
+                    if ($model->save())
+                        Yii::$app->session->setFlash('success', Module::t('Folder renamed successfully!'));
+                    else
+                        Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed in the database!'));
+                }
+                else
+                    Yii::$app->session->setFlash('error', Module::t('No changes were made to the folder name!'));
+            }
+            else
+                Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed!'));
+        }
+
+        return $this->renderAjax('_rename-folder', ['model' => $model]);
+    }
+    public function actionDeleteFolder()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $id = Yii::$app->request->post('id');
+        $folder = StorageDirectory::findOne($id);
+
+        if (!$folder)
+            Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
+        $this->deleteFolderRecursive($folder);
+
+        Yii::$app->session->setFlash('success', Module::t('Folder and its contents deleted successfully!'));
     }
 
-    $dataProvider = new \portalium\data\ActiveDataProvider([
-        'query' => $query,
-        'pagination' => ['pageSize' => 12],
-        'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
-    ]);
+    protected function deleteFolderRecursive($folder)
+    {
+        $subFolders = StorageDirectory::findAll(['id_parent' => $folder->id_directory]);
+        foreach ($subFolders as $subFolder) {
+            $this->deleteFolderRecursive($subFolder);
+        }
 
-    return $this->renderPartial('_file-list', [
-        'dataProvider' => $dataProvider,
-        'isPicker' => $isPicker,
-    ]);
-}    
+        $files = Storage::findAll(['id_directory' => $folder->id_directory]);
+        foreach ($files as $file) {
+            $filePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+            if (file_exists($filePath))
+                @unlink($filePath);
+            $file->delete();
+        }
+        $folder->delete();
+    }
 
-    // deneme 
 }
