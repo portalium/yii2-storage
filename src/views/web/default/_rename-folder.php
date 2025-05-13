@@ -5,13 +5,13 @@ use portalium\theme\widgets\ActiveForm;
 use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Modal;
 use yii\helpers\Html;
-/* @var $model portalium\storage\models\Storage */
 
+/* @var $model portalium\storage\models\StorageDirectory */
 
 if (isset($model)) {
     Modal::begin([
-        'id' => 'renameModal',
-        'title' => Module::t('Rename'),
+        'id' => 'renameFolderModal',
+        'title' => Module::t('Rename Folder'),
         'options' => ['class' => 'fade'],
         'bodyOptions' => ['class' => 'modal-body'],
         'closeButton' => false,
@@ -25,23 +25,27 @@ if (isset($model)) {
                 'label' => Module::t('Rename'),
                 'options' => [
                     'class' => 'btn btn-success',
-                    'id' => 'renameButton',
+                    'id' => 'renameFolderButton',
                     'type' => 'button',
+                    "data-id" => $model->id_directory
                 ],
             ]),
         'dialogOptions' => ['class' => 'modal-dialog-centered']
     ]);
 
     $form = ActiveForm::begin([
-        'id' => 'renameForm',
+        'id' => 'renameFolderForm',
         'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true],
-        'method' => 'post'
+        'method' => 'post',
+        'action' => ['/storage/default/rename-folder'],
     ]);
 
-    echo $form->field($model, 'title')->textInput(['maxlength' => true, 'placeholder' => Module::t('Enter new name')]);
-
+    echo $form->field($model, 'name')->textInput([
+        'maxlength' => true,
+        'placeholder' => Module::t('Enter new folder name')
+    ]);
     ActiveForm::end();
     Modal::end();
+} else {
+    Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
 }
-else
-    Yii::$app->session->setFlash('error', Module::t('File not found!'));

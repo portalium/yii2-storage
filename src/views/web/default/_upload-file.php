@@ -1,5 +1,6 @@
 <?php
 
+use portalium\storage\models\Storage;
 use portalium\storage\Module;
 use portalium\theme\widgets\ActiveForm;
 use portalium\theme\widgets\Button;
@@ -40,8 +41,67 @@ $form = ActiveForm::begin([
     'method' => 'post',
     'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true]
 ]);
-echo $form->field($model, 'title')->textInput(['required' => true]);
-echo $form->field($model, 'file')->fileInput(['required' => true]);
+
+echo $form->field($model, 'type')->dropDownList([
+    'file'   => Module::t('File'),
+    'folder' => Module::t('Folder'),
+], ['id' => 'upload-type']);
+
+echo Html::beginTag('div', ['id' => 'title-field-wrapper']);
+if ($model instanceof Storage) {
+    echo $form->field($model, 'title')->textInput(['required' => true]);
+}
+echo Html::endTag('div');
+
+if ($model instanceof Storage) {
+    echo $form->field($model, 'file[]')->fileInput([
+        'id' => 'file-input',
+        'required' => true,
+    ]);
+} else {
+    echo Html::fileInput('Storage[file][]', null, [
+        'id'           => 'file-input',
+        'required'     => true,
+        'multiple'     => true,
+        'webkitdirectory' => true,
+        'directory'    => true,
+    ]);
+}
 
 ActiveForm::end();
 Modal::end();
+?>
+
+<?php
+$this->registerJs(<<<JS
+(function () {
+    var uploadType        = document.getElementById('upload-type'),
+        fileInput         = document.getElementById('file-input'),
+        titleFieldWrapper = document.getElementById('title-field-wrapper'),
+        titleInput        = document.querySelector('[name="Storage[title]"]');
+
+    if (!uploadType || !fileInput || !titleFieldWrapper || !titleInput) return;
+
+    function updateInputAttributes() {
+        if (uploadType.value === 'folder') {
+            fileInput.setAttribute('multiple', '');
+            fileInput.setAttribute('webkitdirectory', '');
+            fileInput.setAttribute('directory', '');
+            titleFieldWrapper.style.display = 'none';
+            titleInput.disabled = true;
+        } else {
+            fileInput.removeAttribute('multiple');
+            fileInput.removeAttribute('webkitdirectory');
+            fileInput.removeAttribute('directory');
+            titleFieldWrapper.style.display = '';
+            titleInput.disabled = false;
+        }
+    }
+
+    uploadType.addEventListener('change', updateInputAttributes);
+    updateInputAttributes();
+})();
+JS
+);
+
+?>

@@ -23,8 +23,33 @@ function toggleContextMenu(e, id) {
         }, 0);
     }
 }
+function toggleFolderMenu(e, id) {
+    e.stopPropagation();
 
+    document.querySelectorAll('[id^="context-folder-menu-"]').forEach(menu => {
+        if (menu.id !== 'context-folder-menu-' + id) {
+            menu.classList.remove('show');
+        }
+    });
 
+    const menu = document.getElementById('context-folder-menu-' + id);
+    if (menu) {
+        menu.classList.toggle('show');
+    }
+
+    const closeFolderMenus = function(event) {
+        document.querySelectorAll('[id^="context-folder-menu-"]').forEach(menu => {
+            menu.classList.remove('show');
+        });
+        document.removeEventListener('click', closeFolderMenus);
+    };
+
+    if (menu && menu.classList.contains('show')) {
+        setTimeout(() => {
+            document.addEventListener('click', closeFolderMenus);
+        }, 0);
+    }
+}
 function handleAccessChange(selectElement) {
     const isPublic = selectElement.value === 'public';
     const container = selectElement.closest('.file-access');
@@ -54,4 +79,3 @@ function handleCopyLink(button) {
         button.classList.add('btn-outline-secondary');
     }, 2000);
 }
-
