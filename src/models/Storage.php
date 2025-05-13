@@ -26,6 +26,8 @@ use portalium\workspace\models\Workspace;
 class Storage extends \yii\db\ActiveRecord
 {
     public $file;
+    public $type;
+
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
     const MIME_TYPE = [
@@ -73,9 +75,14 @@ class Storage extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['title'], 'required'],
+            [['title'], 'required', 'when' => function ($model) {
+                return $model->type === 'file';
+            }, 'whenClient' => "function (attribute, value) {
+            return $('#upload-type').val() === 'file';
+        }"],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
+            [['id_directory'], 'integer'],
             [['file', 'access', 'hash_file', 'id_workspace'], 'safe'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE]
@@ -93,43 +100,49 @@ class Storage extends \yii\db\ActiveRecord
             'id_workspace' => Module::t('Workspace'),
             'access' => Module::t('Access'),
             'hash_file' => Module::t('Hash File'),
+            'id_directory' => Module::t('Directory'),
         ];
     }
 
     public function upload()
     {
-        if ($this->validate()) {
-            if (!$this->file) {
-                $this->save();
-                return true;
-            }
-            $path = realpath(Yii::$app->basePath . '/../data');
-            $filename = md5(rand()) . "." . $this->file->extension;
-            $hash = md5_file($this->file->tempName);
+        if (!$this->validate())
+            return false;
+        if (!$this->file)
+            return $this->save();
 
-            if (in_array($this->file->extension, self::$allowExtensions)) {
-                if ($this->file->saveAs($path . '/' . $filename)) {
-                    $this->name = $filename;
-                    $this->title = $this->title;
-                    $this->hash_file = $hash;
-                    $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
-                    $this->id_workspace = Yii::$app->workspace->id;
-                    $this->id_user = Yii::$app->user->id;
-                    if ($this->save()) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
-            } else {
-                return false;
-            }
-        }
-        return false;
+        $path = realpath(Yii::$app->basePath . '/../data');
+        $filename = md5(uniqid(rand(), true)) . '.' . $this->file->extension;
+        $hash = md5_file($this->file->tempName);
+
+        if (!in_array($this->file->extension, self::$allowExtensions))
+            return false;
+
+        if (!$this->file->saveAs($path . '/' . $filename))
+            return false;
+
+        $this->name = $filename;
+        $this->hash_file = $hash;
+        $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
+        $this->id_workspace = Yii::$app->workspace->id;
+        $this->id_user = Yii::$app->user->id;
+
+        return $this->save();
     }
 
+
+    /**
+     * Get MIME type for a file
+     * @param string|null $filename The file name
+     * @return string The MIME type
+     */
     public function getMIMEType($filename)
     {
+        // Check if filename is empty or null
+        if (empty($filename)) {
+            return 'application/octet-stream'; // Default MIME type for unknown files
+        }
+
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
         switch ($ext) {
             case 'jpg':
