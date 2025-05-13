@@ -3,9 +3,7 @@
 use portalium\workspace\models\WorkspaceUser;
 use yii\db\Migration;
 use portalium\site\Module;
-use yii\helpers\ArrayHelper;
 use portalium\site\models\Form;
-use portalium\workspace\models\Workspace;
 
 class m110523_200102_storage_setting extends Migration
 {
@@ -59,14 +57,6 @@ class m110523_200102_storage_setting extends Migration
             $siteUserRole,
             $siteAdminRole
         ];
-        /* $workspaceUser = new WorkspaceUser();
-    
-        $workspaceUser->id_user = 1;
-        $workspaceUser->id_workspace = 1;
-        $workspaceUser->role = Yii::$app->setting->getValue('storage::workspace::default_role');
-        $workspaceUser->id_module = 'storage';
-        $workspaceUser->status = WorkspaceUser::STATUS_ACTIVE;
-        $workspaceUser->save(); */
         foreach ($roles as $role) {
             $workspaceUser = new WorkspaceUser();
             $workspaceUser->id_user = 1;
