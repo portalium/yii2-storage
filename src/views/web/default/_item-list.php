@@ -11,7 +11,7 @@ use yii\helpers\Url;
 /** @var yii\data\ActiveDataProvider $fileDataProvider */
 /** @var bool $isPicker */
 
-$id_directory = Yii::$app->request->get('id_directory', null);
+$id_directory = Yii::$app->request->get('id_directory');
 $parentDirectory = null;
 
 if ($id_directory !== null) {
@@ -19,15 +19,16 @@ if ($id_directory !== null) {
 }
 
 echo Html::beginTag('div', ['class' => 'container-fluid']);
-
 echo Html::beginTag('div', ['class' => 'row mb-3']);
 echo Html::beginTag('div', ['class' => 'col-12']);
 
 if ($id_directory !== null) {
+    $parentId = $parentDirectory && $parentDirectory->id_parent ? $parentDirectory->id_parent : null;
+    $backUrl = $parentId ? ['index', 'id_directory' => $parentId] : ['index'];
     echo Html::a(
         Html::tag('i', '', ['class' => 'fa fa-chevron-left']) . ' ' ,
-        ['index', 'id_directory' => $parentDirectory ? $parentDirectory->id_parent : null],
-        ['class' => 'btn btn-lg', 'data-pjax' => true]
+        $backUrl,
+        ['class' => 'btn btn-lg', 'data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . ($parentId ? $parentId : 'null') . ';']
     );
 
     $pathItems = [];
@@ -50,7 +51,7 @@ if ($id_directory !== null) {
     echo Html::beginTag('ol', ['class' => 'breadcrumb d-inline-flex mb-0']);
 
     echo Html::tag('li',
-        Html::a(Module::t('Home'), ['index',], ['data-pjax' => true]),
+        Html::a(Module::t('Home'), ['index'], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = null;']),
         ['class' => 'breadcrumb-item']
     );
 
@@ -59,7 +60,7 @@ if ($id_directory !== null) {
             echo Html::tag('li', Html::encode($item['name']), ['class' => 'breadcrumb-item active']);
         } else {
             echo Html::tag('li',
-                Html::a(Html::encode($item['name']), ['index', 'id_directory' => $item['id']], ['data-pjax' => true]),
+                Html::a(Html::encode($item['name']), ['index', 'id_directory' => $item['id']], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . $item['id'] . ';']),
                 ['class' => 'breadcrumb-item']
             );
         }

@@ -25,11 +25,10 @@ class DefaultController extends Controller
 
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
-
         $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
-                ->orderBy(['name' => SORT_DESC]),
+                ->orderBy(['id_directory' => SORT_DESC]),
             'pagination' => [
                 'pageSize' => 11,
             ],

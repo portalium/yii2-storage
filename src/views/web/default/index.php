@@ -133,12 +133,12 @@ $this->registerJs(
         $(event.target).closest('.folder-dropdown-menu').length) {
         return;
     }
-    currentDirectoryId = (id_directory === null || id_directory === undefined) ? null : id_directory; 
+    currentDirectoryId = (id_directory === null || id_directory === undefined) ? null : parseInt(id_directory); 
 
     let url = '/storage/default/index';
     if (id_directory) {
         url += '?id_directory=' + id_directory;
-    }   
+    }
     $.pjax.reload({
         container: '#list-item-pjax',
         url: url,
@@ -218,6 +218,9 @@ $(document).on('click', '#uploadButton', function(e) {
         if (currentDirectoryId) {
             url += '?id_directory=' + currentDirectoryId;
         }
+        else {
+        url += '?id_directory=null';
+    }
         $.pjax.reload({
             container: '#new-folder-pjax',
             type: 'GET',
