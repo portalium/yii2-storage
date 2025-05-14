@@ -275,12 +275,10 @@ $(document).on('click', '#uploadButton', function(e) {
         }
     });
 });
-
-
-   function openRenameFolderModal(id) {
+function openRenameFolderModal(id) {
     event.preventDefault();
     let url = '/storage/default/rename-folder?id=' + id;
-     if (currentDirectoryId) {
+    if (currentDirectoryId) {
         url += '&id_directory=' + currentDirectoryId;
     }
     else {
@@ -290,7 +288,6 @@ $(document).on('click', '#uploadButton', function(e) {
         container: '#rename-folder-pjax',
         type: 'GET',
         url: url,
-        data: { id: id },
     }).done(function() {
         setTimeout(function () {
             if ($('#renameFolderModal').length) {
@@ -315,14 +312,8 @@ $(document).on('click', '#renameFolderButton', function(e) {
     } else {
         formData.append('id_directory', 'null'); 
     }
-    
-    var folderId = $('#renameFolderForm').data('folder-id');
-    if (folderId) {
-        formData.append('id', folderId); 
-    }
-    
     $.ajax({
-        url: form.action,
+        url: form.action + '?id_directory=' + currentDirectoryId + '&id=' + $('#renameFolderButton').data('id'),
         type: 'POST',
         data: formData,
         contentType: false,
@@ -347,17 +338,32 @@ $(document).on('click', '#renameFolderButton', function(e) {
         }
     });
 });
-
+    
 function deleteFolder(id) {
     $.ajax({
-        url: '/storage/default/delete-folder',
+        url: '/storage/default/delete-folder?id_directory=' + (currentDirectoryId || 'null') + '&id=' + id,
         type: 'POST',
-        data: { id: id },
+        data: {},
         headers: {
             'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
         },
+        dataType: 'json',
         complete: function() {
-            $.pjax.reload({container: "#list-item-pjax"});
+            if (currentDirectoryId) {
+                $.pjax.reload({
+                    container: "#list-item-pjax",
+                    url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                    replace: false,
+                    push: false,
+                });
+            } else {
+                $.pjax.reload({
+                    container: "#list-item-pjax",
+                    url: '/storage/default/index',
+                    replace: false,
+                    push: false
+                });
+            }
         }
     });
 }

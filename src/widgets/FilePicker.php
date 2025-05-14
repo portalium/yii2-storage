@@ -62,9 +62,9 @@ class FilePicker extends InputWidget
             $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
         }
 
-        
+
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
-        echo Html::script("window.isPicker = true;");  
+        echo Html::script("window.isPicker = true;");
 
         echo Html::button(Module::t('Select File'), [
             'class' => 'btn btn-primary',
@@ -228,7 +228,5 @@ if (!window.saveSelect) {
 JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
- //
- 
     }
 }

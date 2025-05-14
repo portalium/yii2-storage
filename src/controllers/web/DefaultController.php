@@ -379,27 +379,31 @@ class DefaultController extends Controller
             'model' => $model
         ]);
     }
-    public function actionRenameFolder($id)
+    public function actionRenameFolder($id, $id_directory)
     {
-        $model = StorageDirectory::findOne($id);
+        $model = StorageDirectory::findOne(['id_directory' => $id]);
         if (!$model) {
             Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
             return '';
         }
-
-        if (Yii::$app->request->isPost) {
+        if (Yii::$app->request->post()) {
+            Yii::warning("veriler: ", json_encode(Yii::$app->request->post()));
             $oldName = $model->name;
-            $id_directory = Yii::$app->request->post('id_directory');
-
             if ($model->load(Yii::$app->request->post()) && $model->validate()) {
                 if ($oldName !== $model->name) {
+                    $baseName = $model->name;
+                    $name = $baseName;
+                    $counter = 1;
+                    while (StorageDirectory::find()
+                        ->where(['name' => $name, 'id_parent' => $model->id_parent])
+                        ->andWhere(['<>', 'id_directory', $id])
+                        ->exists()) {
+                        $name = $baseName . ' (' . $counter . ')';
+                        $counter++;
+                    }
+                    $model->name = $name;
                     if ($model->save()) {
-                        Yii::$app->session->setFlash('success', Module::t('Folder renamed successfully!'));
-
-                        if ($id_directory !== null && $id_directory !== 'null') {
-                            $model->parent_id = $id_directory;
-                            $model->save();
-                        }
+                        Yii::$app->session->setFlash('success', Module::t('Folder renamed to "{name}"', ['name' => $model->name]));
                     } else {
                         Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed in the database!'));
                     }
@@ -410,20 +414,22 @@ class DefaultController extends Controller
                 Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed!'));
             }
         }
-
         return $this->renderAjax('_rename-folder', [
             'model' => $model,
         ]);
     }
-    public function actionDeleteFolder()
+
+    public function actionDeleteFolder($id, $id_directory = null)
     {
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-        $id = Yii::$app->request->post('id');
-        $folder = StorageDirectory::findOne($id);
+        $folder = StorageDirectory::findOne(['id_directory' => $id]);
 
-        if (!$folder)
+        if (!$folder) {
             Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
+            return ['success' => false, 'message' => Module::t('Folder not found!')];
+        }
+
         $this->deleteFolderRecursive($folder);
 
         Yii::$app->session->setFlash('success', Module::t('Folder and its contents deleted successfully!'));
