@@ -7,6 +7,8 @@ use portalium\theme\widgets\Modal;
 use yii\helpers\Html;
 
 /* @var $model portalium\storage\models\StorageDirectory */
+/* @var $form yii\widgets\ActiveForm */
+/* @var $this yii\web\View */
 
 if (isset($model)) {
     Modal::begin([
