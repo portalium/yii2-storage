@@ -337,36 +337,54 @@ class DefaultController extends Controller
         ]);
     }
 
-    public function actionSearch($q = null, $fileExtensions = null, $isPicker = false)
-    {
-        $query = \portalium\storage\models\Storage::find();
+  public function actionSearch()
+{
+    Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
 
+    $q = Yii::$app->request->get('q', '');
+    $id_directory = Yii::$app->request->get('id_directory');
+    $isPicker = Yii::$app->request->get('isPicker', false);
 
-        if ($q) {
-            $query->andFilterWhere(['like', 'title', $q]);
-        }
-
-
-        if ($isPicker && $fileExtensions) {
-            $extensions = is_array($fileExtensions) ? $fileExtensions : explode(',', $fileExtensions);
-            $orConditions = ['or'];
-            foreach ($extensions as $ext) {
-                $orConditions[] = ['like', 'name', '.' . ltrim($ext, '.')];
-            }
-            $query->andWhere($orConditions);
-        }
-
-        $dataProvider = new \portalium\data\ActiveDataProvider([
-            'query' => $query,
-            'pagination' => ['pageSize' => 12],
-            'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
-        ]);
-
-        return $this->renderPartial('_file-list', [
-            'dataProvider' => $dataProvider,
-            'isPicker' => $isPicker,
-        ]);
+    // File query
+    $fileQuery = Storage::find();
+    if (!empty($q)) {
+        $fileQuery->andFilterWhere(['like', 'title', $q]);
     }
+    if ($id_directory !== null) {
+        $fileQuery->andWhere(['id_directory' => $id_directory]);
+    }
+
+    $fileDataProvider = new \yii\data\ActiveDataProvider([
+        'query' => $fileQuery,
+        'pagination' => ['pageSize' => 12],
+        'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
+    ]);
+
+    // Directory query
+    $directoryQuery = \portalium\storage\models\StorageDirectory::find();
+    if ($id_directory !== null) {
+        $directoryQuery->andWhere(['id_parent' => $id_directory]);
+    } else {
+        $directoryQuery->andWhere(['id_parent' => null]);
+    }
+
+    if (!empty($q)) {
+        $directoryQuery->andFilterWhere(['like', 'name', $q]);
+    }
+
+    $directoryDataProvider = new \yii\data\ActiveDataProvider([
+        'query' => $directoryQuery,
+        'pagination' => ['pageSize' => 11],
+        'sort' => ['defaultOrder' => ['id_directory' => SORT_DESC]],
+    ]);
+
+    return $this->renderAjax('_item-list', [
+        'fileDataProvider' => $fileDataProvider,
+        'directoryDataProvider' => $directoryDataProvider,
+        'isPicker' => $isPicker,
+    ]);
+}
+
     public function actionNewFolder()
     {
         $model = new StorageDirectory();

@@ -7,12 +7,11 @@ use portalium\theme\widgets\Html;
 use portalium\widgets\Pjax;
 use yii\helpers\Url;
 
-
-/* @var $this yii\web\View */
-/* @var $form portalium\theme\widgets\ActiveForm */
-/* @var yii\data\ActiveDataProvider $directoryDataProvider */
-/* @var yii\data\ActiveDataProvider $fileDataProvider */
-/* @var bool $isPicker */
+/** @var $this yii\web\View */
+/** @var $form portalium\theme\widgets\ActiveForm */
+/** @var yii\data\ActiveDataProvider $directoryDataProvider */
+/** @var yii\data\ActiveDataProvider $fileDataProvider */
+/** @var bool $isPicker */
 
 StorageAsset::register($this);
 
@@ -29,7 +28,8 @@ echo Html::tag(
     Html::textInput('file', '', [
         'class' => 'form-control',
         'id' => 'searchFileInput',
-        'placeholder' => Module::t('Search file..')
+        'placeholder' => Module::t('Search file..'),
+        'data-is-picker' => $isPicker ? '1' : '0',
     ]) .
     Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), [
         'class' => 'input-group-text'
@@ -114,7 +114,6 @@ Pjax::begin([
     'timeout' => false,
     'enablePushState' => false
 ]);
-
 Pjax::end();
 
 Pjax::begin([
@@ -641,6 +640,34 @@ function downloadFile(id) {
             }, 500);
         });
     });
+
+    function bindSearchInput() {
+    let searchTimer;
+    $(document).off('keyup.search').on('keyup.search', '#searchFileInput', function () {
+        clearTimeout(searchTimer);
+        const q = $(this).val().trim();
+        const isPicker = $(this).data('is-picker');
+        const finalUrl = '/storage/default/search?q=' + encodeURIComponent(q) + '&isPicker=' + isPicker;
+
+        searchTimer = setTimeout(function () {
+            $.pjax.reload({
+                container: '#list-item-pjax',
+                url: finalUrl,
+                timeout: 10000
+            });
+        }, 500);
+    });
+}
+
+$(document).ready(function () {
+    bindSearchInput();
+});
+
+$(document).on('pjax:end', function () {
+    bindSearchInput();
+});
+
+
 
 JS,
     \yii\web\View::POS_END
