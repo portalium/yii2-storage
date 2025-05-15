@@ -269,30 +269,57 @@ class DefaultController extends Controller
     }
 
     public function actionPickerModal()
-    {
-        $query = Storage::find();
+{
+    // Başlangıçta veritabanı sorgusu
+    $query = Storage::find();
+            $searchModel = new StorageSearch();
+         $id_directory = Yii::$app->request->get('id_directory');
+        $dataProvider = $searchModel->search($this->request->queryParams);
+        $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
 
-        $extensions = Yii::$app->request->get('fileExtensions', []);
-        if (!empty($extensions) && is_array($extensions)) {
-            $orConditions = ['or'];
-            foreach ($extensions as $extension) {
-                $orConditions[] = ['like', 'name', $extension];
-            }
-            $query->andWhere($orConditions);
+    // 'fileExtensions' parametresini almak
+    $extensions = Yii::$app->request->get('fileExtensions', []);
+
+    if (!empty($extensions) && is_array($extensions)) {
+        $orConditions = ['or'];  // 'OR' koşulu ile sorgu oluşturacağız
+
+        // Her bir extension için sorgu koşulu ekle
+        foreach ($extensions as $extension) {
+            // Dosya uzantısı başındaki "." karakterini ekliyoruz, örneğin ".jpg"
+            $orConditions[] = ['like', 'name', '.' . ltrim($extension, '.')];
         }
+        
+        // 'andWhere' yerine 'andWhere' kullanarak koşulları ekliyoruz
+        $query->andWhere($orConditions);
+    }
 
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-            'pagination' => ['pageSize' => 10],
-            'sort' => [
-                'defaultOrder' => ['id_storage' => SORT_DESC],
+    // DataProvider oluşturuyoruz
+    $dataProvider = new ActiveDataProvider([
+        'query' => $query,  // Bu query artık tüm dosya uzantılarını filtreleyecek
+        'pagination' => [
+            'pageSize' => 10,  // Sayfa başına 10 dosya
+        ],
+        'sort' => [
+            'defaultOrder' => ['id_storage' => SORT_DESC],  // Sıralama yapılıyor
+        ],
+    ]);
+    $directoryDataProvider = new ActiveDataProvider([
+            'query' => StorageDirectory::find()
+                ->andWhere(['id_parent' => $id_directory])
+                ->orderBy(['id_directory' => SORT_DESC]),
+            'pagination' => [
+                'pageSize' => 11,
             ],
         ]);
 
-        return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
-            'dataProvider' => $dataProvider
-        ]);
-    }
+    // DataProvider ile '_picker-modal' view'ını render ediyoruz
+    return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
+        'dataProvider' => $dataProvider,  // Veriyi gönderiyoruz
+        'directoryDataProvider' => $directoryDataProvider,  // Veriyi gönderiyoruz
+    ]);
+}
+
 
 
     public function actionFileList()
@@ -310,36 +337,54 @@ class DefaultController extends Controller
         ]);
     }
 
-    public function actionSearch($q = null, $fileExtensions = null, $isPicker = false)
-    {
-        $query = \portalium\storage\models\Storage::find();
+  public function actionSearch()
+{
+    Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
 
+    $q = Yii::$app->request->get('q', '');
+    $id_directory = Yii::$app->request->get('id_directory');
+    $isPicker = Yii::$app->request->get('isPicker', false);
 
-        if ($q) {
-            $query->andFilterWhere(['like', 'title', $q]);
-        }
-
-
-        if ($isPicker && $fileExtensions) {
-            $extensions = is_array($fileExtensions) ? $fileExtensions : explode(',', $fileExtensions);
-            $orConditions = ['or'];
-            foreach ($extensions as $ext) {
-                $orConditions[] = ['like', 'name', '.' . ltrim($ext, '.')];
-            }
-            $query->andWhere($orConditions);
-        }
-
-        $dataProvider = new \portalium\data\ActiveDataProvider([
-            'query' => $query,
-            'pagination' => ['pageSize' => 12],
-            'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
-        ]);
-
-        return $this->renderPartial('_file-list', [
-            'dataProvider' => $dataProvider,
-            'isPicker' => $isPicker,
-        ]);
+    // File query
+    $fileQuery = Storage::find();
+    if (!empty($q)) {
+        $fileQuery->andFilterWhere(['like', 'title', $q]);
     }
+    if ($id_directory !== null) {
+        $fileQuery->andWhere(['id_directory' => $id_directory]);
+    }
+
+    $fileDataProvider = new \yii\data\ActiveDataProvider([
+        'query' => $fileQuery,
+        'pagination' => ['pageSize' => 12],
+        'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
+    ]);
+
+    // Directory query
+    $directoryQuery = \portalium\storage\models\StorageDirectory::find();
+    if ($id_directory !== null) {
+        $directoryQuery->andWhere(['id_parent' => $id_directory]);
+    } else {
+        $directoryQuery->andWhere(['id_parent' => null]);
+    }
+
+    if (!empty($q)) {
+        $directoryQuery->andFilterWhere(['like', 'name', $q]);
+    }
+
+    $directoryDataProvider = new \yii\data\ActiveDataProvider([
+        'query' => $directoryQuery,
+        'pagination' => ['pageSize' => 11],
+        'sort' => ['defaultOrder' => ['id_directory' => SORT_DESC]],
+    ]);
+
+    return $this->renderAjax('_item-list', [
+        'fileDataProvider' => $fileDataProvider,
+        'directoryDataProvider' => $directoryDataProvider,
+        'isPicker' => $isPicker,
+    ]);
+}
+
     public function actionNewFolder()
     {
         $model = new StorageDirectory();
@@ -451,5 +496,7 @@ class DefaultController extends Controller
         }
         $folder->delete();
     }
+
+    
 
 }
