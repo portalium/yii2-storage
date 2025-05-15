@@ -44,7 +44,7 @@ echo Button::widget([
     'options' => [
         'type' => 'button',
         'class' => 'btn btn-success btn-md d-flex',
-        'onclick' => 'openUploadModal()',
+        'onclick' => 'openUploadModal(event)',
     ],
 ]);
 
@@ -56,7 +56,7 @@ echo Button::widget([
         'type' => 'button',
         'class' => 'btn btn-primary btn-md d-flex',
         'style' => 'min-width: 106px;',
-        'onclick' => 'openNewFolderModal()',
+        'onclick' => 'openNewFolderModal(event)',
     ],
 ]);
 echo Html::endTag('span');
@@ -118,6 +118,9 @@ Pjax::end();
 
 Pjax::begin([
     'id' => 'share-file-pjax',
+    'history' => false,
+    'timeout' => false,
+    'enablePushState' => false
 ]);
 Pjax::end();
 
@@ -127,172 +130,220 @@ Pjax::end();
 $this->registerJs(
     <<<JS
     let currentDirectoryId = null;
-    window.openFolder = function(id_directory, event) {
-    if (event.target.classList.contains('folder-ellipsis') || 
-        $(event.target).closest('.folder-dropdown-menu').length) {
-        return;
-    }
-    currentDirectoryId = (id_directory === null || id_directory === undefined) ? null : parseInt(id_directory); 
-
-    let url = '/storage/default/index';
-    if (id_directory) {
-        url += '?id_directory=' + id_directory;
-    }
-    $.pjax.reload({
-        container: '#list-item-pjax',
-        url: url,
-        push: true, 
-        replace: false,
-        timeout: 10000,
-        complete: function (){
-            if (!url.includes('id_directory=')) 
-                currentDirectoryId = null;
-        }
-    });
-};
     
-function openUploadModal() {
-    event.preventDefault();
-    let url = '/storage/default/upload-file';
-    if (currentDirectoryId) {
-        url += '?id_directory=' + currentDirectoryId;
+
+    function isInWidgetContext() {
+        return window.location.href.includes('picker-modal') || 
+               window.top !== window.self || 
+               window.frameElement !== null;
     }
-    else {
-        url += '?id_directory=null';
-    }
-    $.pjax.reload({
-        container: '#upload-file-pjax',
-        type: 'GET',
-        url: url,
-    }).done(function() {
+    
+    
+    function showModal(modalId, timeout = 200) {
         setTimeout(function() {
-            $('#uploadModal').modal('show');
-        }, 1000);
-    }).fail(function(e) {
-        console.log('Error Modal:', e);
-    });
-}
-
-$(document).on('click', '#uploadButton', function(e) {
-    e.preventDefault();
-
-    var form = document.getElementById('uploadForm');
-    var formData = new FormData(form);
-    
-    if (currentDirectoryId !== null) 
-        formData.append('id_directory', currentDirectoryId);
-    else
-        formData.append('id_directory', '');
-    
-    $.ajax({
-        url: form.action,
-        type: 'POST',
-        data: formData,
-        contentType: false,
-        processData: false,
-        success: function() {
-            $('#uploadModal').modal('hide');
-            if (currentDirectoryId) {
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: '/storage/default/index?id_directory=' + currentDirectoryId,
-                    replace: false,
-                    push: false,
-                });
+            const modalEl = document.getElementById(modalId);
+            if (modalEl) {
+                if (typeof bootstrap !== 'undefined') {
+                    const modalInstance = new bootstrap.Modal(modalEl);
+                    modalInstance.show();
+                } else {
+                    $(modalEl).modal('show');
+                }
             } else {
-                $.pjax.reload({
-                container: "#list-item-pjax",
-                url: '/storage/default/index',
-                replace: false,
-                push: false
-                });
+                console.warn('Modal element not found:', modalId);
+            }
+        }, timeout);
+    }
+    
+
+    function hideModal(modalId) {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            if (typeof bootstrap !== 'undefined') {
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
+                else $(modalEl).modal('hide');
+            } else {
+                $(modalEl).modal('hide');
             }
         }
-    });
-});
+    }
+    
+    window.openFolder = function(id_directory, event) {
+        if (event && (event.target.classList.contains('folder-ellipsis') || 
+            $(event.target).closest('.folder-dropdown-menu').length)) {
+            return;
+        }
+        currentDirectoryId = (id_directory === null || id_directory === undefined) ? null : parseInt(id_directory); 
 
-    function openNewFolderModal() {
-        event.preventDefault();
-        let url = '/storage/default/new-folder';
+        let url = '/storage/default/index';
+        if (id_directory) {
+            url += '?id_directory=' + id_directory;
+        }
+        
+        
+        if ($('#searchFileInput').data('is-picker') === 1) {
+            const separator = url.includes('?') ? '&' : '?';
+            url += separator + 'isPicker=1';
+        }
+        
+        $.pjax.reload({
+            container: '#list-item-pjax',
+            url: url,
+            push: true, 
+            replace: false,
+            timeout: 10000,
+            complete: function (){
+                if (!url.includes('id_directory=')) 
+                    currentDirectoryId = null;
+            }
+        });
+    };
+    
+    function openUploadModal(event) {
+        if (event) event.preventDefault();
+        let url = '/storage/default/upload-file';
+        
         if (currentDirectoryId) {
             url += '?id_directory=' + currentDirectoryId;
         }
         else {
-        url += '?id_directory=null';
-    }
-        $.pjax.reload({
-            container: '#new-folder-pjax',
-            type: 'GET',
+            url += '?id_directory=null';
+        }
+        
+        $.ajax({
             url: url,
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#newFolderModal').length) {
-                    $('#newFolderModal').modal('show');
-                } else {
-                    $.pjax.reload({container: "#list-item-pjax"});
-                }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
+            type: 'GET',
+            success: function(response) {
+                $('#upload-file-pjax').html(response);
+                showModal('uploadModal');
+            },
+            error: function(e) {
+                console.error('Error loading upload modal:', e);
+            }
         });
     }
-    $(document).on('click', '#createFolderButton', function(e) {
-    e.preventDefault();
 
-    var form = document.getElementById('newFolderForm');
-    var formData = new FormData(form);
-    
-    if (currentDirectoryId) {
-        formData.append('id_directory', currentDirectoryId); 
-    } else {
-        formData.append('id_directory', null); 
-    }
+    $(document).on('click', '#uploadButton', function(e) {
+        e.preventDefault();
 
-    $.ajax({
-        url: form.action,
-        type: 'POST',
-        data: formData,
-        contentType: false,
-        processData: false,
-        complete: function() {
-            $('#newFolderModal').modal('hide');
-            if (currentDirectoryId) {
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: '/storage/default/index?id_directory=' + currentDirectoryId,
-                    replace: false,
-                    push: false,
-                });
-            } else {
-                $.pjax.reload({
-                container: "#list-item-pjax",
-                url: '/storage/default/index',
-                replace: false,
-                push: false
-                });
-            }
-        }
-    });
-});
-
-
-    function openRenameFolderModal(id) {
-        event.preventDefault();
-        $.pjax.reload({
-            container: '#rename-folder-pjax',
-            type: 'GET',
-            url: '/storage/default/rename-folder',
-            data: { id: id },
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#renameFolderModal').length) {
-                    $('#renameFolderModal').modal('show');
+        var form = document.getElementById('uploadForm');
+        var formData = new FormData(form);
+        
+        if (currentDirectoryId !== null) 
+            formData.append('id_directory', currentDirectoryId);
+        else
+            formData.append('id_directory', '');
+        
+        $.ajax({
+            url: form.action,
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function() {
+                hideModal('uploadModal');
+                
+                if (currentDirectoryId) {
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                        replace: false,
+                        push: false,
+                    });
                 } else {
-                    $.pjax.reload({container: "#list-item-pjax"});
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index',
+                        replace: false,
+                        push: false
+                    });
                 }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error uploading file:', error);
+            }
+        });
+    });
+
+    function openNewFolderModal(event) {
+        if (event) event.preventDefault();
+        let url = '/storage/default/new-folder';
+        
+        if (currentDirectoryId) {
+            url += '?id_directory=' + currentDirectoryId;
+        }
+        else {
+            url += '?id_directory=null';
+        }
+        
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function(response) {
+                $('#new-folder-pjax').html(response);
+                showModal('newFolderModal');
+            },
+            error: function(e) {
+                console.error('Error loading new folder modal:', e);
+            }
+        });
+    }
+    
+    $(document).on('click', '#createFolderButton', function(e) {
+        e.preventDefault();
+
+        var form = document.getElementById('newFolderForm');
+        var formData = new FormData(form);
+        
+        if (currentDirectoryId) {
+            formData.append('id_directory', currentDirectoryId); 
+        } else {
+            formData.append('id_directory', null); 
+        }
+
+        $.ajax({
+            url: form.action,
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            complete: function() {
+                hideModal('newFolderModal');
+                
+                if (currentDirectoryId) {
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                        replace: false,
+                        push: false,
+                    });
+                } else {
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index',
+                        replace: false,
+                        push: false
+                    });
+                }
+            }
+        });
+    });
+
+    function openRenameFolderModal(id, event) {
+        if (event) event.preventDefault();
+        
+        $.ajax({
+            url: '/storage/default/rename-folder',
+            type: 'GET',
+            data: { id: id },
+            success: function(response) {
+                $('#rename-folder-pjax').html(response);
+                showModal('renameFolderModal');
+            },
+            error: function(e) {
+                console.error('Error loading rename folder modal:', e);
+            }
         });
     }
 
@@ -309,74 +360,74 @@ $(document).on('click', '#uploadButton', function(e) {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
-                $('#renameFolderModal').modal('hide');
+                hideModal('renameFolderModal');
                 $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
 
-function deleteFolder(id) {
-    $.ajax({
-        url: '/storage/default/delete-folder',
-        type: 'POST',
-        data: { id: id },
-        headers: {
-            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-        },
-        complete: function() {
-            $.pjax.reload({container: "#list-item-pjax"});
-        }
-    });
-}
-
-function downloadFile(id) {
-    event.preventDefault();
-    $.post({
-        url: '/storage/default/download-file',
-        data: { id: id },
-        xhrFields: { responseType: 'blob' },
-        headers: {
-            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(data, status, xhr) {
-            const disposition = xhr.getResponseHeader('Content-Disposition');
-            if (disposition && disposition.indexOf('attachment') !== -1) {
-                const filename = disposition.split('filename=')[1]?.replace(/["']/g, '') || 'downloaded_file';
-                const blobUrl = URL.createObjectURL(data);
-                const a = document.createElement('a');
-                a.href = blobUrl;
-                a.download = decodeURIComponent(filename);
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(blobUrl);
-            } else {
+    function deleteFolder(id, event) {
+        if (event) event.preventDefault();
+        
+        $.ajax({
+            url: '/storage/default/delete-folder',
+            type: 'POST',
+            data: { id: id },
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            complete: function() {
                 $.pjax.reload({container: "#list-item-pjax"});
             }
-        },
-        error: function() {
-           $.pjax.reload({container: "#list-item-pjax"});
-        }
-    });
-}
+        });
+    }
 
-    function openRenameModal(id) {
-        event.preventDefault();
-        $.pjax.reload({
-            container: '#rename-file-pjax',
-            type: 'GET',
-            url: '/storage/default/rename-file',
+    function downloadFile(id, event) {
+        if (event) event.preventDefault();
+        
+        $.post({
+            url: '/storage/default/download-file',
             data: { id: id },
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#renameModal').length) {
-                    $('#renameModal').modal('show');
+            xhrFields: { responseType: 'blob' },
+            headers: {
+                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(data, status, xhr) {
+                const disposition = xhr.getResponseHeader('Content-Disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filename = disposition.split('filename=')[1]?.replace(/["']/g, '') || 'downloaded_file';
+                    const blobUrl = URL.createObjectURL(data);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = decodeURIComponent(filename);
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(blobUrl);
                 } else {
                     $.pjax.reload({container: "#list-item-pjax"});
                 }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
+            },
+            error: function() {
+               $.pjax.reload({container: "#list-item-pjax"});
+            }
+        });
+    }
+
+    function openRenameModal(id, event) {
+        if (event) event.preventDefault();
+        
+        $.ajax({
+            url: '/storage/default/rename-file',
+            type: 'GET',
+            data: { id: id },
+            success: function(response) {
+                $('#rename-file-pjax').html(response);
+                showModal('renameModal');
+            },
+            error: function(e) {
+                console.error('Error loading rename modal:', e);
+            }
         });
     }
 
@@ -393,30 +444,27 @@ function downloadFile(id) {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
-                $('#renameModal').modal('hide');
+                hideModal('renameModal');
                 $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
 
-    function openUpdateModal(id) {
-    event.preventDefault();
-    $.pjax.reload({
-        container: '#update-file-pjax',
-        type: 'GET',
-        url: '/storage/default/update-file',
-        data: { id: id },
-    }).done(function() {
-        setTimeout(function () {
-            if ($('#updateModal').length > 0) {
-                $('#updateModal').modal('show');
-            } else {
-                $.pjax.reload({container: "#list-item-pjax"});
+    function openUpdateModal(id, event) {
+        if (event) event.preventDefault();
+        
+        $.ajax({
+            url: '/storage/default/update-file',
+            type: 'GET',
+            data: { id: id },
+            success: function(response) {
+                $('#update-file-pjax').html(response);
+                showModal('updateModal');
+            },
+            error: function(e) {
+                console.error('Error loading update modal:', e);
             }
-        }, 1000); 
-    }).fail(function(e) {
-        console.log('Error Modal:', e);
-    });
+        });
     }
 
     $(document).on('click', '#updateButton', function(e) {
@@ -435,25 +483,26 @@ function downloadFile(id) {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
-                $('#updateModal').modal('hide');
+                hideModal('updateModal');
                 $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
 
-    function openShareModal(id) {
-        event.preventDefault();
-        $.pjax.reload({
-            container: '#share-file-pjax',
-            type: 'GET',
+    function openShareModal(id, event) {
+        if (event) event.preventDefault();
+        
+        $.ajax({
             url: '/storage/default/share-file',
+            type: 'GET',
             data: { id: id },
-        }).done(function() {
-            setTimeout(function() {
-                $('#shareModal').modal('show');
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal', e);
+            success: function(response) {
+                $('#share-file-pjax').html(response);
+                showModal('shareModal');
+            },
+            error: function(e) {
+                console.error('Error loading share modal:', e);
+            }
         });
     }
 
@@ -468,14 +517,15 @@ function downloadFile(id) {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
-                $('#shareModal').modal('hide');
+                hideModal('shareModal');
                 $.pjax.reload({container: "#list-item-pjax"});
             }
         });
     });
 
-    function copyFile(id) {
-        event.preventDefault();
+    function copyFile(id, event) {
+        if (event) event.preventDefault();
+        
         $.ajax({
             url: '/storage/default/copy-file',
             type: 'POST',
@@ -492,8 +542,9 @@ function downloadFile(id) {
         });
     }
 
-    function deleteFile(id) {
-        event.preventDefault();
+    function deleteFile(id, event) {
+        if (event) event.preventDefault();
+        
         $.ajax({
             url: '/storage/default/delete-file',
             type: 'POST',
@@ -506,169 +557,126 @@ function downloadFile(id) {
             }
         });
     }
-
     
     async function refreshFileList() {
         return await new Promise((resolve, reject) => {
-            if ($('#list-file-pjax').length) {
+            const container = isInWidgetContext() ? '#list-file-pjax' : '#list-item-pjax';
+            
+            if ($(container).length) {
                 $.pjax.reload({
-                    container: '#list-file-pjax',
+                    container: container,
                     timeout: false,
                     url: '/storage/default/file-list',
+                    complete: function() {
+                        resolve();
+                    }
                 });
             } else {
-                reject('File picker modal not found');
+                reject('File list container not found');
             }
         });
     }
-      function rebindSearchEvent() {
-        $('#searchFileInput').off('keyup').on('keyup', function () {
-            const q = $(this).val().trim();
-            const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
-            const isPicker = window.isPicker ? 1 : 0;
-            let baseUrl = '/storage/default/search?q=' + encodeURIComponent(q);
-            if (fileExtensions) {
-                baseUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
-            }
-            baseUrl += '&isPicker=' + isPicker;
-            $.pjax.reload({
-                container: '#list-file-pjax',
-                url: baseUrl,
-                timeout: false
-            });
-        });
-
-        
-        $('#searchFileInput').trigger('keyup');
-    }
-    $(document).off('click.rename').on('click.rename', '#renameButton', function(e) {
-        e.preventDefault();
-        const form = $('#renameForm');
-        $.ajax({
-            url: form.attr('action'),
-            type: 'POST',
-            data: form.serialize(),
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function () {
-                bootstrap.Modal.getInstance(document.getElementById('renameModal')).hide();
-                refreshFileList();
-                rebindSearchEvent(); 
-            }
-        });
-    });
-
-    $(document).off('click.update').on('click.update', '#updateButton', function(e) {
-        e.preventDefault();
-        const form = document.getElementById('updateForm');
-        const formData = new FormData(form);
-        $.ajax({
-            url: $(form).attr('action'),
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function () {
-                bootstrap.Modal.getInstance(document.getElementById('updateModal')).hide();
-                refreshFileList();
-                rebindSearchEvent(); 
-            },
-            error: function (xhr, status, error) {
-                alert('An error occurred while updating the file. Please try again.');
-                console.error('Error:', error);
-            }
-        });
-    });
-
-    $(document).off('click.share').on('click.share', '#shareButton', function(e) {
-        e.preventDefault();
-        const form = $('#shareForm');
-        $.ajax({
-            url: form.attr('action'),
-            type: 'POST',
-            data: form.serialize(),
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function () {
-                bootstrap.Modal.getInstance(document.getElementById('shareModal')).hide();
-                refreshFileList();
-                rebindSearchEvent();
-            }
-        });
-    });
-     $(document).off('click.copy').on('click.copy', '.file-card .fa-copy', function(e) {
-        e.preventDefault();
-        const id = $(this).closest('.file-card').data('id');
-        copyFile(id);
-    });
-
-    $(document).off('click.remove').on('click.remove', '.file-card .fa-trash', function(e) {
-        e.preventDefault();
-        const id = $(this).closest('.file-card').data('id');
-        deleteFile(id);
-    });
-
-    $(document).off('click.download').on('click.download', '.file-card .fa-download', function(e) {
-        e.preventDefault();
-        const id = $(this).closest('.file-card').data('id');
-        downloadFile(id);
-    });
-
-    $(document).ready(function () {
+    
+    function bindSearchInput() {
         let searchTimer;
-        $('#searchFileInput').on('keyup', function () {
+        $(document).off('keyup.search').on('keyup.search', '#searchFileInput', function () {
             clearTimeout(searchTimer);
             const q = $(this).val().trim();
+            const isPicker = $(this).data('is-picker') ? 1 : 0;
             const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
-            const isPicker = window.isPicker ? 1 : 0;
-            let baseUrl = '/storage/default/search?q=' + encodeURIComponent(q);
-            if (fileExtensions) {
-                baseUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+            
+            let finalUrl = '/storage/default/search?q=' + encodeURIComponent(q) + '&isPicker=' + isPicker;
+            
+            // Add current directory if available
+            if (currentDirectoryId !== null) {
+                finalUrl += '&id_directory=' + currentDirectoryId;
             }
-            baseUrl += '&isPicker=' + isPicker;
+            
+            if (fileExtensions) {
+                finalUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+            }
+            
+            const container = isInWidgetContext() ? '#list-file-pjax' : '#list-item-pjax';
+            
             searchTimer = setTimeout(function () {
                 $.pjax.reload({
-                    container: '#list-file-pjax',
-                    url: baseUrl,
-                    timeout: false
+                    container: container,
+                    url: finalUrl,
+                    timeout: 10000
                 });
             }, 500);
         });
+    }
+    
+    // File actions event bindings
+    $(document).off('click.fileActions').on('click.fileActions', '.file-action', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const action = $(this).data('action');
+        const id = $(this).closest('[data-id]').data('id');
+        
+        if (!id) return;
+        
+        switch(action) {
+            case 'copy':
+                copyFile(id, e);
+                break;
+            case 'delete':
+                deleteFile(id, e);
+                break;
+            case 'download':
+                downloadFile(id, e);
+                break;
+            case 'rename':
+                openRenameModal(id, e);
+                break;
+            case 'update':
+                openUpdateModal(id, e);
+                break;
+            case 'share':
+                openShareModal(id, e);
+                break;
+        }
+    });
+    
+    // Folder actions event bindings
+    $(document).off('click.folderActions').on('click.folderActions', '.folder-action', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const action = $(this).data('action');
+        const id = $(this).closest('[data-id]').data('id');
+        
+        if (!id) return;
+        
+        switch(action) {
+            case 'delete':
+                deleteFolder(id, e);
+                break;
+            case 'rename':
+                openRenameFolderModal(id, e);
+                break;
+        }
     });
 
-    function bindSearchInput() {
-    let searchTimer;
-    $(document).off('keyup.search').on('keyup.search', '#searchFileInput', function () {
-        clearTimeout(searchTimer);
-        const q = $(this).val().trim();
-        const isPicker = $(this).data('is-picker');
-        const finalUrl = '/storage/default/search?q=' + encodeURIComponent(q) + '&isPicker=' + isPicker;
+    // Make functions available globally
+    window.openRenameModal = openRenameModal;
+    window.openUpdateModal = openUpdateModal;
+    window.openShareModal = openShareModal;
+    window.openRenameFolderModal = openRenameFolderModal;
+    window.downloadFile = downloadFile;
+    window.copyFile = copyFile;
+    window.deleteFile = deleteFile;
+    window.deleteFolder = deleteFolder;
 
-        searchTimer = setTimeout(function () {
-            $.pjax.reload({
-                container: '#list-item-pjax',
-                url: finalUrl,
-                timeout: 10000
-            });
-        }, 500);
+    $(document).ready(function () {
+        bindSearchInput();
     });
-}
 
-$(document).ready(function () {
-    bindSearchInput();
-});
-
-$(document).on('pjax:end', function () {
-    bindSearchInput();
-});
-
-
-
+    $(document).on('pjax:end', function () {
+        bindSearchInput();
+    });
 JS,
     \yii\web\View::POS_END
 );
