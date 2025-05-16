@@ -85,48 +85,56 @@ class StorageDirectory extends \yii\db\ActiveRecord
             $this->addError('file', Module::t('No files were uploaded'));
             return false;
         }
-
         $userId = Yii::$app->user->id;
         $workspaceId = $this->id_workspace ?? 0;
         $allowed = Storage::$allowExtensions;
         $validFiles = [];
-
         foreach ($uploadedFiles as $file) {
             $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
             if (in_array($ext, $allowed)) {
                 $validFiles[] = $file;
             }
         }
-
         if (empty($validFiles)) {
             $this->addError('file', Module::t('No valid files to upload.'));
             return false;
         }
-
         $directories = [];
         $success = true;
-
         foreach ($validFiles as $file) {
             $fullPath = $file->fullPath ?? $file->name;
             $pathParts = explode('/', $fullPath);
-
             $fileName = array_pop($pathParts);
             $currentPath = '';
             $parentDirectoryId = $initialParentId;
-
+            $rootFolderName = !empty($pathParts) ? $pathParts[0] : null;
+            if ($rootFolderName === $this->name && !empty($pathParts)) {
+                $directories[$rootFolderName] = $this->id_directory;
+                $parentDirectoryId = $this->id_directory;
+                $currentPath = $rootFolderName;
+                array_shift($pathParts);
+            }
             foreach ($pathParts as $depth => $folderName) {
-                $currentPath = $depth === 0 ? $folderName : $currentPath . '/' . $folderName;
-
+                $currentPath = $currentPath === '' ? $folderName : $currentPath . '/' . $folderName;
                 if (!isset($directories[$currentPath])) {
                     $dir = new StorageDirectory();
-                    $dir->name = $folderName;
-
-                    if ($depth === 0 && $initialParentId !== null) {
-                        $dir->id_parent = $initialParentId;
+                    $baseName = $folderName;
+                    $name = $baseName;
+                    $counter = 1;
+                    $parentId = null;
+                    if ($depth === 0 && $initialParentId !== null && empty($directories)) {
+                        $parentId = $initialParentId;
                     } else {
-                        $dir->id_parent = $directories[dirname($currentPath)] ?? null;
+                        $parentId = $directories[dirname($currentPath)] ?? null;
                     }
-
+                    while (StorageDirectory::find()
+                        ->where(['name' => $name, 'id_parent' => $parentId])
+                        ->exists()) {
+                        $name = $baseName . ' (' . $counter . ')';
+                        $counter++;
+                    }
+                    $dir->name = $name;
+                    $dir->id_parent = $parentId;
                     if (!$dir->save()) {
                         foreach ($dir->errors as $attribute => $errors) {
                             foreach ($errors as $error) {
@@ -139,11 +147,20 @@ class StorageDirectory extends \yii\db\ActiveRecord
                 }
                 $parentDirectoryId = $directories[$currentPath];
             }
-
             if (!empty($fileName)) {
                 $storage = new Storage();
-                $storage->title = pathinfo($fileName, PATHINFO_FILENAME);
-                $storage->name = $fileName;
+                $baseName = pathinfo($fileName, PATHINFO_FILENAME);
+                $name = $baseName;
+                $counter = 1;
+                $extension = pathinfo($fileName, PATHINFO_EXTENSION);
+                while (Storage::find()
+                    ->where(['title' => $name, 'id_directory' => $parentDirectoryId])
+                    ->exists()) {
+                    $name = $baseName . ' (' . $counter . ')';
+                    $counter++;
+                }
+                $storage->title = $name;
+                $storage->name = !empty($extension) ? $name . '.' . $extension : $name;
                 $storage->id_directory = $parentDirectoryId;
                 $storage->id_user = $userId;
                 $storage->id_workspace = $workspaceId;
