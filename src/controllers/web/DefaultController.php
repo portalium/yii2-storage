@@ -106,7 +106,7 @@ class DefaultController extends Controller
             }
         }
 
-        return $this->renderAjax('_upload-file', [
+        return $this->renderPartial('_upload-file', [
             'model' => $model,
         ]);
     }
@@ -153,7 +153,7 @@ class DefaultController extends Controller
                 Yii::$app->session->setFlash('error', Module::t('File name could not be changed!'));
         }
 
-        return $this->renderAjax('_rename-file', ['model' => $model]);
+        return $this->renderPartial('_rename-file', ['model' => $model]);
     }
 
     public function actionUpdateFile($id)
@@ -205,13 +205,13 @@ class DefaultController extends Controller
             }
         }
 
-        return $this->renderAjax('_update', ['model' => $model]);
+        return $this->renderPartial('_update', ['model' => $model]);
     }
 
     public function actionShareFile($id)
     {
         $model = Storage::findOne($id);
-        return $this->renderAjax('_share', [
+        return $this->renderPartial('_share', [
             'model' => $model,
         ]);
     }
@@ -270,7 +270,7 @@ class DefaultController extends Controller
 
     public function actionPickerModal()
 {
-    // Başlangıçta veritabanı sorgusu
+    
     $query = Storage::find();
             $searchModel = new StorageSearch();
          $id_directory = Yii::$app->request->get('id_directory');
@@ -278,30 +278,30 @@ class DefaultController extends Controller
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
 
-    // 'fileExtensions' parametresini almak
+   
     $extensions = Yii::$app->request->get('fileExtensions', []);
 
     if (!empty($extensions) && is_array($extensions)) {
-        $orConditions = ['or'];  // 'OR' koşulu ile sorgu oluşturacağız
+        $orConditions = ['or'];  
 
-        // Her bir extension için sorgu koşulu ekle
+        
         foreach ($extensions as $extension) {
-            // Dosya uzantısı başındaki "." karakterini ekliyoruz, örneğin ".jpg"
+           
             $orConditions[] = ['like', 'name', '.' . ltrim($extension, '.')];
         }
         
-        // 'andWhere' yerine 'andWhere' kullanarak koşulları ekliyoruz
+        
         $query->andWhere($orConditions);
     }
 
-    // DataProvider oluşturuyoruz
+    
     $dataProvider = new ActiveDataProvider([
-        'query' => $query,  // Bu query artık tüm dosya uzantılarını filtreleyecek
+        'query' => $query,  
         'pagination' => [
-            'pageSize' => 10,  // Sayfa başına 10 dosya
+            'pageSize' => 10,  
         ],
         'sort' => [
-            'defaultOrder' => ['id_storage' => SORT_DESC],  // Sıralama yapılıyor
+            'defaultOrder' => ['id_storage' => SORT_DESC], 
         ],
     ]);
     $directoryDataProvider = new ActiveDataProvider([
@@ -313,10 +313,10 @@ class DefaultController extends Controller
             ],
         ]);
 
-    // DataProvider ile '_picker-modal' view'ını render ediyoruz
+    
     return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
-        'dataProvider' => $dataProvider,  // Veriyi gönderiyoruz
-        'directoryDataProvider' => $directoryDataProvider,  // Veriyi gönderiyoruz
+        'dataProvider' => $dataProvider,  
+        'directoryDataProvider' => $directoryDataProvider, 
     ]);
 }
 
@@ -360,7 +360,7 @@ class DefaultController extends Controller
         'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
     ]);
 
-    // Directory query
+    
     $directoryQuery = \portalium\storage\models\StorageDirectory::find();
     if ($id_directory !== null) {
         $directoryQuery->andWhere(['id_parent' => $id_directory]);
@@ -378,7 +378,7 @@ class DefaultController extends Controller
         'sort' => ['defaultOrder' => ['id_directory' => SORT_DESC]],
     ]);
 
-    return $this->renderAjax('_item-list', [
+    return $this->renderPartial('_item-list', [
         'fileDataProvider' => $fileDataProvider,
         'directoryDataProvider' => $directoryDataProvider,
         'isPicker' => $isPicker,
@@ -421,7 +421,7 @@ class DefaultController extends Controller
             }
         }
 
-        return $this->renderAjax('_new-folder', [
+        return $this->renderPartial('_new-folder', [
             'model' => $model
         ]);
     }
@@ -449,7 +449,7 @@ class DefaultController extends Controller
                 Yii::$app->session->setFlash('error', Module::t('Folder name could not be changed!'));
         }
 
-        return $this->renderAjax('_rename-folder', ['model' => $model]);
+        return $this->renderPartial('_rename-folder', ['model' => $model]);
     }
     public function actionDeleteFolder()
     {

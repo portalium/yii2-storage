@@ -329,7 +329,7 @@ $this->registerJs(
             }
         });
     });
-
+//
     function openRenameFolderModal(id, event) {
         if (event) event.preventDefault();
         
@@ -365,6 +365,7 @@ $this->registerJs(
             }
         });
     });
+    //
 
     function deleteFolder(id, event) {
         if (event) event.preventDefault();
