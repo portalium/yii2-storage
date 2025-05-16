@@ -166,20 +166,6 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
         return $success;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     public function getStorageDirectories()
     {
         return $this->hasMany(StorageDirectory::class, ['id_parent' => 'id_directory']);
