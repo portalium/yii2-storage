@@ -10,8 +10,9 @@ use yii\helpers\Url;
 
 /* @var $this yii\web\View */
 /* @var $form portalium\theme\widgets\ActiveForm */
-/* @var yii\data\ActiveDataProvider $directoryDataProvider */
-/* @var yii\data\ActiveDataProvider $fileDataProvider */
+/* @var yii\data\ActiveDataProvider $directories */
+/* @var yii\data\ActiveDataProvider $files */
+/** @var \yii\data\Pagination $pagination */
 /* @var bool $isPicker */
 
 StorageAsset::register($this);
@@ -94,8 +95,9 @@ Pjax::begin([
 ]);
 
 echo $this->render('_item-list', [
-    'directoryDataProvider' => $directoryDataProvider,
-    'fileDataProvider' => $fileDataProvider,
+    'directories' => $directories,
+    'files' => $files,
+    'pagination' => $pagination,
     'isPicker' => $isPicker ?? false
 ]);
 Pjax::end();
