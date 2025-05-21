@@ -329,14 +329,21 @@ $this->registerJs(
             }
         });
     });
-//
+
     function openRenameFolderModal(id, event) {
         if (event) event.preventDefault();
+        let url = '/storage/default/rename-folder?id=' + id;
+        
+        if (currentDirectoryId) {
+            url += '&id_directory=' + currentDirectoryId;
+        }
+        else {
+            url += '&id_directory=null';
+        }
         
         $.ajax({
-            url: '/storage/default/rename-folder',
+            url: url,
             type: 'GET',
-            data: { id: id },
             success: function(response) {
                 $('#rename-folder-pjax').html(response);
                 showModal('renameFolderModal');
@@ -350,35 +357,72 @@ $this->registerJs(
     $(document).on('click', '#renameFolderButton', function(e) {
         e.preventDefault();
 
-        var form = $('#renameFolderForm');
+        var form = document.getElementById('renameFolderForm');
+        var formData = new FormData(form);
+        
+        if (currentDirectoryId) {
+            formData.append('id_directory', currentDirectoryId); 
+        } else {
+            formData.append('id_directory', 'null'); 
+        }
         
         $.ajax({
-            url: form.attr('action') + "?id="+$("#renameFolderButton").data("id"),
+            url: form.action + '?id_directory=' + currentDirectoryId + '&id=' + $('#renameFolderButton').data('id'),
             type: 'POST',
-            data: form.serialize(),
+            data: formData,
+            contentType: false,
+            processData: false,
             headers: {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
                 hideModal('renameFolderModal');
-                $.pjax.reload({container: "#list-item-pjax"});
+                if (currentDirectoryId) {
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                        replace: false,
+                        push: false,
+                    });
+                } else {
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index',
+                        replace: false,
+                        push: false
+                    });
+                }
             }
         });
     });
-    //
 
     function deleteFolder(id, event) {
         if (event) event.preventDefault();
         
         $.ajax({
-            url: '/storage/default/delete-folder',
+            url: '/storage/default/delete-folder?id_directory=' + (currentDirectoryId || 'null') + '&id=' + id,
             type: 'POST',
-            data: { id: id },
+            data: {},
             headers: {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
+            dataType: 'json',
             complete: function() {
-                $.pjax.reload({container: "#list-item-pjax"});
+                if (currentDirectoryId) {
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index?id_directory=' + currentDirectoryId,
+                        replace: false,
+                        push: false,
+                    });
+                } else {
+                    $.pjax.reload({
+                        container: "#list-item-pjax",
+                        url: '/storage/default/index',
+                        replace: false,
+                        push: false
+                    });
+                }
             }
         });
     }
