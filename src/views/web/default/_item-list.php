@@ -309,5 +309,4 @@ window.handleFileCardClick = function(event, id_storage) {
         }
     }
 };
-JS
-);
+JS);

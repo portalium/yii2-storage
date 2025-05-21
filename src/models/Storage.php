@@ -138,9 +138,8 @@ class Storage extends \yii\db\ActiveRecord
      */
     public function getMIMEType($filename)
     {
-        // Check if filename is empty or null
         if (empty($filename)) {
-            return 'application/octet-stream'; // Default MIME type for unknown files
+            return 'application/octet-stream';
         }
 
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
