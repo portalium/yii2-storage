@@ -3,184 +3,232 @@
 namespace portalium\storage\widgets;
 
 use Yii;
-use yii\base\Model;
-use yii\base\Widget;
-use yii\widgets\ListView;
-use kartik\file\FileInput;
+use portalium\widgets\Pjax;
 use portalium\storage\Module;
-use portalium\theme\widgets\Html;
 use portalium\storage\models\Storage;
+use portalium\theme\widgets\Html;
 use portalium\theme\widgets\InputWidget;
-use portalium\theme\widgets\Modal;
+use portalium\data\ActiveDataProvider;
 
 class FilePicker extends InputWidget
 {
-
     public $dataProvider;
-    public $selected;
     public $multiple = 0;
-    public $attributes = ['id_storage'];
-    public $name = '';
     public $isJson = 1;
-    public $isPicker = true;
     public $callbackName = null;
-    public $fileExtensions = null;
     public $manage = false;
+    public $fileExtensions = null;
 
     public function init()
     {
-
         parent::init();
         Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
-        $this->name = $this->generateHtmlId($this->name);
-        $this->options['id'] = 'file-picker-input-' . $this->name;
-        $this->options['id'] = 'file-picker-input-' . $this->name;
 
-        $attribute = $this->attribute;
-        try {
-            if (str_contains($attribute, "[")) {
-                $startPos = strpos($attribute, "[");
-                $endPos = strpos($attribute, "]");
-
-                $attribute = substr($attribute, 0, $startPos) . substr($attribute, $endPos + 1);
-            }
-        } catch (\Exception $e) {
-            // do nothing
-        }
-        if ($attribute) {
-            try {
-                $value = json_decode($this->model[$attribute], true);
-                if (isset($value['id_storage'])) {
-                    $storageModelForName = Storage::findOne($value['id_storage']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
-                } else if (isset($value['name'])) {
-                    $storageModelForName = Storage::findOne($value['name']);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : null;
-                } else {
-                    $storageModelForName = Storage::findOne($this->model[$attribute]);
-                    $this->options['data-src'] = $storageModelForName ? $storageModelForName->id_storage : '';
-                }
-            } catch (\Exception $e) {
-                // do nothing
-            }
-        }
-
-        if (isset($this->options['multiple'])) {
-            $this->multiple = $this->options['multiple'];
-        }
-        if (isset($this->options['attributes'])) {
-            $this->attributes = $this->options['attributes'];
-        }
-        if (isset($this->options['isJson'])) {
-            $this->isJson = $this->options['isJson'];
-        }
-        if (isset($this->options['isPicker'])) {
-            $this->isPicker = $this->options['isPicker'];
-        }
-        if (isset($this->options['fileExtensions'])) {
-            $this->fileExtensions = $this->options['fileExtensions'];
-        }
-        if (isset($this->options['callbackName'])) {
-            $this->callbackName = $this->options['callbackName'];
-        }
+        $this->multiple = $this->options['multiple'] ?? $this->multiple;
+        $this->isJson = $this->options['isJson'] ?? $this->isJson;
+        $this->callbackName = $this->options['callbackName'] ?? $this->callbackName;
+        $this->fileExtensions = $this->options['fileExtensions'] ?? $this->fileExtensions;
     }
 
     public function run()
     {
         $query = Storage::find();
-        if ($this->fileExtensions) {
-            foreach ($this->fileExtensions as $fileExtension) {
-                $query->orWhere(['like', 'name', $fileExtension]);
+
+        if (is_array($this->fileExtensions) && !empty($this->fileExtensions)) {
+            $orConditions = ['or'];
+            foreach ($this->fileExtensions as $extension) {
+                $orConditions[] = ['like', 'name', $extension];
             }
+            $query->andWhere($orConditions);
         }
-        if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['id_workspace']) && Yii::$app->request->queryParams['StorageSearch']['id_workspace'] != '' && Yii::$app->request->queryParams['StorageSearch']['id_workspace'] != null) {
-            $query->andWhere(['id_workspace' => Yii::$app->request->queryParams['StorageSearch']['id_workspace']]);
-        }
-        if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-            $query->andWhere(['access' => Storage::ACCESS_PRIVATE]);
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PUBLIC) {
-            $query->andWhere(['access' => Storage::ACCESS_PUBLIC]);
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ($this->manage && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == '') {
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PRIVATE) {
-            $query->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-            $query->andWhere(['access' => Storage::ACCESS_PRIVATE]);
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == Storage::ACCESS_PUBLIC) {
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-            $query->andWhere(['access' => Storage::ACCESS_PUBLIC])->andWhere(['id_workspace' => Yii::$app->workspace->id]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && isset(Yii::$app->request->queryParams['StorageSearch']['access']) && Yii::$app->request->queryParams['StorageSearch']['access'] == '') {
-            $query->andWhere(['like', 'title', Yii::$app->request->queryParams['StorageSearch']['title']]);
-            $query->andWhere([
-                'OR',
-                ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
-                ['access' => Storage::ACCESS_PUBLIC, 'id_workspace' => Yii::$app->workspace->id]
-            ]);
-        } else if ((!isset($this->manage) || !$this->manage || $this->isPicker) && (!isset(Yii::$app->request->queryParams['StorageSearch']['access']) || !isset(Yii::$app->request->queryParams['StorageSearch']['title']))) {
-            $query->andWhere([
-                'OR',
-                ['and', ['id_workspace' => Yii::$app->workspace->id, 'access' => Storage::ACCESS_PRIVATE]],
-                ['access' => Storage::ACCESS_PUBLIC, 'id_workspace' => Yii::$app->workspace->id]
-            ]);
-        } else if ((isset($this->manage) && $this->manage) && (!isset(Yii::$app->request->queryParams['StorageSearch']['access']) || !isset(Yii::$app->request->queryParams['StorageSearch']['title']))) {
-        } else {
-            $query->andWhere([
-                1 => 0
-            ]);
-        }
-        $searchModel = new \portalium\storage\models\StorageSearch();
-        $this->dataProvider = new \portalium\data\ActiveDataProvider([
+
+        $this->dataProvider = new ActiveDataProvider([
             'query' => $query,
-            'pagination' => [
-                'pageSize' => $this->isPicker ? 1 : (Yii::$app->session->get('theme::page_size') ? Yii::$app->session->get('theme::page_size') : 12),
-            ],
-            'sort' => [
-                'defaultOrder' => [
-                    'id_storage' => SORT_DESC,
-                ]
-            ],
+            'pagination' => ['pageSize' => 12],
         ]);
-        if ($this->isPicker) {
-            if ($this->dataProvider->getCount() > 0) {
-                $this->dataProvider->setModels([array_values($this->dataProvider->getModels())[0]]);
-            }
-        }
+
         if ($this->hasModel()) {
-            $input = 'activeHiddenInput';
-            echo Html::$input($this->model, $this->attribute, $this->options);
+            echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         }
 
-        $model = new Storage();
-        if (Yii::$app->request->isGet) {
-            $id_storage = Yii::$app->request->get('id_storage');
-            if ($id_storage) {
-                $model = Storage::findOne($id_storage);
-            }
+        $value = $this->model->{$this->attribute} ?? '';
+        $decoded = json_decode($value, true);
+        $idStorage = '';
+
+        if ($this->multiple && is_array($decoded)) {
+            $first = reset($decoded);
+            $idStorage = is_array($first) ? ($first['id_storage'] ?? '') : $first;
+        } elseif (!empty($decoded)) {
+            $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
         }
 
-        echo $this->renderFile('@vendor/portalium/yii2-storage/src/views/web/file-browser/index.php', [
-            'model' => $this->model,
-            'attribute' => $this->attribute,
-            'multiple' => $this->multiple,
-            'dataProvider' => $this->dataProvider,
-            'isJson' => $this->isJson,
-            'storageModel' => $model,
-            'attributes' => $this->attributes,
-            'name' => $this->name,
-            'callbackName' => $this->callbackName,
-            'isPicker' => $this->isPicker,
-            'fileExtensions' => $this->fileExtensions,
-            'searchModel' => $searchModel,
-            'manage' => $this->manage,
+        
+        echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
+        echo Html::script("window.isPicker = true;");  
+
+        echo Html::button(Module::t('Select File'), [
+            'class' => 'btn btn-primary',
+            'onclick' => 'window.openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '")'
         ]);
+
+        $this->registerJsScript();
     }
 
-    function generateHtmlId($name)
+    protected function registerJsScript()
     {
-        $name = preg_replace('/[^a-zA-Z0-9]+/', ' ', $name);
-        $name = str_replace(' ', '-', strtolower(trim($name)));
-        return $name;
+        $js = <<<JS
+const updateFileCard = function(id_storage) {
+    $('.file-card.active').removeClass('active');
+    $('.file-card input[type="checkbox"]').prop('checked', false);
+    if (!id_storage) return;
+
+    if (Array.isArray(id_storage)) {
+        id_storage.forEach(id => {
+            let el = $('#file-picker-modal span[data-id="' + id + '"]');
+            el.addClass('active');
+            el.find('input[type="checkbox"]').prop('checked', true);
+        });
+    } else {
+        let el = $('#file-picker-modal span[data-id="' + id_storage + '"]');
+        el.addClass('active');
+        el.find('input[type="checkbox"]').prop('checked', true);
+    }
+};
+
+const forceReflow = function() {
+    const container = document.querySelector('#file-picker-modal .files-container');
+    if (container) {
+        container.classList.remove('d-none');
+        void container.offsetWidth;
+        container.classList.add('d-flex');
+    }
+};
+
+const cleanupModal = function() {
+    const modalEl = document.getElementById('file-picker-modal');
+    if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) {
+            modal.hide();
+        }
+    }
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open').css('padding-right', '');
+};
+
+const bindModalButtons = function() {
+    $(document).off('click.btn-select').on('click.btn-select', '#file-picker-modal .btn-select', function() {
+        window.saveSelect();
+    });
+
+    $(document).off('click.btn-close').on('click.btn-close', '#file-picker-modal .btn-close, #file-picker-modal .close', function() {
+        cleanupModal();
+    });
+};
+
+if (!window.openFilePickerModal) {
+    window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName) {
+        window.multiple = multiple;
+        window.isJson = isJson;
+        window.callbackName = callbackName;
+        window.inputId = id;
+
+        cleanupModal();
+
+        $.ajax({
+            url: '/storage/default/picker-modal',
+            type: 'GET',
+            data: {
+                id: id,
+                multiple: multiple,
+                isJson: isJson,
+                fileExtensions: window.fileExtensions
+            },
+            success: function(response) {
+                $('#file-picker-modal').remove();
+                $('body').append(response);
+
+                requestAnimationFrame(() => {
+                    const modalEl = document.getElementById('file-picker-modal');
+                    const modal = new bootstrap.Modal(modalEl, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                    document.body.classList.add('modal-open');
+                    document.body.style.paddingRight = '0px';
+                    modal.show();
+
+                    updateFileCard(id_storage);
+                    bindModalButtons();
+                    forceReflow();
+                });
+
+                $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
+                    e.preventDefault();
+                    $('#file-picker-modal .modal-content').append('<div class="loading-overlay"><div class="spinner"></div></div>');
+
+                    $.ajax({
+                        url: $(this).attr('href'),
+                        type: 'GET',
+                        data: {
+                            id: window.inputId,
+                            multiple: window.multiple,
+                            isJson: window.isJson,
+                            fileExtensions: window.fileExtensions
+                        },
+                        success: function(newContent) {
+                            const \$temp = $('<div></div>').append(newContent);
+                            const newGrid = \$temp.find('.files-container').html();
+                            const newPagination = \$temp.find('.pagination-container').html();
+                            $('#file-picker-modal .files-container').html(newGrid);
+                            $('#file-picker-modal .pagination-container').html(newPagination);
+                            $('.loading-overlay').remove();
+                            updateFileCard(id_storage);
+                            forceReflow();
+                        },
+                        error: function() {
+                            $('.loading-overlay').remove();
+                            alert('Sayfa yüklenirken bir hata oluştu.');
+                        }
+                    });
+                });
+            },
+            error: function() {
+                alert('Modal yüklenirken bir hata oluştu.');
+            }
+        });
+    };
+}
+
+if (!window.saveSelect) {
+    window.saveSelect = function() {
+        let selectedFiles = window.multiple ?
+            $('.file-card input[type="checkbox"]:checked').map(function() {
+                return $(this).closest('.file-card').data('id');
+            }).get() :
+            $('.file-card.active').data('id');
+
+        let value = window.isJson
+            ? (window.multiple
+                ? JSON.stringify(selectedFiles.map(id => ({ id_storage: id })))
+                : JSON.stringify({ id_storage: selectedFiles }))
+            : (window.multiple
+                ? selectedFiles.join(',')
+                : selectedFiles);
+
+        $('#' + window.inputId).val(value);
+
+        if (window.callbackName && typeof window[window.callbackName] === 'function') {
+            window[window.callbackName](selectedFiles);
+        }
+
+        cleanupModal();
+    };
+}
+JS;
+
+        $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
+ //
+ 
     }
 }

@@ -26,87 +26,24 @@ use portalium\workspace\models\Workspace;
 class Storage extends \yii\db\ActiveRecord
 {
     public $file;
+    public $type;
 
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
-    const IS_MODAL_TRUE = 1;
-    const IS_MODAL_FALSE = 0;
-
     const MIME_TYPE = [
-        'audio/aac' => '0',
-        'audio/mpeg' => '1',
-        'audio/ogg' => '2',
-        'audio/opus' => '3',
-        'audio/wav' => '4',
-        'audio/webm' => '5',
-        'audio/midi audio/x-midi' => '6',
-        'video/avi' => '7',
-        'video/mpeg' => '8',
-        'video/ogg' => '9',
-        'video/mp4' => '10',
-        'video/webm' => '11',
-        'video/3gpp' => '12',
-        'image/bmp' => '13',
-        'image/gif' => '14',
-        'image/vnd.microsoft.icon' => '15',
-        'image/jpg' => '16',
-        'image/jpeg' => '17',
-        'image/png' => '18',
-        'image/svg+xml' => '19',
-        'image/tiff' => '20',
-        'image/webp' => '21',
-        'application/x-abiword' => '22',
-        'application/x-freearc' => '23',
-        'application/vnd.amazon.ebook' => '24',
-        'application/octet-stream' => '25',
-        'application/x-bzip' => '26',
-        'application/x-bzip2' => '27',
-        'application/x-csh' => '28',
-        'text/css' => '29',
-        'text/csv' => '30',
-        'application/msword' => '31',
-        'application/vnd.ms-fontobject' => '32',
-        'application/epub+zip' => '33',
-        'application/gzip' => '34',
-        'text/html' => '35',
-        'text/calendar' => '36',
-        'application/java-archive' => '37',
-        'text/javascript' => '38',
-        'application/json' => '39',
-        'application/ld+json' => '40',
-        'text/javascript' => '41',
-        'application/vnd.apple.installer+xml' => '42',
-        'application/vnd.oasis.opendocument.presentation' => '43',
-        'application/vnd.oasis.opendocument.spreadsheet' => '44',
-        'application/vnd.oasis.opendocument.text' => '45',
-        'application/ogg' => '46',
-        'font/otf' => '47',
-        'application/pdf' => '48',
-        'application/x-httpd-php' => '49',
-        'application/vnd.ms-powerpoint' => '50',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => '51',
-        'application/vnd.rar' => '52',
-        'application/rtf' => '53',
-        'application/x-sh' => '54',
-        'application/x-shockwave-flash' => '55',
-        'application/x-tar' => '56',
-        'font/ttf' => '57',
-        'text/plain' => '58',
-        'application/vnd.visio' => '59',
-        'font/woff' => '60',
-        'font/woff2' => '61',
-        'application/xhtml+xml' => '62',
-        'application/vnd.ms-excel' => '63',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '64',
-        'application/xml' => '65',
-        'application/vnd.mozilla.xul+xml' => '66',
-        'application/zip' => '67',
-        'application/x-7z-compressed' => '68',
-        'other' => '69',
+        'image/jpeg' => '0',
+        'image/png' => '1',
+        'application/pdf' => '2',
+        'application/msword' => '3',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => '4',
+        'application/vnd.ms-excel' => '5',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '6',
+        'application/vnd.ms-powerpoint' => '7',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => '8',
     ];
 
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
-    // behaviors id_user is set to current user
+
     public function behaviors()
     {
         return [
@@ -130,43 +67,28 @@ class Storage extends \yii\db\ActiveRecord
         }, $this);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public static function tableName()
     {
-        //use prefix from module
         return '{{%' . Module::$tablePrefix . 'storage}}';
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function rules()
     {
         return [
-            [['title', 'id_workspace'], 'required'],
+            [['title'], 'required', 'when' => function ($model) {
+                return $model->type === 'file';
+            }, 'whenClient' => "function (attribute, value) {
+            return $('#upload-type').val() === 'file';
+        }"],
             [['name', 'title'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
-            [['file', 'access', 'hash_file'], 'safe'],
+            [['id_directory'], 'integer'],
+            [['file', 'access', 'hash_file', 'id_workspace'], 'safe'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE]
         ];
     }
 
-    /* //fields add url
-    public function fields()
-    {
-        return array_merge(parent::fields(), [
-            'url' => function ($model) {
-                return Yii::getAlias('@data') . '/' . $model->name;
-            },
-        ]);
-    } */
-
-    /**
-     * {@inheritdoc}
-     */
     public function attributeLabels()
     {
         return [
@@ -178,215 +100,180 @@ class Storage extends \yii\db\ActiveRecord
             'id_workspace' => Module::t('Workspace'),
             'access' => Module::t('Access'),
             'hash_file' => Module::t('Hash File'),
+            'id_directory' => Module::t('Directory'),
         ];
     }
 
-    public static function getMimeTypeList()
-    {
-        $array = [];
-        foreach (self::MIME_TYPE as $key => $value) {
-            if (is_array($value)) {
-                foreach ($value as $k => $v) {
-                    $array[$key][$v] = $k;
-                }
-            } else {
-                $array[$value] = $key;
-            }
-        }
-        return $array;
-    }
-
-    public function getAllowedExtensions()
-    {
-        return implode(', ', self::$allowExtensions);
-    }
-
-    public static function getAccesses()
-    {
-        return [
-            self::ACCESS_PUBLIC => Module::t('Public'),
-            self::ACCESS_PRIVATE => Module::t('Private'),
-        ];
-    }
-
-    /**
-     * (@inheritdoc)
-     */
     public function upload()
     {
+        if (!$this->validate())
+            return false;
+        if (!$this->file)
+            return $this->save();
 
-        if ($this->validate()) {
-            if (!$this->file) {
-                $this->save();
-                return true;
-            }
+        $path = realpath(Yii::$app->basePath . '/../data');
+        $filename = md5(uniqid(rand(), true)) . '.' . $this->file->extension;
+        $hash = md5_file($this->file->tempName);
 
-            $path = realpath(Yii::$app->basePath . '/../data');
-            $filename = md5(rand()) . "." . $this->file->extension;
-            // check if file extension is allowed
-            if (in_array($this->file->extension, self::$allowExtensions)) {
-                if ($this->file->saveAs($path . '/' . $filename)) {
-                    $this->name = $filename;
-                    $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
-                    if ($this->save()) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+        if (!in_array($this->file->extension, self::$allowExtensions))
+            return false;
+
+        if (!$this->file->saveAs($path . '/' . $filename))
+            return false;
+
+        $this->name = $filename;
+        $this->hash_file = $hash;
+        $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
+        $this->id_workspace = Yii::$app->workspace->id;
+        $this->id_user = Yii::$app->user->id;
+
+        return $this->save();
+    }
+
+
+    /**
+     * Get MIME type for a file
+     * @param string|null $filename The file name
+     * @return string The MIME type
+     */
+    public function getMIMEType($filename)
+    {
+        // Check if filename is empty or null
+        if (empty($filename)) {
+            return 'application/octet-stream'; // Default MIME type for unknown files
+        }
+
+        $ext = strtolower(substr(strrchr($filename, '.'), 1));
+        switch ($ext) {
+            case 'jpg':
+            case 'jpeg':
+                return 'image/jpeg';
+            case 'png':
+                return 'image/png';
+            case 'pdf':
+                return 'application/pdf';
+            case 'doc':
+                return 'application/msword';
+            case 'docx':
+                return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            case 'xls':
+                return 'application/vnd.ms-excel';
+            case 'xlsx':
+                return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            case 'ppt':
+                return 'application/vnd.ms-powerpoint';
+            case 'pptx':
+                return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            default:
+                if (function_exists('finfo_open')) {
+                    $finfo = finfo_open(FILEINFO_MIME);
+                    $mimetype = finfo_file($finfo, $filename);
+                    finfo_close($finfo);
+                    $mimetype = explode(';', $mimetype);
+                    return $mimetype[0];
+                } else {
+                    return 'application/octet-stream';
                 }
+        }
+    }
+    public function deleteFile()
+    {
+        $filePath = Yii::$app->basePath . '/../data/' . $this->name;
+        if (file_exists($filePath)) {
+            if (unlink($filePath)) {
+                return $this->delete();
+            }
+        }
+        return false;
+    }
+
+    public function copyFile()
+    {
+        $path = realpath(Yii::$app->basePath . '/../data');
+        $sourcePath = $path . '/' . $this->name;
+        $newModel = new Storage();
+        $newModel->attributes = $this->attributes;
+        $newModel->id_storage = null;
+        $extension = pathinfo($this->name, PATHINFO_EXTENSION);
+        $newFileName = md5(rand()) . "." . $extension;
+        $newFilePath = $path . '/' . $newFileName;
+        $newModel->title = $this->generateNewTitle($this->title);
+
+        if (copy($sourcePath, $newFilePath)) {
+            $newModel->name = $newFileName;
+            if ($newModel->save()) {
+                return $newModel;
             } else {
+                if (file_exists($newFilePath)) {
+                    unlink($newFilePath);
+                }
                 return false;
             }
         }
         return false;
     }
-
-    public function getMIMEType($filename)
+    private function generateNewTitle($originalTitle)
     {
-        $mime_types = self::MIME_TYPE;
-        $ext = strtolower(substr(strrchr($filename, '.'), 1));
-        if (array_key_exists($ext, $mime_types)) {
-            if (is_array($mime_types[$ext])) {
-                //; charset=binary to ''
-                $mime_types[$ext][0] = str_replace('; charset=binary', '', $mime_types[$ext][0]);
-                return $mime_types[$ext][0];
-            } else {
-                $mime_types[$ext] = str_replace('; charset=binary', '', $mime_types[$ext]);
-                return $mime_types[$ext];
-            }
-        } elseif (function_exists('finfo_open')) {
-            $finfo = finfo_open(FILEINFO_MIME);
-            $mimetype = finfo_file($finfo, $filename);
-            finfo_close($finfo);
-            $mimetype = explode(';', $mimetype);
-            return $mimetype[0];
-        } else {
-            return 'application/octet-stream';
+        $baseName = $originalTitle;
+        $newTitle = $baseName . '_1';
+        $counter = 1;
+        while (self::find()->where(['title' => $newTitle])->exists()) {
+            $counter++;
+            $newTitle = $baseName . '_' . $counter;
         }
+        return $newTitle;
     }
 
-    public function deleteFile($filename)
+    public function getIconUrl()
     {
-        $path = realpath(Yii::$app->basePath . '/../data');
-        if (file_exists($path . '/' . $filename)) {
-            if (unlink($path . '/' . $filename)) {
-                return true;
-            }
+        $mimeType = $this->mime_type;
+        if (is_numeric($mimeType)) {
+            $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
-        return true;
-    }
-
-    public function getFilePath()
-    {
-        // $path =  Yii::$app->request->baseUrl . '/' . Yii::$app->setting->getValue('storage::path');
-        // return $path . '/' . $this->name;
-        return '/storage/default/get-file?id=' . $this->id_storage;
-    }
-
-    public static function findForApi()
-    {
-        $query = parent::find();
-
-//        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
-            return $query;
-//        }
-
-        if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
-            // get public files
-            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        }
-        $workspaces = WorkspaceUser::find()->select('id_workspace')->where(['id_user' => Yii::$app->user->id])->asArray()->all();
-        $workspaces = ArrayHelper::getColumn($workspaces, 'id_workspace');
-
-        if ($workspaces) {
-            // $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-            return $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $workspaces])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        } else {
-            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
-        }
-    }
-
-    public function cloneStorage()
-    {
-        $newStorage = new Storage();
-        $newStorage->title = $this->title;
-        $newStorage->id_user = Yii::$app->user->id;
-        $newStorage->mime_type = $this->mime_type;
-        $newStorage->id_workspace = Yii::$app->workspace->id;
-        $newStorage->access = self::ACCESS_PUBLIC;
-
-        $path = realpath(Yii::$app->basePath . '/../data');
-        $extension = pathinfo($this->name, PATHINFO_EXTENSION);
-        $filename = md5(rand()) . "." . $extension;
-        try {
-            if (copy($path . '/' . $this->name, $path . '/' . $filename)) {
-                $newStorage->name = $filename;
-                // system("cp -r " . $path . '/' . $this->name . " " . $path . '/' . $filename);
-                if ($newStorage->save()) {
-                    return $newStorage;
-                }
-            }
-        } catch (\Throwable $th) {
-            return false;
-        }
-        return false;
-    }
-
-    public function getExtension()
-    {
-        return pathinfo($this->name, PATHINFO_EXTENSION);
-    }
-
-    public static function getWorkspaces()
-    {
-        $workspaces = Workspace::find()->all();
-        $array = [];
-        foreach ($workspaces as $workspace) {
-            $array[$workspace->id_workspace] = $workspace->name . ' (' . (isset($workspace->user) ? $workspace->user->username : '') . ')';
-        }
-        return $array;
-    }
-
-    public function fileExists()
-    {
-        $path = realpath(Yii::$app->basePath . '/../data');
-        return file_exists($path . '/' . $this->name);
-    }
-
-    public function afterDelete()
-    {
-        $this->deleteFile($this->name);
-        return parent::afterDelete();
-    }
-
-
-
-    public function beforeSave($insert)
-    {
-        if (Yii::$app->workspace->checkOwner($this->id_workspace)) {
-            return parent::beforeSave($insert);
-        }
-        return false;
-    }
-
-    public function afterSave($insert, $changedAttributes)
-    {
-        if ($insert) {
-            $this->hash_file = md5_file(Yii::$app->basePath . '/../data/' . $this->name);
-            $this->save();
-        }
-        return parent::afterSave($insert, $changedAttributes);
-    }
-
-    public function afterFind()
-    {
-        if (!$this->hash_file) {
-            $file = realpath(Yii::$app->basePath . '/../data') . '/' . $this->name;
-            if (file_exists($file)) {
-                $this->hash_file = md5_file($file);
-                $this->save();
+        $path = Yii::$app->basePath . '/../data/' . $this->name;
+        if (file_exists($path)) {
+            switch ($mimeType) {
+                case 'application/pdf':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=13417&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'application/msword':
+                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=13674&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'application/vnd.ms-excel':
+                case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=13654&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'application/vnd.ms-powerpoint':
+                case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=81726&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
+                case 'image/jpeg':
+                case 'image/png':
+                    return [
+                        'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,
+                        'class' => 'image-file'
+                    ];
+                default:
+                    return [
+                        'url' => 'https://img.icons8.com/?size=100&id=12141&format=png&color=000000',
+                        'class' => 'non-image'
+                    ];
             }
         }
-        return parent::afterFind();
+        else {
+            return [
+                'url' => 'https://img.icons8.com/?size=100&id=12141&format=png&color=000000',
+                'class' => 'non-image'
+            ];
+        }
     }
 }

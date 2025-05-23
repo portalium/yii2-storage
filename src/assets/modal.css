@@ -1,0 +1,287 @@
+
+.container-fluid {
+    padding: 5px;
+}
+
+.file-card-wrapper {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.file-card {
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    height: 210px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.file-card:hover {
+    transform: scale(1.03);
+}
+
+.file-card.active,
+.file-card:has(.file-select-checkbox:checked) {
+    border: 2px solid #0d6efd;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+}
+
+.file-card .card-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    font-size: 14px;
+    background: rgba(238, 238, 238, 0.9);
+    border-radius: 8px 8px 0 0;
+    height: 40px;
+}
+
+.file-card .card-header .fa-ellipsis-h {
+    font-size: 18px;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.file-card .card-header .fa-ellipsis-h:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.file-select-checkbox {
+    position: relative;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    transition: all 0.2s ease;
+    margin-right: 10px;
+}
+
+.file-select-checkbox:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.file-select-checkbox:checked::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.file-select-checkbox:hover {
+    border-color: #0d6efd;
+}
+
+.file-card img.file-icon.image-file {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    padding-top: 30px;
+    border-radius: 3px;
+}
+
+.file-card img.file-icon.non-image {
+    width: 70px;
+    height: 70px;
+    margin-top: 20px;
+}
+
+.file-title {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+.file-title.picker {
+    max-width: 100px;
+}
+
+.custom-dropdown-menu {
+    right: 10px;
+    top: 30px;
+    animation: fadeIn 0.2s ease;
+}
+
+.custom-dropdown-menu.show {
+    display: block;
+}
+
+.custom-dropdown-menu .menu-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.custom-dropdown-menu .menu-item:hover {
+    background-color: #f5f5f5;
+}
+
+.custom-dropdown-menu .divider {
+    height: 1px;
+    background-color: #e5e5e5;
+    margin: 5px 0;
+}
+
+.folder-container {
+    position: relative;
+    max-width: 120px;
+    height: 100px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    transition: transform 0.3s ease;
+    margin: 0 auto 20px;
+}
+
+.folder-container:hover {
+    transform: translateY(-3px);
+}
+
+.folder {
+    position: absolute;
+    width: 90px;
+    height: 75px;
+    background-color: #ffca28;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 211, 89, 0.8);
+    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 25%);
+    top: 0;
+    left: 15px;
+}
+
+.folder-notch {
+    position: absolute;
+    width: 30px;
+    height: 10px;
+    border-top-right-radius: 3px;
+    top: -5px;
+    left: 15px;
+    border-top: 1px solid rgba(255, 211, 89, 0.8);
+    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 100%);
+}
+
+.folder-title {
+    position: absolute;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100px;
+    font-size: 14px;
+    padding-left: 25px;
+}
+
+.folder-ellipsis {
+    position: absolute;
+    top: -15px;
+    left: 100px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.folder-ellipsis:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+.folder-dropdown-menu {
+    top: 5px;
+    animation: fadeIn 0.2s ease;
+}
+.folder-dropdown-menu.show {
+    display: block;
+}
+.pagination-custom {
+    margin: 0;
+    padding: 0;
+}
+
+.pagination-custom li {
+    display: inline-block;
+}
+
+.pagination-custom li a,
+.pagination-custom li span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 0;
+    color: #666;
+    background: transparent;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    margin-left: -1px;
+}
+
+.pagination-custom li:first-child a,
+.pagination-custom li:first-child span {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    margin-left: 0;
+}
+
+.pagination-custom li:last-child a,
+.pagination-custom li:last-child span {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.pagination-custom li.active a,
+.pagination-custom li.active span {
+    background: #3498db;
+    border-color: #3498db;
+    color: white;
+    font-weight: bold;
+}
+
+.pagination-custom li.disabled span,
+.pagination-custom li.disabled a {
+    color: #ccc;
+    border-color: #eee;
+    cursor: not-allowed;
+}
+
+.pagination-custom li a .fa {
+    font-size: 12px;
+}
