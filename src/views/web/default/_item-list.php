@@ -7,10 +7,9 @@ use portalium\theme\widgets\Dropdown;
 use yii\helpers\Url;
 use yii\widgets\LinkPager;
 
-/** @var array $directories */
-/** @var array $files */
+/** @var \yii\data\ActiveDataProvider $directoryDataProvider */
+/** @var \yii\data\ActiveDataProvider $fileDataProvider */
 /** @var bool $isPicker */
-/** @var \yii\data\Pagination $pagination */
 
 $id_directory = Yii::$app->request->get('id_directory');
 $parentDirectory = null;
@@ -80,6 +79,9 @@ echo Html::endTag('div');
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'row']);
+
+// Fix: Use directoryDataProvider->models instead of $directories
+$directories = $directoryDataProvider->models;
 
 foreach ($directories as $model) {
     $folderId = $model->id_directory;
@@ -153,6 +155,9 @@ echo Html::endTag('div');
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'row']);
+
+// Fix: Use fileDataProvider->models instead of $files
+$files = $fileDataProvider->models;
 
 foreach ($files as $model) {
     $content = Html::beginTag('div', ['class' => 'col-md-2 col-sm-3 col-6 mb-3']);
@@ -253,6 +258,9 @@ echo Html::endTag('div');
 echo Html::beginTag('div', ['class' => 'row']);
 echo Html::beginTag('div', ['class' => 'col-12 d-flex justify-content-start']);
 
+// Get pagination from fileDataProvider
+$pagination = $fileDataProvider->pagination;
+
 echo LinkPager::widget([
     'pagination' => $pagination,
     'options' => ['class' => 'pagination pagination-custom'],
@@ -301,5 +309,4 @@ window.handleFileCardClick = function(event, id_storage) {
         }
     }
 };
-JS
-);
+JS);

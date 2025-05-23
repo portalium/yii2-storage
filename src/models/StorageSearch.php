@@ -47,6 +47,9 @@ class StorageSearch extends Storage
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => 12, // ✅ her sayfada 12 dosya gösterilsin
+            ],
         ]);
 
         $this->load($params);

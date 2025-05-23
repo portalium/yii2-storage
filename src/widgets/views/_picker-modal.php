@@ -30,7 +30,10 @@ Modal::begin([
 
 echo $this->render('@portalium/storage/views/web/default/index', [
     'fileDataProvider' => $dataProvider,
-    'directoryDataProvider' => $directoryDataProvider,  // Veriyi gönderiyoruz
+    'directoryDataProvider' => $directoryDataProvider,
+    //'directories' => $directories,
+    //'files'  => $files,
+    //'pagination'  => $pagination,  // Veriyi gönderiyoruz
 
     'isPicker' => true,
 ]);
