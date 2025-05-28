@@ -7,6 +7,7 @@ class m220227_125705_storage_rbac extends Migration
     {
         $auth = Yii::$app->authManager;
         $role = Yii::$app->setting->getValue('site::admin_role');
+
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $permissionNames = [
             'storageApiDefaultView',
@@ -15,13 +16,20 @@ class m220227_125705_storage_rbac extends Migration
             'storageApiDefaultDelete',
             'storageApiDefaultIndex',
             'storageWebDefaultIndex',
-            'storageWebDefaultView',
-            'storageWebDefaultGetFile',
-            'storageWebDefaultCreate',
-            'storageWebDefaultUpdate',
-            'storageWebDefaultDelete',
-            'storageStorageFindAll',
-            'storageStorageFindOwner',
+            'storageWebDefaultUploadFile',
+            'storageWebDefaultDownloadFile',
+            'storageWebDefaultRenameFile',
+            'storageWebDefaultUpdateFile',
+            'storageWebDefaultShareFile',
+            'storageWebDefaultCopyFile',
+            'storageWebDefaultDeleteFile',
+            'storageWebDefaultPickerModal',
+            'storageWebDefaultFileList',
+            'storageWebDefaultSearch',
+            'storageWebDefaultNewFolder',
+            'storageWebDefaultRenameFolder',
+            'storageWebDefaultDeleteFolder',
+            'storageWebDefaultdeleteFolderRecursive'
         ];
         
         foreach ($permissionNames as $permissionName) {
@@ -36,20 +44,34 @@ class m220227_125705_storage_rbac extends Migration
     public function down()
     {
         $auth = Yii::$app->authManager;
+        $permissionNames = [
+            'storageApiDefaultView',
+            'storageApiDefaultCreate',
+            'storageApiDefaultUpdate',
+            'storageApiDefaultDelete',
+            'storageApiDefaultIndex',
+            'storageWebDefaultIndex',
+            'storageWebDefaultUploadFile',
+            'storageWebDefaultDownloadFile',
+            'storageWebDefaultRenameFile',
+            'storageWebDefaultUpdateFile',
+            'storageWebDefaultShareFile',
+            'storageWebDefaultCopyFile',
+            'storageWebDefaultDeleteFile',
+            'storageWebDefaultPickerModal',
+            'storageWebDefaultFileList',
+            'storageWebDefaultSearch',
+            'storageWebDefaultNewFolder',
+            'storageWebDefaultRenameFolder',
+            'storageWebDefaultDeleteFolder',
+            'storageWebDefaultdeleteFolderRecursive'
+        ];
 
-        $auth->remove($auth->getPermission('storageWebDefaultIndex'));
-        $auth->remove($auth->getPermission('storageWebDefaultView'));
-        $auth->remove($auth->getPermission('storageWebDefaultCreate'));
-        $auth->remove($auth->getPermission('storageWebDefaultUpdate'));
-        $auth->remove($auth->getPermission('storageWebDefaultDelete'));
-        $auth->remove($auth->getPermission('storageApiDefaultView'));
-        $auth->remove($auth->getPermission('storageWebDefaultGetFile'));
-        $auth->remove($auth->getPermission('storageApiDefaultCreate'));
-        $auth->remove($auth->getPermission('storageApiDefaultUpdate'));
-        $auth->remove($auth->getPermission('storageApiDefaultDelete'));
-        $auth->remove($auth->getPermission('storageApiDefaultIndex'));
-        $auth->remove($auth->getPermission('storageStorageFindAll'));
-        $auth->remove($auth->getPermission('storageStorageFindOwner'));
-
+        foreach ($permissionNames as $permissionName) {
+            $permission = $auth->getPermission($permissionName);
+            if ($permission) {
+                $auth->remove($permission);
+            }
+        }
     }
 }
