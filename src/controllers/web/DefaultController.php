@@ -17,7 +17,7 @@ use portalium\data\ActiveDataProvider;
 class DefaultController extends Controller
 {
     const DEFAULT_PAGE_SIZE = 12;
-    
+
     public function actionIndex()
     {
         if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
@@ -35,7 +35,7 @@ class DefaultController extends Controller
                 ->andWhere(['id_parent' => $id_directory])
                 ->orderBy(['id_directory' => SORT_DESC]),
             'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE-1,
+                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
         ]);
         $isPicker = Yii::$app->request->get('isPicker', false);
@@ -108,7 +108,7 @@ class DefaultController extends Controller
             }
         }
 
-        return $this->renderPartial('_upload-file', [
+        return $this->renderAjax('_upload-file', [
             'model' => $model,
         ]);
     }
@@ -300,31 +300,31 @@ class DefaultController extends Controller
         $extensions = Yii::$app->request->get('fileExtensions', []);
 
         if (!empty($extensions) && is_array($extensions)) {
-            $orConditions = ['or'];  
+            $orConditions = ['or'];
 
             foreach ($extensions as $extension) {
                 $orConditions[] = ['like', 'name', '.' . ltrim($extension, '.')];
             }
-            
+
             $query->andWhere($orConditions);
         }
 
         $dataProvider = new ActiveDataProvider([
-            'query' => $query,  
+            'query' => $query,
             'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE,  
+                'pageSize' => self::DEFAULT_PAGE_SIZE,
             ],
             'sort' => [
-                'defaultOrder' => ['id_storage' => SORT_DESC], 
+                'defaultOrder' => ['id_storage' => SORT_DESC],
             ],
         ]);
-        
+
         $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
                 ->orderBy(['id_directory' => SORT_DESC]),
             'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE-1,
+                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
         ]);
 
@@ -337,15 +337,15 @@ class DefaultController extends Controller
             ->andWhere(['id_directory' => $id_directory])
             ->orderBy(['id_storage' => SORT_DESC])
             ->all();
-            
+
         $pagination = $dataProvider->getPagination();
 
         return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
-            'dataProvider' => $dataProvider,  
+            'dataProvider' => $dataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'directories' => $directories,
-            'files'  => $files,
-            'pagination'  => $pagination,
+            'files' => $files,
+            'pagination' => $pagination,
         ]);
     }
 
@@ -378,7 +378,6 @@ class DefaultController extends Controller
         $id_directory = Yii::$app->request->get('id_directory');
         $isPicker = Yii::$app->request->get('isPicker', false);
 
-        // File query
         $fileQuery = Storage::find();
         if (!empty($q)) {
             $fileQuery->andFilterWhere(['like', 'title', $q]);
@@ -393,7 +392,6 @@ class DefaultController extends Controller
             'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
         ]);
 
-        // Directory query
         $directoryQuery = \portalium\storage\models\StorageDirectory::find();
         if ($id_directory !== null) {
             $directoryQuery->andWhere(['id_parent' => $id_directory]);
@@ -407,7 +405,7 @@ class DefaultController extends Controller
 
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
             'query' => $directoryQuery,
-            'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE-1],
+            'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE - 1],
             'sort' => ['defaultOrder' => ['id_directory' => SORT_DESC]],
         ]);
 
@@ -460,7 +458,7 @@ class DefaultController extends Controller
             'model' => $model
         ]);
     }
-    
+
     public function actionRenameFolder($id, $id_directory)
     {
         if (!\Yii::$app->user->can('storageWebDefaultRenameFolder') && !\Yii::$app->user->can('storageWebDefaultRenameFolderOwn')) {
@@ -472,7 +470,6 @@ class DefaultController extends Controller
             return '';
         }
         if (Yii::$app->request->post()) {
-            Yii::warning("veriler: ", json_encode(Yii::$app->request->post()));
             $oldName = $model->name;
             if ($model->load(Yii::$app->request->post()) && $model->validate()) {
                 if ($oldName !== $model->name) {

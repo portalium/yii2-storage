@@ -14,31 +14,27 @@ class m220228_125709_storage_rule_rbac extends Migration
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
 
         $permissions = [
-        'storageApiDefaultView',
-        'storageApiDefaultCreate',
-        'storageApiDefaultUpdate',
-        'storageApiDefaultDelete',
-        'storageApiDefaultIndex',
-        'storageWebDefaultIndex',
-        'storageWebDefaultUploadFile',
-        'storageWebDefaultDownloadFile',
-        'storageWebDefaultRenameFile',
-        'storageWebDefaultUpdateFile',
-        'storageWebDefaultShareFile',
-        'storageWebDefaultCopyFile',
-        'storageWebDefaultDeleteFile',
-        'storageWebDefaultPickerModal',
-        'storageWebDefaultFileList',
-        'storageWebDefaultSearch',
-        'storageWebDefaultNewFolder',
-        'storageWebDefaultRenameFolder',
-        'storageWebDefaultDeleteFolder',
-        'storageWebDefaultdeleteFolderRecursive'
-    ];
+            'storageWebDefaultIndex',
+            'storageWebDefaultUploadFile',
+            'storageWebDefaultDownloadFile',
+            'storageWebDefaultRenameFile',
+            'storageWebDefaultUpdateFile',
+            'storageWebDefaultShareFile',
+            'storageWebDefaultCopyFile',
+            'storageWebDefaultDeleteFile',
+            'storageWebDefaultPickerModal',
+            'storageWebDefaultFileList',
+            'storageWebDefaultSearch',
+            'storageWebDefaultNewFolder',
+            'storageWebDefaultRenameFolder',
+            'storageWebDefaultDeleteFolder',
+            'storageWebDefaultdeleteFolderRecursive'
+        ];
 
         foreach ($permissions as $permissionKey) {
-        $permissionOwn = $auth->createPermission($permissionKey . 'Own');
-            $permissionOwn->description = $permissionKey . ' Own';
+            $permissionOwn = $auth->createPermission($permissionKey . 'Own');
+            $description = preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey . 'Own');
+            $permissionOwn->description = ucfirst($description);
             $permissionOwn->ruleName = $rule->name;
             $auth->add($permissionOwn);
             $auth->addChild($admin, $permissionOwn);
@@ -52,31 +48,28 @@ class m220228_125709_storage_rule_rbac extends Migration
         $auth = Yii::$app->authManager;
 
         $permissions = [
-        'storageApiDefaultView',
-        'storageApiDefaultCreate',
-        'storageApiDefaultUpdate',
-        'storageApiDefaultDelete',
-        'storageApiDefaultIndex',
-        'storageWebDefaultIndex',
-        'storageWebDefaultUploadFile',
-        'storageWebDefaultDownloadFile',
-        'storageWebDefaultRenameFile',
-        'storageWebDefaultUpdateFile',
-        'storageWebDefaultShareFile',
-        'storageWebDefaultCopyFile',
-        'storageWebDefaultDeleteFile',
-        'storageWebDefaultPickerModal',
-        'storageWebDefaultFileList',
-        'storageWebDefaultSearch',
-        'storageWebDefaultNewFolder',
-        'storageWebDefaultRenameFolder',
-        'storageWebDefaultDeleteFolder',
-        'storageWebDefaultdeleteFolderRecursive'
-    ];
+            'storageWebDefaultIndex',
+            'storageWebDefaultUploadFile',
+            'storageWebDefaultDownloadFile',
+            'storageWebDefaultRenameFile',
+            'storageWebDefaultUpdateFile',
+            'storageWebDefaultShareFile',
+            'storageWebDefaultCopyFile',
+            'storageWebDefaultDeleteFile',
+            'storageWebDefaultPickerModal',
+            'storageWebDefaultFileList',
+            'storageWebDefaultSearch',
+            'storageWebDefaultNewFolder',
+            'storageWebDefaultRenameFolder',
+            'storageWebDefaultDeleteFolder',
+            'storageWebDefaultdeleteFolderRecursive'
+        ];
 
         foreach ($permissions as $permissionKey) {
-        $permissionOwn = $auth->getPermission($permissionKey . 'Own');
-            $auth->remove($permissionOwn);
+            $permissionOwn = $auth->getPermission($permissionKey . 'Own');
+            if ($permissionOwn) {
+                $auth->remove($permissionOwn);
+            }
         }
     }
 }
