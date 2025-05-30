@@ -16,17 +16,18 @@ use portalium\data\ActiveDataProvider;
 
 class DefaultController extends Controller
 {
-    const DEFAULT_PAGE_SIZE = 12;
+    const DEFAULT_PAGE_SIZE = 24;
 
     public function actionIndex()
     {
         if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
         $model = new Storage();
         $searchModel = new StorageSearch();
         $id_directory = Yii::$app->request->get('id_directory');
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        $isPicker = Yii::$app->request->get('isPicker', false);
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
@@ -38,22 +39,40 @@ class DefaultController extends Controller
                 'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
         ]);
-        $isPicker = Yii::$app->request->get('isPicker', false);
+        $directoryCount = StorageDirectory::find()
+            ->andWhere(['id_parent' => $id_directory])
+            ->count();
+        $fileCount = Storage::find()
+            ->where(['id_directory' => $id_directory])
+            ->count();
+        $directoryPages = ceil($directoryCount / (self::DEFAULT_PAGE_SIZE - 1));
+        $filePages = ceil($fileCount / self::DEFAULT_PAGE_SIZE);
+        $totalPages = max($directoryPages, $filePages);
+        $totalItems = $totalPages * (self::DEFAULT_PAGE_SIZE + (self::DEFAULT_PAGE_SIZE - 1));
+        $pagination = new \yii\data\Pagination([
+            'totalCount' => $totalItems,
+            'pageSize' => 23,
+        ]);
+
         if (Yii::$app->request->isPjax) {
             return $this->renderAjax('_item-list', [
                 'directoryDataProvider' => $directoryDataProvider,
                 'fileDataProvider' => $fileDataProvider,
                 'isPicker' => $isPicker,
+                'pagination' => $pagination,
             ]);
         }
+
         return $this->render('index', [
             'model' => $model,
-            'dataProvider' => $dataProvider,
+            'dataProvider' => $searchModel->search($this->request->queryParams),
             'fileDataProvider' => $fileDataProvider,
             'directoryDataProvider' => $directoryDataProvider,
-            'isPicker' => $isPicker
+            'isPicker' => $isPicker,
+            'pagination' => $pagination,
         ]);
     }
+
 
     public function actionUploadFile()
     {
@@ -140,8 +159,9 @@ class DefaultController extends Controller
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = Storage::findOne($id);
+
         if (!$model) {
-            Yii::$app->session->setFlash('error', Module::t('File not found!'));
+            Yii::$app->session->setFlash('error', Module::t('Model not found!'));
             return '';
         }
         $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
@@ -232,31 +252,41 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultCopyFile') && !\Yii::$app->user->can('storageWebDefaultCopyFileOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
+        if (!Yii::$app->request->isPost) {
+            throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
+        }
+
         $id = Yii::$app->request->post('id');
+
+        if (!$id) {
+            Yii::$app->session->setFlash('error', Module::t('File ID is required!'));
+            return;
+        }
+
         $sourceModel = Storage::findOne($id);
+
         if (!$sourceModel) {
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return '';
+            return;
         }
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
         $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
         $filePath = $storagePath . '/' . $sourceModel->name;
 
-        if (!$sourceModel)
-            Yii::$app->session->setFlash('error', Module::t('File not found!'));
-
         if (!file_exists($filePath)) {
             Storage::deleteAll(['id_storage' => $sourceModel->id_storage]);
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return '';
+            return;
         }
+
         $newModel = $sourceModel->copyFile();
 
-        if ($newModel)
+        if ($newModel) {
             Yii::$app->session->setFlash('success', Module::t('File copied successfully!'));
-        else
+        } else {
             Yii::$app->session->setFlash('error', Module::t('File could not be copied!'));
+        }
     }
 
     public function actionDeleteFile()
@@ -264,24 +294,36 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultDeleteFile') && !\Yii::$app->user->can('storageWebDefaultDeleteFileOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
+        if (!Yii::$app->request->isPost) {
+            throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
+        }
+
         $fileId = Yii::$app->request->post('id');
 
-        if (Yii::$app->request->isPost && Yii::$app->request->validateCsrfToken()) {
-            $file = Storage::findOne($fileId);
+        if (!$fileId) {
+            Yii::$app->session->setFlash('error', Module::t('File ID is required!'));
+            return;
+        }
 
-            if ($file) {
-                $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+        $file = Storage::findOne($fileId);
 
-                if (!file_exists($path)) {
-                    Storage::deleteAll(['id_storage' => $file->id_storage]);
-                    Yii::$app->session->setFlash('error', Module::t('File not found!'));
-                }
-                if ($file->deleteFile())
-                    Yii::$app->session->setFlash('success', Module::t('File deleted successfully!'));
-                else
-                    Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            } else
+        if ($file) {
+            $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+
+            if (!file_exists($path)) {
+                Storage::deleteAll(['id_storage' => $file->id_storage]);
                 Yii::$app->session->setFlash('error', Module::t('File not found!'));
+                return;
+            }
+
+            if ($file->deleteFile()) {
+                Yii::$app->session->setFlash('success', Module::t('File deleted successfully!'));
+            } else {
+                Yii::$app->session->setFlash('error', Module::t('File could not be deleted!'));
+            }
+        } else {
+            Yii::$app->session->setFlash('error', Module::t('File not found!'));
         }
     }
 
