@@ -10,11 +10,6 @@ class m220227_125705_storage_rbac extends Migration
 
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $permissionNames = [
-            'storageApiDefaultView',
-            'storageApiDefaultCreate',
-            'storageApiDefaultUpdate',
-            'storageApiDefaultDelete',
-            'storageApiDefaultIndex',
             'storageWebDefaultIndex',
             'storageWebDefaultUploadFile',
             'storageWebDefaultDownloadFile',
@@ -31,25 +26,20 @@ class m220227_125705_storage_rbac extends Migration
             'storageWebDefaultDeleteFolder',
             'storageWebDefaultdeleteFolderRecursive'
         ];
-        
+
         foreach ($permissionNames as $permissionName) {
             $permission = $auth->createPermission($permissionName);
-            $permission->description = ucfirst(str_replace('storage', '', $permissionName));
+            $description = preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionName);
+            $permission->description = ucfirst($description);
             $auth->add($permission);
             $auth->addChild($admin, $permission);
-        }        
-
+        }
     }
 
     public function down()
     {
         $auth = Yii::$app->authManager;
         $permissionNames = [
-            'storageApiDefaultView',
-            'storageApiDefaultCreate',
-            'storageApiDefaultUpdate',
-            'storageApiDefaultDelete',
-            'storageApiDefaultIndex',
             'storageWebDefaultIndex',
             'storageWebDefaultUploadFile',
             'storageWebDefaultDownloadFile',
