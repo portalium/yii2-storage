@@ -39,27 +39,11 @@ class DefaultController extends Controller
                 'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
         ]);
-        $directoryCount = StorageDirectory::find()
-            ->andWhere(['id_parent' => $id_directory])
-            ->count();
-        $fileCount = Storage::find()
-            ->where(['id_directory' => $id_directory])
-            ->count();
-        $directoryPages = ceil($directoryCount / (self::DEFAULT_PAGE_SIZE - 1));
-        $filePages = ceil($fileCount / self::DEFAULT_PAGE_SIZE);
-        $totalPages = max($directoryPages, $filePages);
-        $totalItems = $totalPages * (self::DEFAULT_PAGE_SIZE + (self::DEFAULT_PAGE_SIZE - 1));
-        $pagination = new \yii\data\Pagination([
-            'totalCount' => $totalItems,
-            'pageSize' => self::DEFAULT_PAGE_SIZE,
-        ]);
-
         if (Yii::$app->request->isPjax) {
             return $this->renderAjax('_item-list', [
                 'directoryDataProvider' => $directoryDataProvider,
                 'fileDataProvider' => $fileDataProvider,
                 'isPicker' => $isPicker,
-                'pagination' => $pagination,
             ]);
         }
 
@@ -69,10 +53,8 @@ class DefaultController extends Controller
             'fileDataProvider' => $fileDataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'isPicker' => $isPicker,
-            'pagination' => $pagination,
         ]);
     }
-
 
     public function actionUploadFile()
     {
@@ -151,7 +133,6 @@ class DefaultController extends Controller
         }
         Yii::$app->session->setFlash('error', Module::t('File not found!'));
     }
-
 
     public function actionRenameFile($id)
     {
@@ -501,7 +482,7 @@ class DefaultController extends Controller
         ]);
     }
 
-    public function actionRenameFolder($id, $id_directory)
+    public function actionRenameFolder($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultRenameFolder') && !\Yii::$app->user->can('storageWebDefaultRenameFolderOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));

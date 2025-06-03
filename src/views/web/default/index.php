@@ -325,6 +325,7 @@ $(document).on('click', '#uploadButton', function(e) {
     });
 
     function openRenameFolderModal(id) {
+    event.preventDefault();
     let url = '/storage/default/rename-folder?id=' + id;
     if (currentDirectoryId) {
         url += '&id_directory=' + currentDirectoryId;
@@ -361,7 +362,7 @@ $(document).on('click', '#renameFolderButton', function(e) {
         formData.append('id_directory', 'null'); 
     }
     $.ajax({
-        url: form.action + '?id_directory=' + currentDirectoryId + '&id=' + $('#renameFolderButton').data('id'),
+        url: '/storage/default/rename-folder?id=' + $('#renameFolderButton').data('id') + '&id_directory=' + currentDirectoryId,
         type: 'POST',
         data: formData,
         contentType: false,
@@ -417,43 +418,61 @@ $(document).on('click', '#renameFolderButton', function(e) {
             }
         });
     }
-
-    function downloadFile(id, event) {
-        event.preventDefault();
-        
-        $.post({
-            url: '/storage/default/download-file',
-            data: { id: id },
-            xhrFields: { responseType: 'blob' },
-            headers: {
-                'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(data, status, xhr) {
-                const disposition = xhr.getResponseHeader('Content-Disposition');
-                if (disposition && disposition.indexOf('attachment') !== -1) {
-                    const filename = disposition.split('filename=')[1]?.replace(/["']/g, '') || 'downloaded_file';
-                    const blobUrl = URL.createObjectURL(data);
-                    const a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = decodeURIComponent(filename);
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(blobUrl);
-                } else {
-                    $.pjax.reload({container: "#list-item-pjax"});
-                }
-            },
-            error: function() {
-               $.pjax.reload({container: "#list-item-pjax"});
+function downloadFile(id) {
+    $.post({
+        url: '/storage/default/download-file',
+        data: { id: id },
+        xhrFields: { responseType: 'blob' },
+        headers: {
+            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(data, status, xhr) {
+            const disposition = xhr.getResponseHeader('Content-Disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filename = disposition.split('filename=')[1]?.replace(/["']/g, '') || 'downloaded_file';
+                const blobUrl = URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = decodeURIComponent(filename);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
             }
-        });
-    }
+            const targetUrl = currentDirectoryId 
+                ? '/storage/default/index?id_directory=' + currentDirectoryId 
+                : '/storage/default/index';
+
+            $.pjax.reload({
+                container: "#list-item-pjax",
+                url: targetUrl,
+                replace: false,
+                push: false
+            });
+        },
+        error: function() {
+            const targetUrl = currentDirectoryId 
+                ? '/storage/default/index?id_directory=' + currentDirectoryId 
+                : '/storage/default/index';
+
+            $.pjax.reload({
+                container: "#list-item-pjax",
+                url: targetUrl,
+                replace: false,
+                push: false
+            });
+        }
+    });
+}
 
     function openRenameModal(id) {
+    event.preventDefault();
     let url = '/storage/default/rename-file?id=' + id;
-    if (currentDirectoryId && currentDirectoryId !== 'undefined') {
+    if (currentDirectoryId) {
         url += '&id_directory=' + currentDirectoryId;
+    }
+    else {
+        url += '&id_directory=null';
     }
     
     $.pjax.reload({
@@ -478,14 +497,14 @@ $(document).on('click', '#renameButton', function(e) {
     var form = document.getElementById('renameForm');
     var formData = new FormData(form);
     
-    let urlParams = '?id=' + $('#renameButton').data('id');
-    if (currentDirectoryId && currentDirectoryId !== 'undefined') {
-        formData.append('id_directory', currentDirectoryId);
-        urlParams += '&id_directory=' + currentDirectoryId;
+    if (currentDirectoryId) {
+        formData.append('id_directory', currentDirectoryId); 
+    } else {
+        formData.append('id_directory', 'null'); 
     }
     
-    $.ajax({
-        url: form.action + urlParams,
+     $.ajax({
+        url: form.action,
         type: 'POST',
         data: formData,
         contentType: false,
@@ -511,10 +530,14 @@ $(document).on('click', '#renameButton', function(e) {
     });
 });
     
-function openUpdateModal(id) {
+function openUpdateModal(id ) {
+    event.preventDefault();
     let url = '/storage/default/update-file?id=' + id;
-    if (currentDirectoryId && currentDirectoryId !== 'undefined') {
+    if (currentDirectoryId) {
         url += '&id_directory=' + currentDirectoryId;
+    }
+    else {
+        url += '&id_directory=null';
     }
     
     $.pjax.reload({
@@ -540,14 +563,14 @@ $(document).on('click', '#updateButton', function(e) {
     var form = document.getElementById('updateForm');
     var formData = new FormData(form);
     
-    let urlParams = '?id=' + $('#updateButton').data('id');
-    if (currentDirectoryId && currentDirectoryId !== 'undefined') {
-        formData.append('id_directory', currentDirectoryId);
-        urlParams += '&id_directory=' + currentDirectoryId;
+    if (currentDirectoryId) {
+        formData.append('id_directory', currentDirectoryId); 
+    } else {
+        formData.append('id_directory', 'null'); 
     }
     
     $.ajax({
-        url: form.action + urlParams,
+        url: form.action,
         type: 'POST',
         data: formData,
         contentType: false,
@@ -575,6 +598,7 @@ $(document).on('click', '#updateButton', function(e) {
 
 
 function openShareModal(id) {
+    event.preventDefault();
     let url = '/storage/default/share-file?id=' + id;
     if (currentDirectoryId) {
         url += '&id_directory=' + currentDirectoryId;
@@ -638,7 +662,7 @@ $(document).on('click', '#shareButton', function(e) {
     });
 });
 
-function copyFile(id, event) {
+function copyFile(id) {
     event.preventDefault();
     
     $.ajax({
@@ -671,7 +695,7 @@ function copyFile(id, event) {
     });
 }
 
-function deleteFile(id, event) {
+function deleteFile(id) {
     event.preventDefault();
     
     $.ajax({
