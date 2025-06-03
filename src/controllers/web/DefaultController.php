@@ -51,7 +51,7 @@ class DefaultController extends Controller
         $totalItems = $totalPages * (self::DEFAULT_PAGE_SIZE + (self::DEFAULT_PAGE_SIZE - 1));
         $pagination = new \yii\data\Pagination([
             'totalCount' => $totalItems,
-            'pageSize' => 23,
+            'pageSize' => self::DEFAULT_PAGE_SIZE,
         ]);
 
         if (Yii::$app->request->isPjax) {
@@ -161,7 +161,7 @@ class DefaultController extends Controller
         $model = Storage::findOne($id);
 
         if (!$model) {
-            Yii::$app->session->setFlash('error', Module::t('Model not found!'));
+            Yii::$app->session->setFlash('error', Module::t('File not found!'));
             return '';
         }
         $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');

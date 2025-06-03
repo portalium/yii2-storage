@@ -202,7 +202,6 @@ $this->registerJs(
     };
     
     function openUploadModal() {
-    event.preventDefault();
     let url = '/storage/default/upload-file';
     if (currentDirectoryId) {
         url += '?id_directory=' + currentDirectoryId;
@@ -262,7 +261,7 @@ $(document).on('click', '#uploadButton', function(e) {
 });
 
     function openNewFolderModal(event) {
-        if (event) event.preventDefault();
+        event.preventDefault();
         let url = '/storage/default/new-folder';
         
         if (currentDirectoryId) {
@@ -326,7 +325,6 @@ $(document).on('click', '#uploadButton', function(e) {
     });
 
     function openRenameFolderModal(id) {
-    event.preventDefault();
     let url = '/storage/default/rename-folder?id=' + id;
     if (currentDirectoryId) {
         url += '&id_directory=' + currentDirectoryId;
@@ -390,7 +388,7 @@ $(document).on('click', '#renameFolderButton', function(e) {
 });
 
     function deleteFolder(id) {
-       if (event) event.preventDefault();
+       event.preventDefault();
         
         $.ajax({
             url: '/storage/default/delete-folder?id_directory=' + (currentDirectoryId || 'null') + '&id=' + id,
@@ -421,7 +419,7 @@ $(document).on('click', '#renameFolderButton', function(e) {
     }
 
     function downloadFile(id, event) {
-        if (event) event.preventDefault();
+        event.preventDefault();
         
         $.post({
             url: '/storage/default/download-file',
@@ -453,8 +451,6 @@ $(document).on('click', '#renameFolderButton', function(e) {
     }
 
     function openRenameModal(id) {
-     event.preventDefault();
-    
     let url = '/storage/default/rename-file?id=' + id;
     if (currentDirectoryId && currentDirectoryId !== 'undefined') {
         url += '&id_directory=' + currentDirectoryId;
@@ -516,8 +512,6 @@ $(document).on('click', '#renameButton', function(e) {
 });
     
 function openUpdateModal(id) {
-    event.preventDefault();
-    
     let url = '/storage/default/update-file?id=' + id;
     if (currentDirectoryId && currentDirectoryId !== 'undefined') {
         url += '&id_directory=' + currentDirectoryId;
@@ -581,8 +575,6 @@ $(document).on('click', '#updateButton', function(e) {
 
 
 function openShareModal(id) {
-    event.preventDefault();
-    
     let url = '/storage/default/share-file?id=' + id;
     if (currentDirectoryId) {
         url += '&id_directory=' + currentDirectoryId;
@@ -647,7 +639,7 @@ $(document).on('click', '#shareButton', function(e) {
 });
 
 function copyFile(id, event) {
-    if (event) event.preventDefault();
+    event.preventDefault();
     
     $.ajax({
         url: '/storage/default/copy-file',
@@ -680,7 +672,7 @@ function copyFile(id, event) {
 }
 
 function deleteFile(id, event) {
-    if (event) event.preventDefault();
+    event.preventDefault();
     
     $.ajax({
         url: '/storage/default/delete-file',

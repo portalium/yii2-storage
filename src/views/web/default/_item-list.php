@@ -80,7 +80,6 @@ echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'row']);
 
-// Fix: Use directoryDataProvider->models instead of $directories
 $directories = $directoryDataProvider->models;
 
 foreach ($directories as $model) {
@@ -156,7 +155,6 @@ echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'row']);
 
-// Fix: Use fileDataProvider->models instead of $files
 $files = $fileDataProvider->models;
 
 foreach ($files as $model) {
@@ -258,7 +256,6 @@ echo Html::endTag('div');
 echo Html::beginTag('div', ['class' => 'row']);
 echo Html::beginTag('div', ['class' => 'col-12 d-flex justify-content-start']);
 
-// Get pagination from fileDataProvider
 $pagination = $fileDataProvider->pagination;
 
 echo LinkPager::widget([
