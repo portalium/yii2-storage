@@ -16,17 +16,18 @@ use portalium\data\ActiveDataProvider;
 
 class DefaultController extends Controller
 {
-    const DEFAULT_PAGE_SIZE = 12;
-    
+    const DEFAULT_PAGE_SIZE = 24;
+
     public function actionIndex()
     {
         if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
         $model = new Storage();
         $searchModel = new StorageSearch();
         $id_directory = Yii::$app->request->get('id_directory');
-        $dataProvider = $searchModel->search($this->request->queryParams);
+        $isPicker = Yii::$app->request->get('isPicker', false);
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
@@ -35,10 +36,9 @@ class DefaultController extends Controller
                 ->andWhere(['id_parent' => $id_directory])
                 ->orderBy(['id_directory' => SORT_DESC]),
             'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE-1,
+                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
         ]);
-        $isPicker = Yii::$app->request->get('isPicker', false);
         if (Yii::$app->request->isPjax) {
             return $this->renderAjax('_item-list', [
                 'directoryDataProvider' => $directoryDataProvider,
@@ -46,12 +46,13 @@ class DefaultController extends Controller
                 'isPicker' => $isPicker,
             ]);
         }
+
         return $this->render('index', [
             'model' => $model,
-            'dataProvider' => $dataProvider,
+            'dataProvider' => $searchModel->search($this->request->queryParams),
             'fileDataProvider' => $fileDataProvider,
             'directoryDataProvider' => $directoryDataProvider,
-            'isPicker' => $isPicker
+            'isPicker' => $isPicker,
         ]);
     }
 
@@ -108,7 +109,7 @@ class DefaultController extends Controller
             }
         }
 
-        return $this->renderPartial('_upload-file', [
+        return $this->renderAjax('_upload-file', [
             'model' => $model,
         ]);
     }
@@ -133,13 +134,13 @@ class DefaultController extends Controller
         Yii::$app->session->setFlash('error', Module::t('File not found!'));
     }
 
-
     public function actionRenameFile($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultRenameFile') && !\Yii::$app->user->can('storageWebDefaultRenameFileOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = Storage::findOne($id);
+
         if (!$model) {
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
             return '';
@@ -232,31 +233,41 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultCopyFile') && !\Yii::$app->user->can('storageWebDefaultCopyFileOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
+        if (!Yii::$app->request->isPost) {
+            throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
+        }
+
         $id = Yii::$app->request->post('id');
+
+        if (!$id) {
+            Yii::$app->session->setFlash('error', Module::t('File ID is required!'));
+            return;
+        }
+
         $sourceModel = Storage::findOne($id);
+
         if (!$sourceModel) {
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return '';
+            return;
         }
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
         $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
         $filePath = $storagePath . '/' . $sourceModel->name;
 
-        if (!$sourceModel)
-            Yii::$app->session->setFlash('error', Module::t('File not found!'));
-
         if (!file_exists($filePath)) {
             Storage::deleteAll(['id_storage' => $sourceModel->id_storage]);
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return '';
+            return;
         }
+
         $newModel = $sourceModel->copyFile();
 
-        if ($newModel)
+        if ($newModel) {
             Yii::$app->session->setFlash('success', Module::t('File copied successfully!'));
-        else
+        } else {
             Yii::$app->session->setFlash('error', Module::t('File could not be copied!'));
+        }
     }
 
     public function actionDeleteFile()
@@ -264,24 +275,36 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultDeleteFile') && !\Yii::$app->user->can('storageWebDefaultDeleteFileOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+
+        if (!Yii::$app->request->isPost) {
+            throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
+        }
+
         $fileId = Yii::$app->request->post('id');
 
-        if (Yii::$app->request->isPost && Yii::$app->request->validateCsrfToken()) {
-            $file = Storage::findOne($fileId);
+        if (!$fileId) {
+            Yii::$app->session->setFlash('error', Module::t('File ID is required!'));
+            return;
+        }
 
-            if ($file) {
-                $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+        $file = Storage::findOne($fileId);
 
-                if (!file_exists($path)) {
-                    Storage::deleteAll(['id_storage' => $file->id_storage]);
-                    Yii::$app->session->setFlash('error', Module::t('File not found!'));
-                }
-                if ($file->deleteFile())
-                    Yii::$app->session->setFlash('success', Module::t('File deleted successfully!'));
-                else
-                    Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            } else
+        if ($file) {
+            $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+
+            if (!file_exists($path)) {
+                Storage::deleteAll(['id_storage' => $file->id_storage]);
                 Yii::$app->session->setFlash('error', Module::t('File not found!'));
+                return;
+            }
+
+            if ($file->deleteFile()) {
+                Yii::$app->session->setFlash('success', Module::t('File deleted successfully!'));
+            } else {
+                Yii::$app->session->setFlash('error', Module::t('File could not be deleted!'));
+            }
+        } else {
+            Yii::$app->session->setFlash('error', Module::t('File not found!'));
         }
     }
 
@@ -300,31 +323,31 @@ class DefaultController extends Controller
         $extensions = Yii::$app->request->get('fileExtensions', []);
 
         if (!empty($extensions) && is_array($extensions)) {
-            $orConditions = ['or'];  
+            $orConditions = ['or'];
 
             foreach ($extensions as $extension) {
                 $orConditions[] = ['like', 'name', '.' . ltrim($extension, '.')];
             }
-            
+
             $query->andWhere($orConditions);
         }
 
         $dataProvider = new ActiveDataProvider([
-            'query' => $query,  
+            'query' => $query,
             'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE,  
+                'pageSize' => self::DEFAULT_PAGE_SIZE,
             ],
             'sort' => [
-                'defaultOrder' => ['id_storage' => SORT_DESC], 
+                'defaultOrder' => ['id_storage' => SORT_DESC],
             ],
         ]);
-        
+
         $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
                 ->orderBy(['id_directory' => SORT_DESC]),
             'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE-1,
+                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
         ]);
 
@@ -337,15 +360,15 @@ class DefaultController extends Controller
             ->andWhere(['id_directory' => $id_directory])
             ->orderBy(['id_storage' => SORT_DESC])
             ->all();
-            
+
         $pagination = $dataProvider->getPagination();
 
         return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
-            'dataProvider' => $dataProvider,  
+            'dataProvider' => $dataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'directories' => $directories,
-            'files'  => $files,
-            'pagination'  => $pagination,
+            'files' => $files,
+            'pagination' => $pagination,
         ]);
     }
 
@@ -378,7 +401,6 @@ class DefaultController extends Controller
         $id_directory = Yii::$app->request->get('id_directory');
         $isPicker = Yii::$app->request->get('isPicker', false);
 
-        // File query
         $fileQuery = Storage::find();
         if (!empty($q)) {
             $fileQuery->andFilterWhere(['like', 'title', $q]);
@@ -393,7 +415,6 @@ class DefaultController extends Controller
             'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
         ]);
 
-        // Directory query
         $directoryQuery = \portalium\storage\models\StorageDirectory::find();
         if ($id_directory !== null) {
             $directoryQuery->andWhere(['id_parent' => $id_directory]);
@@ -407,7 +428,7 @@ class DefaultController extends Controller
 
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
             'query' => $directoryQuery,
-            'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE-1],
+            'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE - 1],
             'sort' => ['defaultOrder' => ['id_directory' => SORT_DESC]],
         ]);
 
@@ -460,8 +481,8 @@ class DefaultController extends Controller
             'model' => $model
         ]);
     }
-    
-    public function actionRenameFolder($id, $id_directory)
+
+    public function actionRenameFolder($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultRenameFolder') && !\Yii::$app->user->can('storageWebDefaultRenameFolderOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
@@ -472,7 +493,6 @@ class DefaultController extends Controller
             return '';
         }
         if (Yii::$app->request->post()) {
-            Yii::warning("veriler: ", json_encode(Yii::$app->request->post()));
             $oldName = $model->name;
             if ($model->load(Yii::$app->request->post()) && $model->validate()) {
                 if ($oldName !== $model->name) {
