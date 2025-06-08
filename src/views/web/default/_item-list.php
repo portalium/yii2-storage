@@ -83,6 +83,7 @@ echo Html::beginTag('div', ['class' => 'row']);
 $directories = $directoryDataProvider->models;
 
 foreach ($directories as $model) {
+    /** @var \portalium\storage\models\StorageDirectory $model */
     $folderId = $model->id_directory;
     $folderName = Html::encode($model->name);
 
@@ -164,6 +165,10 @@ foreach ($files as $model) {
     $content .= Html::beginTag('div', [
         'class' => 'file-card',
         'data-id' => $model->id_storage,
+        'attributes' => json_encode([
+            'id_storage' => $model->id_storage,
+            'name' => $model->name,
+        ]),
         'onclick' => $isPicker ? 'handleFileCardClick.call(this, event, ' . $model->id_storage . ')' : null,
     ]);
 

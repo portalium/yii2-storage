@@ -18,6 +18,8 @@ class FilePicker extends InputWidget
     public $callbackName = null;
     public $manage = false;
     public $fileExtensions = null;
+    public $attributes = ['id_storage'];
+    public $isPicker = true;
 
     public function init()
     {
@@ -62,9 +64,9 @@ class FilePicker extends InputWidget
             $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
         }
 
-        
+
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
-        echo Html::script("window.isPicker = true;");  
+        echo Html::script("window.isPicker = true;");
 
         echo Html::button(Module::t('Select File'), [
             'class' => 'btn btn-primary',
@@ -199,22 +201,53 @@ if (!window.openFilePickerModal) {
         });
     };
 }
-
+if (!window.getAttributesFromDOM) {
+    window.getAttributesFromDOM = function(id)  {
+    let el = document.querySelector('[data-id="' + id + '"]');
+    if (!el) return {};
+    try {
+        return JSON.parse(el.getAttribute('attributes') || '{}');
+    } catch (e) {
+        console.error('JSON parse hatası:', e);
+        return {};
+    }
+}
+}
 if (!window.saveSelect) {
     window.saveSelect = function() {
+        let attributes = window.attributes || ['id_storage'];
+        let value;
+
         let selectedFiles = window.multiple ?
             $('.file-card input[type="checkbox"]:checked').map(function() {
                 return $(this).closest('.file-card').data('id');
             }).get() :
             $('.file-card.active').data('id');
-
-        let value = window.isJson
-            ? (window.multiple
-                ? JSON.stringify(selectedFiles.map(id => ({ id_storage: id })))
-                : JSON.stringify({ id_storage: selectedFiles }))
-            : (window.multiple
-                ? selectedFiles.join(',')
-                : selectedFiles);
+        if (window.isJson) {
+            if (window.multiple) {
+                value = JSON.stringify(selectedFiles.map(id => {
+                    let fullData = getAttributesFromDOM(id);
+                    let obj = {};
+                    attributes.forEach(attr => {
+                        obj[attr] = fullData[attr] || null;
+                    });
+                    return obj;
+                }));
+            } else {
+                let fullData = getAttributesFromDOM(selectedFiles);
+                if (attributes.length === 1) {
+                    value = JSON.stringify(fullData[attributes[0]] || null);
+                } else {
+                    let obj = {};
+                    attributes.forEach(attr => {
+                        obj[attr] = fullData[attr] || null;
+                    });
+                    value = JSON.stringify(obj);
+                }
+            }
+        } else {
+            value = window.multiple ? selectedFiles.join(',') : selectedFiles;
+        }
 
         $('#' + window.inputId).val(value);
 
@@ -228,7 +261,7 @@ if (!window.saveSelect) {
 JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
- //
- 
+        //
+
     }
 }
