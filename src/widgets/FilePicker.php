@@ -30,6 +30,37 @@ class FilePicker extends InputWidget
         $this->isJson = $this->options['isJson'] ?? $this->isJson;
         $this->callbackName = $this->options['callbackName'] ?? $this->callbackName;
         $this->fileExtensions = $this->options['fileExtensions'] ?? $this->fileExtensions;
+        $this->isPicker = $this->options['isPicker'] ?? $this->isPicker;
+        
+        // attributes özelliğini çeşitli kaynaklardan al
+        if (isset($this->options['attributes'])) {
+            // 1. Öncelik: options'dan
+            $this->attributes = $this->options['attributes'];
+        } elseif (isset($_GET['attributes'])) {
+            // 2. Öncelik: GET parametresinden
+            $this->attributes = is_string($_GET['attributes']) ? 
+                explode(',', $_GET['attributes']) : $_GET['attributes'];
+        } elseif (isset($_POST['attributes'])) {
+            // 3. Öncelik: POST parametresinden
+            $this->attributes = is_string($_POST['attributes']) ? 
+                explode(',', $_POST['attributes']) : $_POST['attributes'];
+        }
+        // 4. Son olarak varsayılan değer zaten tanımlı
+        
+        // attributes'un array olduğundan emin ol
+        if (!is_array($this->attributes)) {
+            $this->attributes = [$this->attributes];
+        }
+        
+        // Boş veya geçersiz attributes'u temizle
+        $this->attributes = array_filter($this->attributes, function($attr) {
+            return !empty(trim($attr));
+        });
+        
+        // Eğer hiç geçerli attribute kalmadıysa varsayılan değeri kullan
+        if (empty($this->attributes)) {
+            $this->attributes = ['id_storage'];
+        }
     }
 
     public function run()
@@ -64,13 +95,13 @@ class FilePicker extends InputWidget
             $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
         }
 
-
+        // JavaScript global değişkenlerini ayarla
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
-        echo Html::script("window.isPicker = true;");
+        echo Html::script("window.isPicker = " . ($this->isPicker ? 'true' : 'false') . ";");
 
         echo Html::button(Module::t('Select File'), [
             'class' => 'btn btn-primary',
-            'onclick' => 'window.openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '")'
+            'onclick' => 'window.openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ')'
         ]);
 
         $this->registerJsScript();
@@ -129,11 +160,13 @@ const bindModalButtons = function() {
 };
 
 if (!window.openFilePickerModal) {
-    window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName) {
+    window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage']) {
         window.multiple = multiple;
         window.isJson = isJson;
         window.callbackName = callbackName;
         window.inputId = id;
+        window.isPicker = isPicker;
+        window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes]; // Fonksiyon parametresinden al
 
         cleanupModal();
 
@@ -144,7 +177,9 @@ if (!window.openFilePickerModal) {
                 id: id,
                 multiple: multiple,
                 isJson: isJson,
-                fileExtensions: window.fileExtensions
+                fileExtensions: window.fileExtensions,
+                isPicker: isPicker,
+                attributes: window.currentAttributes
             },
             success: function(response) {
                 $('#file-picker-modal').remove();
@@ -165,6 +200,7 @@ if (!window.openFilePickerModal) {
                     forceReflow();
                 });
 
+                // PJAX pagination event'i
                 $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
                     e.preventDefault();
                     $('#file-picker-modal .modal-content').append('<div class="loading-overlay"><div class="spinner"></div></div>');
@@ -176,7 +212,9 @@ if (!window.openFilePickerModal) {
                             id: window.inputId,
                             multiple: window.multiple,
                             isJson: window.isJson,
-                            fileExtensions: window.fileExtensions
+                            fileExtensions: window.fileExtensions,
+                            isPicker: window.isPicker,
+                            attributes: window.currentAttributes
                         },
                         success: function(newContent) {
                             const \$temp = $('<div></div>').append(newContent);
@@ -194,6 +232,78 @@ if (!window.openFilePickerModal) {
                         }
                     });
                 });
+
+                // Search input binding
+                $(document).off('keyup.picker-search').on('keyup.picker-search', '#file-picker-modal #searchFileInput', function() {
+                    let searchTimer;
+                    clearTimeout(searchTimer);
+                    const q = $(this).val().trim();
+                    const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
+                    let finalUrl = '/storage/default/search?q=' + encodeURIComponent(q) + '&isPicker=' + (window.isPicker ? '1' : '0');
+                    
+                    if (fileExtensions) {
+                        finalUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+                    }
+                    
+                    searchTimer = setTimeout(function() {
+                        $.ajax({
+                            url: finalUrl,
+                            type: 'GET',
+                            data: {
+                                id: window.inputId,
+                                multiple: window.multiple,
+                                isJson: window.isJson,
+                                fileExtensions: window.fileExtensions,
+                                isPicker: window.isPicker,
+                                attributes: window.currentAttributes
+                            },
+                            success: function(newContent) {
+                                const \$temp = $('<div></div>').append(newContent);
+                                const newGrid = \$temp.find('.files-container').html();
+                                const newPagination = \$temp.find('.pagination-container').html();
+                                $('#file-picker-modal .files-container').html(newGrid);
+                                $('#file-picker-modal .pagination-container').html(newPagination);
+                                updateFileCard(id_storage);
+                                forceReflow();
+                            }
+                        });
+                    }, 500);
+                });
+
+                // Folder açma işlemi
+                $(document).off('click.picker-folder').on('click.picker-folder', '#file-picker-modal .folder-item', function(e) {
+                    if ($(e.target).closest('.dropdown').length) return;
+                    
+                    const folderId = $(this).data('id');
+                    let url = '/storage/default/picker-modal';
+                    
+                    if (folderId) {
+                        url += '?id_directory=' + folderId;
+                    }
+                    
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        data: {
+                            id: window.inputId,
+                            multiple: window.multiple,
+                            isJson: window.isJson,
+                            fileExtensions: window.fileExtensions,
+                            isPicker: window.isPicker,
+                            id_directory: folderId || null,
+                            attributes: window.currentAttributes
+                        },
+                        success: function(newContent) {
+                            const \$temp = $('<div></div>').append(newContent);
+                            const newGrid = \$temp.find('.files-container').html();
+                            const newPagination = \$temp.find('.pagination-container').html();
+                            $('#file-picker-modal .files-container').html(newGrid);
+                            $('#file-picker-modal .pagination-container').html(newPagination);
+                            updateFileCard(id_storage);
+                            forceReflow();
+                        }
+                    });
+                });
             },
             error: function() {
                 alert('Modal yüklenirken bir hata oluştu.');
@@ -201,21 +311,25 @@ if (!window.openFilePickerModal) {
         });
     };
 }
+
 if (!window.getAttributesFromDOM) {
-    window.getAttributesFromDOM = function(id)  {
-    let el = document.querySelector('[data-id="' + id + '"]');
-    if (!el) return {};
-    try {
-        return JSON.parse(el.getAttribute('attributes') || '{}');
-    } catch (e) {
-        console.error('JSON parse hatası:', e);
-        return {};
+    window.getAttributesFromDOM = function(id) {
+        let el = document.querySelector('[data-id="' + id + '"]');
+        if (!el) return {};
+        try {
+            let attributesStr = el.getAttribute('data-attributes') || el.getAttribute('attributes');
+            return attributesStr ? JSON.parse(attributesStr) : {};
+        } catch (e) {
+            console.error('JSON parse hatası:', e);
+            return {};
+        }
     }
 }
-}
+
 if (!window.saveSelect) {
     window.saveSelect = function() {
-        let attributes = window.attributes || ['id_storage'];
+        // attributes'u fonksiyon parametresinden gelen değerden al
+        let attributes = window.currentAttributes && Array.isArray(window.currentAttributes) ? window.currentAttributes : ['id_storage'];
         let value;
 
         let selectedFiles = window.multiple ?
@@ -223,6 +337,7 @@ if (!window.saveSelect) {
                 return $(this).closest('.file-card').data('id');
             }).get() :
             $('.file-card.active').data('id');
+            
         if (window.isJson) {
             if (window.multiple) {
                 value = JSON.stringify(selectedFiles.map(id => {
@@ -261,7 +376,5 @@ if (!window.saveSelect) {
 JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
-        //
-
     }
 }
