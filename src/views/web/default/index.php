@@ -21,7 +21,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <?php
 echo Html::beginTag('span', [
-    'class' => 'col-md-5 d-flex gap-2 mb-3']);
+    'class' => 'col-md-5 d-flex gap-2 mb-3'
+]);
 
 echo Html::tag(
     'span',
@@ -31,9 +32,9 @@ echo Html::tag(
         'placeholder' => Module::t('Search file..'),
         'data-is-picker' => $isPicker ? '1' : '0',
     ]) .
-    Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), [
-        'class' => 'input-group-text'
-    ]),
+        Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), [
+            'class' => 'input-group-text'
+        ]),
     ['class' => 'input-group']
 );
 
@@ -132,6 +133,9 @@ $this->registerJs(
     <<<JS
     let currentDirectoryId = null;
     let currentIsPicker = $('#searchFileInput').data('is-picker') === 1;
+    let searchTimer;
+    let isSearching = false; // Arama durumunu takip et
+    let originalUrl = window.location.href; // Orijinal URL'yi sakla
     
 
     function isInWidgetContext() {
@@ -171,6 +175,36 @@ $this->registerJs(
         }
     }
     
+    // Ana sayfa URL'ini oluştur
+    function getBaseUrl() {
+        let url = '/storage/default/index';
+        if (currentDirectoryId) {
+            url += '?id_directory=' + currentDirectoryId;
+        }
+        if (currentIsPicker) {
+            const separator = url.includes('?') ? '&' : '?';
+            url += separator + 'isPicker=1';
+        }
+        return url;
+    }
+    
+    // Arama sonrası ana sayfaya dön
+    function returnToMainPage() {
+        isSearching = false;
+        const baseUrl = getBaseUrl();
+        
+        $.pjax.reload({
+            container: '#list-item-pjax',
+            url: baseUrl,
+            push: false,
+            replace: false,
+            timeout: 10000,
+            complete: function() {
+                console.log('Ana sayfaya döndü, pagination restore edildi');
+            }
+        });
+    }
+    
     window.openFolder = function(id_directory, event) {
         if (event && (event.target.classList.contains('folder-ellipsis') || 
             $(event.target).closest('.folder-dropdown-menu').length)) {
@@ -188,6 +222,10 @@ $this->registerJs(
             const separator = url.includes('?') ? '&' : '?';
             url += separator + 'isPicker=1';
         }
+        
+        // Arama durumunu sıfırla
+        isSearching = false;
+        $('#searchFileInput').val('');
         
         $.pjax.reload({
             container: '#list-item-pjax',
@@ -252,14 +290,19 @@ $this->registerJs(
             processData: false,
             success: function() {
                 $('#uploadModal').modal('hide');
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
+                
+                // Upload sonrası arama durumunu koru
+                if (isSearching) {
+                    // Arama aktifse arama sonuçlarını yenile
+                    const searchValue = $('#searchFileInput').val().trim();
+                    if (searchValue) {
+                        performSearch(searchValue);
+                        return;
+                    }
                 }
                 
+                // Normal durumda ana sayfayı yenile
+                const reloadUrl = getBaseUrl();
                 $.pjax.reload({
                     container: "#list-item-pjax",
                     url: reloadUrl,
@@ -323,14 +366,16 @@ $this->registerJs(
             complete: function() {
                 hideModal('newFolderModal');
                 
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
+                // Folder oluşturma sonrası arama durumunu koru
+                if (isSearching) {
+                    const searchValue = $('#searchFileInput').val().trim();
+                    if (searchValue) {
+                        performSearch(searchValue);
+                        return;
+                    }
                 }
                 
+                const reloadUrl = getBaseUrl();
                 $.pjax.reload({
                     container: "#list-item-pjax",
                     url: reloadUrl,
@@ -364,17 +409,7 @@ $this->registerJs(
                 if ($('#renameFolderModal').length) {
                     $('#renameFolderModal').modal('show');
                 } else {
-                    let reloadUrl = '/storage/default/index';
-                    if (currentDirectoryId) {
-                        reloadUrl += '?id_directory=' + currentDirectoryId;
-                    }
-                    if (currentIsPicker) {
-                        reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                    }
-                    $.pjax.reload({
-                        container: "#list-item-pjax",
-                        url: reloadUrl
-                    });
+                    refreshCurrentView();
                 }
             }, 1000);
         }).fail(function(e) {
@@ -406,20 +441,7 @@ $this->registerJs(
             processData: false,
             complete: function() {
                 $('#renameFolderModal').modal('hide');
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-                
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: reloadUrl,
-                    replace: false,
-                    push: false
-                });
+                refreshCurrentView();
             }
         });
     });
@@ -436,20 +458,7 @@ $this->registerJs(
             },
             dataType: 'json',
             complete: function() {
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-                
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: reloadUrl,
-                    replace: false,
-                    push: false,
-                });
+                refreshCurrentView();
             }
         });
     }
@@ -479,36 +488,10 @@ $this->registerJs(
                     URL.revokeObjectURL(blobUrl);
                 }
                 
-                let targetUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    targetUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    targetUrl += (targetUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: targetUrl,
-                    replace: false,
-                    push: false
-                });
+                refreshCurrentView();
             },
             error: function() {
-                let targetUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    targetUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    targetUrl += (targetUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: targetUrl,
-                    replace: false,
-                    push: false
-                });
+                refreshCurrentView();
             }
         });
     }
@@ -536,17 +519,7 @@ $this->registerJs(
                 if ($('#renameModal').length) {
                     $('#renameModal').modal('show');
                 } else {
-                    let reloadUrl = '/storage/default/index';
-                    if (currentDirectoryId) {
-                        reloadUrl += '?id_directory=' + currentDirectoryId;
-                    }
-                    if (currentIsPicker) {
-                        reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                    }
-                    $.pjax.reload({
-                        container: "#list-item-pjax",
-                        url: reloadUrl
-                    });
+                    refreshCurrentView();
                 }
             }, 1000);
         }).fail(function(e) {
@@ -577,20 +550,7 @@ $this->registerJs(
             processData: false,
             complete: function() {
                 $('#renameModal').modal('hide');
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-                
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: reloadUrl,
-                    replace: false,
-                    push: false,
-                });
+                refreshCurrentView();
             }
         });
     });
@@ -618,17 +578,7 @@ $this->registerJs(
                 if ($('#updateModal').length) {
                     $('#updateModal').modal('show');
                 } else {
-                    let reloadUrl = '/storage/default/index';
-                    if (currentDirectoryId) {
-                        reloadUrl += '?id_directory=' + currentDirectoryId;
-                    }
-                    if (currentIsPicker) {
-                        reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                    }
-                    $.pjax.reload({
-                        container: "#list-item-pjax",
-                        url: reloadUrl
-                    });
+                    refreshCurrentView();
                 }
             }, 1000);
         }).fail(function(e) {
@@ -660,24 +610,10 @@ $this->registerJs(
             processData: false,
             complete: function() {
                 $('#updateModal').modal('hide');
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-                
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: reloadUrl,
-                    replace: false,
-                    push: false,
-                });
+                refreshCurrentView();
             }
         });
     });
-
 
     function openShareModal(id) {
         event.preventDefault();
@@ -701,17 +637,7 @@ $this->registerJs(
                 if ($('#shareModal').length) {
                     $('#shareModal').modal('show');
                 } else {
-                    let reloadUrl = '/storage/default/index';
-                    if (currentDirectoryId) {
-                        reloadUrl += '?id_directory=' + currentDirectoryId;
-                    }
-                    if (currentIsPicker) {
-                        reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                    }
-                    $.pjax.reload({
-                        container: "#list-item-pjax",
-                        url: reloadUrl
-                    });
+                    refreshCurrentView();
                 }
             }, 1000);
         }).fail(function(e) {
@@ -743,20 +669,7 @@ $this->registerJs(
             processData: false,
             complete: function() {
                 $('#shareModal').modal('hide');
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-                
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: reloadUrl,
-                    replace: false,
-                    push: false,
-                });
+                refreshCurrentView();
             }
         });
     });
@@ -776,20 +689,7 @@ $this->registerJs(
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-                
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: reloadUrl,
-                    replace: false,
-                    push: false,
-                });
+                refreshCurrentView();
             }
         });
     }
@@ -809,24 +709,63 @@ $this->registerJs(
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
             complete: function() {
-                let reloadUrl = '/storage/default/index';
-                if (currentDirectoryId) {
-                    reloadUrl += '?id_directory=' + currentDirectoryId;
-                }
-                if (currentIsPicker) {
-                    reloadUrl += (reloadUrl.includes('?') ? '&' : '?') + 'isPicker=1';
-                }
-                
-                $.pjax.reload({
-                    container: "#list-item-pjax",
-                    url: reloadUrl,
-                    replace: false,
-                    push: false,
-                });
+                refreshCurrentView();
             }
         });
     }
         
+    // Mevcut görünümü yenile (arama durumunu koru)
+    function refreshCurrentView() {
+        if (isSearching) {
+            const searchValue = $('#searchFileInput').val().trim();
+            if (searchValue) {
+                performSearch(searchValue);
+            } else {
+                returnToMainPage();
+            }
+        } else {
+            const reloadUrl = getBaseUrl();
+            $.pjax.reload({
+                container: "#list-item-pjax",
+                url: reloadUrl,
+                replace: false,
+                push: false,
+            });
+        }
+    }
+    
+    // Arama fonksiyonu
+    function performSearch(query) {
+        if (!query || query.trim() === '') {
+            // Arama kutusu boşsa ana sayfaya dön
+            returnToMainPage();
+            return;
+        }
+        
+        isSearching = true;
+        const isPicker = $('#searchFileInput').data('is-picker') ? 1 : 0;
+        const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
+        let finalUrl = '/storage/default/search?q=' + encodeURIComponent(query) + '&isPicker=' + isPicker;
+        
+        if (currentDirectoryId !== null) {
+            finalUrl += '&id_directory=' + currentDirectoryId;
+        }
+        
+        if (fileExtensions) {
+            finalUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+        }
+        
+        const container = isInWidgetContext() ? '#list-file-pjax' : '#list-item-pjax';
+        
+        $.pjax.reload({
+            container: container,
+            url: finalUrl,
+            timeout: 10000,
+            push: false, // URL'yi değiştirme
+            replace: false
+        });
+    }
+    
     async function refreshFileList() {
         return await new Promise((resolve, reject) => {
             const container = isInWidgetContext() ? '#list-file-pjax' : '#list-item-pjax';
@@ -852,30 +791,20 @@ $this->registerJs(
     }
     
     function bindSearchInput() {
-        let searchTimer;
-        $(document).off('keyup.search').on('keyup.search', '#searchFileInput', function () {
+        $(document).off('keyup.search input.search').on('keyup.search input.search', '#searchFileInput', function () {
             clearTimeout(searchTimer);
             const q = $(this).val().trim();
-            const isPicker = $(this).data('is-picker') ? 1 : 0;
-            const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
-            let finalUrl = '/storage/default/search?q=' + encodeURIComponent(q) + '&isPicker=' + isPicker;
-            
-            if (currentDirectoryId !== null) {
-                finalUrl += '&id_directory=' + currentDirectoryId;
-            }
-            
-            if (fileExtensions) {
-                finalUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
-            }
-            
-            const container = isInWidgetContext() ? '#list-file-pjax' : '#list-item-pjax';
             
             searchTimer = setTimeout(function () {
-                $.pjax.reload({
-                    container: container,
-                    url: finalUrl,
-                    timeout: 10000
-                });
+                if (q === '') {
+                    // Arama kutusu boşaldığında ana sayfaya dön
+                    console.log('Arama kutusu boş, ana sayfaya dönülüyor...');
+                    returnToMainPage();
+                } else {
+                    // Arama yap
+                    console.log('Arama yapılıyor:', q);
+                    performSearch(q);
+                }
             }, 500);
         });
     }
@@ -923,10 +852,12 @@ $this->registerJs(
 
     $(document).ready(function () {
         bindSearchInput();
+        console.log('Search binding initialized');
     });
 
     $(document).on('pjax:end', function () {
         bindSearchInput();
+        console.log('Search binding refreshed after pjax');
     });
 JS,
     \yii\web\View::POS_END
