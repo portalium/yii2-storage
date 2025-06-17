@@ -33,32 +33,30 @@ class FilePicker extends InputWidget
         $this->fileExtensions = $this->options['fileExtensions'] ?? $this->fileExtensions;
         $this->isPicker = $this->options['isPicker'] ?? $this->isPicker;
 
-        // attributes özelliğini çeşitli kaynaklardan al
+
         if (isset($this->options['attributes'])) {
-            // 1. Öncelik: options'dan
+
             $this->attributes = $this->options['attributes'];
         } elseif (isset($_GET['attributes'])) {
-            // 2. Öncelik: GET parametresinden
+
             $this->attributes = is_string($_GET['attributes']) ?
                 explode(',', $_GET['attributes']) : $_GET['attributes'];
         } elseif (isset($_POST['attributes'])) {
-            // 3. Öncelik: POST parametresinden
+
             $this->attributes = is_string($_POST['attributes']) ?
                 explode(',', $_POST['attributes']) : $_POST['attributes'];
         }
-        // 4. Son olarak varsayılan değer zaten tanımlı
 
-        // attributes'un array olduğundan emin ol
         if (!is_array($this->attributes)) {
             $this->attributes = [$this->attributes];
         }
 
-        // Boş veya geçersiz attributes'u temizle
+
         $this->attributes = array_filter($this->attributes, function ($attr) {
             return !empty(trim($attr));
         });
 
-        // Eğer hiç geçerli attribute kalmadıysa varsayılan değeri kullan
+
         if (empty($this->attributes)) {
             $this->attributes = ['id_storage'];
         }
@@ -96,7 +94,7 @@ class FilePicker extends InputWidget
             $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
         }
 
-        // JavaScript global değişkenlerini ayarla
+
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
         echo Html::script("window.isPicker = " . ($this->isPicker ? 'true' : 'false') . ";");
 
@@ -138,16 +136,16 @@ const forceReflow = function() {
     }
 };
 
+
 const cleanupModal = function(modalId = null) {
     if (modalId) {
-        // Belirli bir modalı kapat
         const modalEl = document.getElementById(modalId);
         if (modalEl) {
             const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) {
                 modal.hide();
             }
-            // Modal elementini DOM'dan kaldır
+            
             setTimeout(() => {
                 if (modalEl && modalEl.parentNode) {
                     modalEl.parentNode.removeChild(modalEl);
@@ -155,7 +153,6 @@ const cleanupModal = function(modalId = null) {
             }, 300);
         }
     } else {
-        // Ana file picker modalını kapat
         const modalEl = document.getElementById('file-picker-modal');
         if (modalEl) {
             const modal = bootstrap.Modal.getInstance(modalEl);
@@ -165,10 +162,10 @@ const cleanupModal = function(modalId = null) {
         }
     }
     
-    // Backdrop'ları temizle
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open').css('padding-right', '');
 };
+
 
 const bindModalButtons = function() {
     $(document).off('click.btn-select').on('click.btn-select', '#file-picker-modal .btn-select', function() {
@@ -180,66 +177,189 @@ const bindModalButtons = function() {
     });
 };
 
+
 const bindFileActions = function() {
-    $(document).off('click', '.btn-share').on('click', '.btn-share', function (e) {
+    
+    const context = window.isPicker ? '#file-picker-modal' : document;
+    
+    
+    $(context).off('click.picker-share').on('click.picker-share', '.btn-share', function (e) {
         e.preventDefault();
+        e.stopPropagation();
+        
         let url = $(this).attr('href');
+        let modalId = 'modal-share-' + Date.now();
+        
         $.get(url, function(response) {
-            $('body').append(response);
-            const modal = new bootstrap.Modal(document.getElementById('modal-share'));
-            modal.show();
-        });
-    });
-
-    $(document).off('click', '.btn-rename').on('click', '.btn-rename', function (e) {
-        e.preventDefault();
-        let url = $(this).attr('href');
-        $.get(url, function(response) {
-            $('body').append(response);
-            const modal = new bootstrap.Modal(document.getElementById('modal-rename'));
-            modal.show();
-        });
-    });
-
-    $(document).off('click', '.btn-update').on('click', '.btn-update', function (e) {
-        e.preventDefault();
-        let url = $(this).attr('href');
-        $.get(url, function(response) {
-            $('body').append(response);
-            const modal = new bootstrap.Modal(document.getElementById('modal-update'));
-            modal.show();
-        });
-    });
-
-    // New Folder butonuna özel event listener
-    $(document).off('click', '.btn-new-folder').on('click', '.btn-new-folder', function (e) {
-        e.preventDefault();
-        let url = $(this).attr('href');
-        $.get(url, function(response) {
-            $('body').append(response);
-            const modal = new bootstrap.Modal(document.getElementById('newFolderModal'));
-            modal.show();
+           
+            $('.modal[id^="modal-share"]').remove();
             
-            // New folder modal için özel event bindings
-            bindNewFolderModalEvents();
+            
+            let modifiedResponse = response.replace(/id="modal-share"/g, 'id="' + modalId + '"');
+            
+            $('body').append(modifiedResponse);
+            
+            setTimeout(() => {
+                const shareModalEl = document.getElementById(modalId);
+                if (shareModalEl) {
+                    const shareModal = new bootstrap.Modal(shareModalEl, {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    shareModal.show();
+                    
+                    
+                    shareModalEl.addEventListener('hidden.bs.modal', function() {
+                        setTimeout(() => {
+                            if (shareModalEl && shareModalEl.parentNode) {
+                                shareModalEl.parentNode.removeChild(shareModalEl);
+                            }
+                        }, 100);
+                    });
+                }
+            }, 100);
+        }).fail(function() {
+            console.error('Share modal yüklenemedi');
         });
     });
 
-    // Genel modal kapatma eventi
+    
+    $(context).off('click.picker-rename').on('click.picker-rename', '.btn-rename', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let url = $(this).attr('href');
+        let modalId = 'modal-rename-' + Date.now();
+        
+        $.get(url, function(response) {
+            $('.modal[id^="modal-rename"]').remove();
+            
+            let modifiedResponse = response.replace(/id="renameModal"/g, 'id="' + modalId + '"');
+            
+            $('body').append(modifiedResponse);
+            
+            setTimeout(() => {
+                const renameModalEl = document.getElementById(modalId);
+                if (renameModalEl) {
+                    const renameModal = new bootstrap.Modal(renameModalEl, {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    renameModal.show();
+                    
+                    renameModalEl.addEventListener('hidden.bs.modal', function() {
+                        setTimeout(() => {
+                            if (renameModalEl && renameModalEl.parentNode) {
+                                renameModalEl.parentNode.removeChild(renameModalEl);
+                            }
+                        }, 100);
+                    });
+                }
+            }, 100);
+        }).fail(function() {
+            console.error('Rename modal yüklenemedi');
+        });
+    });
+
+    
+    $(context).off('click.picker-update').on('click.picker-update', '.btn-update', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let url = $(this).attr('href');
+        let modalId = 'modal-update-' + Date.now();
+        
+        $.get(url, function(response) {
+            $('.modal[id^="modal-update"]').remove();
+            
+            let modifiedResponse = response.replace(/id="updateModal"/g, 'id="' + modalId + '"');
+            
+            $('body').append(modifiedResponse);
+            
+            setTimeout(() => {
+                const updateModalEl = document.getElementById(modalId);
+                if (updateModalEl) {
+                    const updateModal = new bootstrap.Modal(updateModalEl, {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    updateModal.show();
+                    
+                    updateModalEl.addEventListener('hidden.bs.modal', function() {
+                        setTimeout(() => {
+                            if (updateModalEl && updateModalEl.parentNode) {
+                                updateModalEl.parentNode.removeChild(updateModalEl);
+                            }
+                        }, 100);
+                    });
+                }
+            }, 100);
+        }).fail(function() {
+            console.error('Update modal yüklenemedi');
+        });
+    });
+
+    
+    $(context).off('click.picker-newfolder').on('click.picker-newfolder', '.btn-new-folder', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let url = $(this).attr('href');
+        let modalId = 'newFolderModal-' + Date.now();
+        
+        $.get(url, function(response) {
+            $('.modal[id^="newFolderModal"]').remove();
+            
+            let modifiedResponse = response.replace(/id="newFolderModal"/g, 'id="' + modalId + '"');
+            
+            $('body').append(modifiedResponse);
+            
+            setTimeout(() => {
+                const newFolderModalEl = document.getElementById(modalId);
+                if (newFolderModalEl) {
+                    const newFolderModal = new bootstrap.Modal(newFolderModalEl, {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    newFolderModal.show();
+                    
+                    
+                    bindNewFolderModalEvents(modalId);
+                    
+                    newFolderModalEl.addEventListener('hidden.bs.modal', function() {
+                        setTimeout(() => {
+                            if (newFolderModalEl && newFolderModalEl.parentNode) {
+                                newFolderModalEl.parentNode.removeChild(newFolderModalEl);
+                            }
+                        }, 100);
+                    });
+                }
+            }, 100);
+        }).fail(function() {
+            console.error('New folder modal yüklenemedi');
+        });
+    });
+
+   
     $(document).off('hidden.bs.modal.widget').on('hidden.bs.modal.widget', '.modal', function () {
-        // Sadece child modalları kaldır, ana file-picker-modal'ı koruy
         if (this.id !== 'file-picker-modal') {
-            $(this).remove();
+            setTimeout(() => {
+                if (this && this.parentNode) {
+                    this.parentNode.removeChild(this);
+                }
+            }, 100);
         }
     });
 };
 
-const bindNewFolderModalEvents = function() {
-    // Create Folder butonu için event
-    $(document).off('click.createFolder').on('click.createFolder', '#createFolderButton', function(e) {
+
+const bindNewFolderModalEvents = function(modalId) {
+    const modalSelector = '#' + modalId;
+    
+    $(document).off('click.createFolder-' + modalId).on('click.createFolder-' + modalId, modalSelector + ' #createFolderButton', function(e) {
         e.preventDefault();
         
-        const form = $('#newFolderForm');
+        const form = $(modalSelector + ' #newFolderForm');
         const formData = new FormData(form[0]);
         
         $.ajax({
@@ -249,22 +369,18 @@ const bindNewFolderModalEvents = function() {
             processData: false,
             contentType: false,
             success: function(response) {
-                // Modalı kapat
-                cleanupModal('newFolderModal');
+                cleanupModal(modalId);
                 
-                // File picker'ı yenile
                 if (typeof window.refreshFilePicker === 'function') {
                     window.refreshFilePicker();
                 } else {
-                    // Manuel olarak sayfayı yenile veya pjax ile güncelle
                     $.pjax.reload('#file-picker-pjax', {
                         timeout: 30000
                     });
                 }
                 
-                // Başarı mesajı göster
                 if (response.success) {
-                    alert('Klasör başarıyla oluşturuldu.');
+                    console.log('Klasör başarıyla oluşturuldu.');
                 }
             },
             error: function(xhr, status, error) {
@@ -274,11 +390,11 @@ const bindNewFolderModalEvents = function() {
         });
     });
     
-    // Close butonları için event
-    $(document).off('click.closeNewFolder').on('click.closeNewFolder', '#newFolderModal .btn-danger, #newFolderModal .close', function() {
-        cleanupModal('newFolderModal');
+    $(document).off('click.closeNewFolder-' + modalId).on('click.closeNewFolder-' + modalId, modalSelector + ' .btn-danger, ' + modalSelector + ' .close', function() {
+        cleanupModal(modalId);
     });
 };
+
 
 if (!window.openFilePickerModal) {
     window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage']) {
@@ -308,18 +424,21 @@ if (!window.openFilePickerModal) {
 
                 requestAnimationFrame(() => {
                     const modalEl = document.getElementById('file-picker-modal');
-                    const modal = new bootstrap.Modal(modalEl, {
-                        backdrop: 'static',
-                        keyboard: false
-                    });
-                    document.body.classList.add('modal-open');
-                    document.body.style.paddingRight = '0px';
-                    modal.show();
-
-                    updateFileCard(id_storage);
-                    bindModalButtons();
-                    bindFileActions();
-                    forceReflow();
+                    if (modalEl) {
+                        const modal = new bootstrap.Modal(modalEl, {
+                            backdrop: 'static',
+                            keyboard: false
+                        });
+                        
+                        modal.show();
+                        
+                        modalEl.addEventListener('shown.bs.modal', function() {
+                            updateFileCard(id_storage);
+                            bindModalButtons();
+                            bindFileActions();
+                            forceReflow();
+                        });
+                    }
                 });
             },
             error: function() {
@@ -329,7 +448,7 @@ if (!window.openFilePickerModal) {
     };
 }
 
-// File picker'ı yenileme fonksiyonu
+
 if (!window.refreshFilePicker) {
     window.refreshFilePicker = function() {
         const pickerContainer = $('#file-picker-modal .files-container');
@@ -355,6 +474,7 @@ if (!window.refreshFilePicker) {
     };
 }
 
+
 if (!window.getAttributesFromDOM) {
     window.getAttributesFromDOM = function(id) {
         let el = document.querySelector('[data-id="' + id + '"]');
@@ -368,6 +488,7 @@ if (!window.getAttributesFromDOM) {
         }
     }
 }
+
 
 if (!window.saveSelect) {
     window.saveSelect = function() {
@@ -419,5 +540,5 @@ JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
     }
-    
 }
+?>
