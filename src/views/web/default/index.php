@@ -862,5 +862,5 @@ $this->registerJs(
 JS,
     \yii\web\View::POS_END
 );
-// 
+ 
 ?>

@@ -419,5 +419,5 @@ JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
     }
-    //
+    
 }
