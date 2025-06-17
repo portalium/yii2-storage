@@ -10,6 +10,7 @@ use portalium\theme\widgets\Html;
 use portalium\theme\widgets\InputWidget;
 use portalium\data\ActiveDataProvider;
 
+
 class FilePicker extends InputWidget
 {
     public $dataProvider;
@@ -31,32 +32,32 @@ class FilePicker extends InputWidget
         $this->callbackName = $this->options['callbackName'] ?? $this->callbackName;
         $this->fileExtensions = $this->options['fileExtensions'] ?? $this->fileExtensions;
         $this->isPicker = $this->options['isPicker'] ?? $this->isPicker;
-        
+
         // attributes özelliğini çeşitli kaynaklardan al
         if (isset($this->options['attributes'])) {
             // 1. Öncelik: options'dan
             $this->attributes = $this->options['attributes'];
         } elseif (isset($_GET['attributes'])) {
             // 2. Öncelik: GET parametresinden
-            $this->attributes = is_string($_GET['attributes']) ? 
+            $this->attributes = is_string($_GET['attributes']) ?
                 explode(',', $_GET['attributes']) : $_GET['attributes'];
         } elseif (isset($_POST['attributes'])) {
             // 3. Öncelik: POST parametresinden
-            $this->attributes = is_string($_POST['attributes']) ? 
+            $this->attributes = is_string($_POST['attributes']) ?
                 explode(',', $_POST['attributes']) : $_POST['attributes'];
         }
         // 4. Son olarak varsayılan değer zaten tanımlı
-        
+
         // attributes'un array olduğundan emin ol
         if (!is_array($this->attributes)) {
             $this->attributes = [$this->attributes];
         }
-        
+
         // Boş veya geçersiz attributes'u temizle
-        $this->attributes = array_filter($this->attributes, function($attr) {
+        $this->attributes = array_filter($this->attributes, function ($attr) {
             return !empty(trim($attr));
         });
-        
+
         // Eğer hiç geçerli attribute kalmadıysa varsayılan değeri kullan
         if (empty($this->attributes)) {
             $this->attributes = ['id_storage'];
@@ -137,14 +138,34 @@ const forceReflow = function() {
     }
 };
 
-const cleanupModal = function() {
-    const modalEl = document.getElementById('file-picker-modal');
-    if (modalEl) {
-        const modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) {
-            modal.hide();
+const cleanupModal = function(modalId = null) {
+    if (modalId) {
+        // Belirli bir modalı kapat
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
+            }
+            // Modal elementini DOM'dan kaldır
+            setTimeout(() => {
+                if (modalEl && modalEl.parentNode) {
+                    modalEl.parentNode.removeChild(modalEl);
+                }
+            }, 300);
+        }
+    } else {
+        // Ana file picker modalını kapat
+        const modalEl = document.getElementById('file-picker-modal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) {
+                modal.hide();
+            }
         }
     }
+    
+    // Backdrop'ları temizle
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open').css('padding-right', '');
 };
@@ -159,6 +180,106 @@ const bindModalButtons = function() {
     });
 };
 
+const bindFileActions = function() {
+    $(document).off('click', '.btn-share').on('click', '.btn-share', function (e) {
+        e.preventDefault();
+        let url = $(this).attr('href');
+        $.get(url, function(response) {
+            $('body').append(response);
+            const modal = new bootstrap.Modal(document.getElementById('modal-share'));
+            modal.show();
+        });
+    });
+
+    $(document).off('click', '.btn-rename').on('click', '.btn-rename', function (e) {
+        e.preventDefault();
+        let url = $(this).attr('href');
+        $.get(url, function(response) {
+            $('body').append(response);
+            const modal = new bootstrap.Modal(document.getElementById('modal-rename'));
+            modal.show();
+        });
+    });
+
+    $(document).off('click', '.btn-update').on('click', '.btn-update', function (e) {
+        e.preventDefault();
+        let url = $(this).attr('href');
+        $.get(url, function(response) {
+            $('body').append(response);
+            const modal = new bootstrap.Modal(document.getElementById('modal-update'));
+            modal.show();
+        });
+    });
+
+    // New Folder butonuna özel event listener
+    $(document).off('click', '.btn-new-folder').on('click', '.btn-new-folder', function (e) {
+        e.preventDefault();
+        let url = $(this).attr('href');
+        $.get(url, function(response) {
+            $('body').append(response);
+            const modal = new bootstrap.Modal(document.getElementById('newFolderModal'));
+            modal.show();
+            
+            // New folder modal için özel event bindings
+            bindNewFolderModalEvents();
+        });
+    });
+
+    // Genel modal kapatma eventi
+    $(document).off('hidden.bs.modal.widget').on('hidden.bs.modal.widget', '.modal', function () {
+        // Sadece child modalları kaldır, ana file-picker-modal'ı koruy
+        if (this.id !== 'file-picker-modal') {
+            $(this).remove();
+        }
+    });
+};
+
+const bindNewFolderModalEvents = function() {
+    // Create Folder butonu için event
+    $(document).off('click.createFolder').on('click.createFolder', '#createFolderButton', function(e) {
+        e.preventDefault();
+        
+        const form = $('#newFolderForm');
+        const formData = new FormData(form[0]);
+        
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                // Modalı kapat
+                cleanupModal('newFolderModal');
+                
+                // File picker'ı yenile
+                if (typeof window.refreshFilePicker === 'function') {
+                    window.refreshFilePicker();
+                } else {
+                    // Manuel olarak sayfayı yenile veya pjax ile güncelle
+                    $.pjax.reload('#file-picker-pjax', {
+                        timeout: 30000
+                    });
+                }
+                
+                // Başarı mesajı göster
+                if (response.success) {
+                    alert('Klasör başarıyla oluşturuldu.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Klasör oluşturma hatası:', error);
+                alert('Klasör oluşturulurken bir hata oluştu.');
+            }
+        });
+    });
+    
+    // Close butonları için event
+    $(document).off('click.closeNewFolder').on('click.closeNewFolder', '#newFolderModal .btn-danger, #newFolderModal .close', function() {
+        cleanupModal('newFolderModal');
+    });
+};
+
 if (!window.openFilePickerModal) {
     window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage']) {
         window.multiple = multiple;
@@ -166,7 +287,7 @@ if (!window.openFilePickerModal) {
         window.callbackName = callbackName;
         window.inputId = id;
         window.isPicker = isPicker;
-        window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes]; // Fonksiyon parametresinden al
+        window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes];
 
         cleanupModal();
 
@@ -197,118 +318,40 @@ if (!window.openFilePickerModal) {
 
                     updateFileCard(id_storage);
                     bindModalButtons();
+                    bindFileActions();
                     forceReflow();
-                });
-
-                // PJAX pagination event'i
-                $(document).off('click.pjax-pagination').on('click.pjax-pagination', '#file-picker-modal .pagination a', function(e) {
-                    e.preventDefault();
-                    $('#file-picker-modal .modal-content').append('<div class="loading-overlay"><div class="spinner"></div></div>');
-
-                    $.ajax({
-                        url: $(this).attr('href'),
-                        type: 'GET',
-                        data: {
-                            id: window.inputId,
-                            multiple: window.multiple,
-                            isJson: window.isJson,
-                            fileExtensions: window.fileExtensions,
-                            isPicker: window.isPicker,
-                            attributes: window.currentAttributes
-                        },
-                        success: function(newContent) {
-                            const \$temp = $('<div></div>').append(newContent);
-                            const newGrid = \$temp.find('.files-container').html();
-                            const newPagination = \$temp.find('.pagination-container').html();
-                            $('#file-picker-modal .files-container').html(newGrid);
-                            $('#file-picker-modal .pagination-container').html(newPagination);
-                            $('.loading-overlay').remove();
-                            updateFileCard(id_storage);
-                            forceReflow();
-                        },
-                        error: function() {
-                            $('.loading-overlay').remove();
-                            alert('Sayfa yüklenirken bir hata oluştu.');
-                        }
-                    });
-                });
-
-                // Search input binding
-                $(document).off('keyup.picker-search').on('keyup.picker-search', '#file-picker-modal #searchFileInput', function() {
-                    let searchTimer;
-                    clearTimeout(searchTimer);
-                    const q = $(this).val().trim();
-                    const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
-                    let finalUrl = '/storage/default/search?q=' + encodeURIComponent(q) + '&isPicker=' + (window.isPicker ? '1' : '0');
-                    
-                    if (fileExtensions) {
-                        finalUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
-                    }
-                    
-                    searchTimer = setTimeout(function() {
-                        $.ajax({
-                            url: finalUrl,
-                            type: 'GET',
-                            data: {
-                                id: window.inputId,
-                                multiple: window.multiple,
-                                isJson: window.isJson,
-                                fileExtensions: window.fileExtensions,
-                                isPicker: window.isPicker,
-                                attributes: window.currentAttributes
-                            },
-                            success: function(newContent) {
-                                const \$temp = $('<div></div>').append(newContent);
-                                const newGrid = \$temp.find('.files-container').html();
-                                const newPagination = \$temp.find('.pagination-container').html();
-                                $('#file-picker-modal .files-container').html(newGrid);
-                                $('#file-picker-modal .pagination-container').html(newPagination);
-                                updateFileCard(id_storage);
-                                forceReflow();
-                            }
-                        });
-                    }, 500);
-                });
-
-                // Folder açma işlemi
-                $(document).off('click.picker-folder').on('click.picker-folder', '#file-picker-modal .folder-item', function(e) {
-                    if ($(e.target).closest('.dropdown').length) return;
-                    
-                    const folderId = $(this).data('id');
-                    let url = '/storage/default/picker-modal';
-                    
-                    if (folderId) {
-                        url += '?id_directory=' + folderId;
-                    }
-                    
-                    $.ajax({
-                        url: url,
-                        type: 'GET',
-                        data: {
-                            id: window.inputId,
-                            multiple: window.multiple,
-                            isJson: window.isJson,
-                            fileExtensions: window.fileExtensions,
-                            isPicker: window.isPicker,
-                            id_directory: folderId || null,
-                            attributes: window.currentAttributes
-                        },
-                        success: function(newContent) {
-                            const \$temp = $('<div></div>').append(newContent);
-                            const newGrid = \$temp.find('.files-container').html();
-                            const newPagination = \$temp.find('.pagination-container').html();
-                            $('#file-picker-modal .files-container').html(newGrid);
-                            $('#file-picker-modal .pagination-container').html(newPagination);
-                            updateFileCard(id_storage);
-                            forceReflow();
-                        }
-                    });
                 });
             },
             error: function() {
                 alert('Modal yüklenirken bir hata oluştu.');
             }
         });
+    };
+}
+
+// File picker'ı yenileme fonksiyonu
+if (!window.refreshFilePicker) {
+    window.refreshFilePicker = function() {
+        const pickerContainer = $('#file-picker-modal .files-container');
+        if (pickerContainer.length) {
+            $.ajax({
+                url: '/storage/default/picker-content',
+                type: 'GET',
+                data: {
+                    fileExtensions: window.fileExtensions,
+                    isPicker: window.isPicker,
+                    attributes: window.currentAttributes
+                },
+                success: function(response) {
+                    pickerContainer.html(response);
+                    bindFileActions();
+                    forceReflow();
+                },
+                error: function() {
+                    console.error('File picker yenilenemedi.');
+                }
+            });
+        }
     };
 }
 
@@ -328,7 +371,6 @@ if (!window.getAttributesFromDOM) {
 
 if (!window.saveSelect) {
     window.saveSelect = function() {
-        // attributes'u fonksiyon parametresinden gelen değerden al
         let attributes = window.currentAttributes && Array.isArray(window.currentAttributes) ? window.currentAttributes : ['id_storage'];
         let value;
 
@@ -377,4 +419,5 @@ JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
     }
+    
 }
