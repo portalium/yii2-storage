@@ -131,11 +131,14 @@ Pjax::end();
 <?php
 $this->registerJs(
     <<<JS
+    
+    window.isPicker = false;
+    
     let currentDirectoryId = null;
     let currentIsPicker = $('#searchFileInput').data('is-picker') === 1;
     let searchTimer;
-    let isSearching = false; // Arama durumunu takip et
-    let originalUrl = window.location.href; // Orijinal URL'yi sakla
+    let isSearching = false;
+    let originalUrl = window.location.href;
     
 
     function isInWidgetContext() {
@@ -144,38 +147,47 @@ $this->registerJs(
                window.frameElement !== null;
     }
     
-    
+  
     function showModal(modalId, timeout = 200) {
         setTimeout(function() {
             const modalEl = document.getElementById(modalId);
             if (modalEl) {
-                if (typeof bootstrap !== 'undefined') {
-                    const modalInstance = new bootstrap.Modal(modalEl);
-                    modalInstance.show();
-                } else {
-                    $(modalEl).modal('show');
+                
+                const existingModal = bootstrap.Modal.getInstance(modalEl);
+                if (existingModal) {
+                    existingModal.dispose();
                 }
+                
+                
+                const modalInstance = new bootstrap.Modal(modalEl, {
+                    backdrop: true,
+                    keyboard: true
+                });
+                modalInstance.show();
             } else {
                 console.warn('Modal element not found:', modalId);
             }
         }, timeout);
     }
     
-
+  
     function hideModal(modalId) {
         const modalEl = document.getElementById(modalId);
         if (modalEl) {
-            if (typeof bootstrap !== 'undefined') {
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) modalInstance.hide();
-                else $(modalEl).modal('hide');
-            } else {
-                $(modalEl).modal('hide');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
             }
+            
+           
+            setTimeout(() => {
+                if (modalEl && modalEl.parentNode && modalEl.id !== 'file-picker-modal') {
+                    modalEl.parentNode.removeChild(modalEl);
+                }
+            }, 300);
         }
     }
     
-    // Ana sayfa URL'ini oluştur
     function getBaseUrl() {
         let url = '/storage/default/index';
         if (currentDirectoryId) {
@@ -188,7 +200,6 @@ $this->registerJs(
         return url;
     }
     
-    // Arama sonrası ana sayfaya dön
     function returnToMainPage() {
         isSearching = false;
         const baseUrl = getBaseUrl();
@@ -217,13 +228,11 @@ $this->registerJs(
             url += '?id_directory=' + id_directory;
         }
         
-        // isPicker durumunu koru
         if (currentIsPicker) {
             const separator = url.includes('?') ? '&' : '?';
             url += separator + 'isPicker=1';
         }
         
-        // Arama durumunu sıfırla
         isSearching = false;
         $('#searchFileInput').val('');
         
@@ -249,7 +258,6 @@ $this->registerJs(
             url += '?id_directory=null';
         }
         
-        // isPicker durumunu koru
         if (currentIsPicker) {
             url += '&isPicker=1';
         }
@@ -260,7 +268,7 @@ $this->registerJs(
             url: url,
         }).done(function() {
             setTimeout(function() {
-                $('#uploadModal').modal('show');
+                showModal('uploadModal');
             }, 1000);
         }).fail(function(e) {
             console.log('Error Modal:', e);
@@ -289,11 +297,9 @@ $this->registerJs(
             contentType: false,
             processData: false,
             success: function() {
-                $('#uploadModal').modal('hide');
+                hideModal('uploadModal');
                 
-                // Upload sonrası arama durumunu koru
                 if (isSearching) {
-                    // Arama aktifse arama sonuçlarını yenile
                     const searchValue = $('#searchFileInput').val().trim();
                     if (searchValue) {
                         performSearch(searchValue);
@@ -301,7 +307,6 @@ $this->registerJs(
                     }
                 }
                 
-                // Normal durumda ana sayfayı yenile
                 const reloadUrl = getBaseUrl();
                 $.pjax.reload({
                     container: "#list-item-pjax",
@@ -313,6 +318,7 @@ $this->registerJs(
         });
     });
 
+   
     function openNewFolderModal(event) {
         event.preventDefault();
         let url = '/storage/default/new-folder';
@@ -332,6 +338,9 @@ $this->registerJs(
             url: url,
             type: 'GET',
             success: function(response) {
+                
+                $('.modal[id^="newFolderModal"]').remove();
+                
                 $('#new-folder-pjax').html(response);
                 showModal('newFolderModal');
             },
@@ -366,7 +375,6 @@ $this->registerJs(
             complete: function() {
                 hideModal('newFolderModal');
                 
-                // Folder oluşturma sonrası arama durumunu koru
                 if (isSearching) {
                     const searchValue = $('#searchFileInput').val().trim();
                     if (searchValue) {
@@ -386,6 +394,7 @@ $this->registerJs(
         });
     });
 
+   
     function openRenameFolderModal(id) {
         event.preventDefault();
         let url = '/storage/default/rename-folder?id=' + id;
@@ -400,20 +409,25 @@ $this->registerJs(
             url += '&isPicker=1';
         }
         
-        $.pjax.reload({
-            container: '#rename-folder-pjax',
-            type: 'GET',
+        $.ajax({
             url: url,
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#renameFolderModal').length) {
-                    $('#renameFolderModal').modal('show');
-                } else {
-                    refreshCurrentView();
-                }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
+            type: 'GET',
+            success: function(response) {
+                $('.modal[id^="renameFolderModal"]').remove();
+                
+                $('#rename-folder-pjax').html(response);
+                setTimeout(function () {
+                    if ($('#renameFolderModal').length) {
+                        showModal('renameFolderModal');
+                    } else {
+                        refreshCurrentView();
+                    }
+                }, 100);
+            },
+            error: function(e) {
+                console.log('Error Modal:', e);
+                refreshCurrentView();
+            }
         });
     }
 
@@ -440,7 +454,7 @@ $this->registerJs(
             contentType: false,
             processData: false,
             complete: function() {
-                $('#renameFolderModal').modal('hide');
+                hideModal('renameFolderModal');
                 refreshCurrentView();
             }
         });
@@ -496,6 +510,7 @@ $this->registerJs(
         });
     }
 
+   
     function openRenameModal(id) {
         event.preventDefault();
         let url = '/storage/default/rename-file?id=' + id;
@@ -510,20 +525,25 @@ $this->registerJs(
             url += '&isPicker=1';
         }
         
-        $.pjax.reload({
-            container: '#rename-file-pjax',
-            type: 'GET',
+        $.ajax({
             url: url,
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#renameModal').length) {
-                    $('#renameModal').modal('show');
-                } else {
-                    refreshCurrentView();
-                }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
+            type: 'GET',
+            success: function(response) {
+                $('.modal[id^="renameModal"]').remove();
+                
+                $('#rename-file-pjax').html(response);
+                setTimeout(function () {
+                    if ($('#renameModal').length) {
+                        showModal('renameModal');
+                    } else {
+                        refreshCurrentView();
+                    }
+                }, 100);
+            },
+            error: function(e) {
+                console.log('Error Modal:', e);
+                refreshCurrentView();
+            }
         });
     }
 
@@ -549,12 +569,13 @@ $this->registerJs(
             contentType: false,
             processData: false,
             complete: function() {
-                $('#renameModal').modal('hide');
+                hideModal('renameModal');
                 refreshCurrentView();
             }
         });
     });
         
+ 
     function openUpdateModal(id ) {
         event.preventDefault();
         let url = '/storage/default/update-file?id=' + id;
@@ -569,20 +590,25 @@ $this->registerJs(
             url += '&isPicker=1';
         }
         
-        $.pjax.reload({
-            container: '#update-file-pjax',
-            type: 'GET',
+        $.ajax({
             url: url,
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#updateModal').length) {
-                    $('#updateModal').modal('show');
-                } else {
-                    refreshCurrentView();
-                }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
+            type: 'GET',
+            success: function(response) {
+                $('.modal[id^="updateModal"]').remove();
+                
+                $('#update-file-pjax').html(response);
+                setTimeout(function () {
+                    if ($('#updateModal').length) {
+                        showModal('updateModal');
+                    } else {
+                        refreshCurrentView();
+                    }
+                }, 100);
+            },
+            error: function(e) {
+                console.log('Error Modal:', e);
+                refreshCurrentView();
+            }
         });
     }
 
@@ -609,12 +635,13 @@ $this->registerJs(
             contentType: false,
             processData: false,
             complete: function() {
-                $('#updateModal').modal('hide');
+                hideModal('updateModal');
                 refreshCurrentView();
             }
         });
     });
 
+   
     function openShareModal(id) {
         event.preventDefault();
         let url = '/storage/default/share-file?id=' + id;
@@ -628,20 +655,25 @@ $this->registerJs(
             url += '&isPicker=1';
         }
         
-        $.pjax.reload({
-            container: '#share-file-pjax',
-            type: 'GET',
+        $.ajax({
             url: url,
-        }).done(function() {
-            setTimeout(function () {
-                if ($('#shareModal').length) {
-                    $('#shareModal').modal('show');
-                } else {
-                    refreshCurrentView();
-                }
-            }, 1000);
-        }).fail(function(e) {
-            console.log('Error Modal:', e);
+            type: 'GET',
+            success: function(response) {
+                $('.modal[id^="shareModal"]').remove();
+                
+                $('#share-file-pjax').html(response);
+                setTimeout(function () {
+                    if ($('#shareModal').length) {
+                        showModal('shareModal');
+                    } else {
+                        refreshCurrentView();
+                    }
+                }, 100);
+            },
+            error: function(e) {
+                console.log('Error Modal:', e);
+                refreshCurrentView();
+            }
         });
     }
 
@@ -668,7 +700,7 @@ $this->registerJs(
             contentType: false,
             processData: false,
             complete: function() {
-                $('#shareModal').modal('hide');
+                hideModal('shareModal');
                 refreshCurrentView();
             }
         });
@@ -714,7 +746,6 @@ $this->registerJs(
         });
     }
         
-    // Mevcut görünümü yenile (arama durumunu koru)
     function refreshCurrentView() {
         if (isSearching) {
             const searchValue = $('#searchFileInput').val().trim();
@@ -734,10 +765,8 @@ $this->registerJs(
         }
     }
     
-    // Arama fonksiyonu
     function performSearch(query) {
         if (!query || query.trim() === '') {
-            // Arama kutusu boşsa ana sayfaya dön
             returnToMainPage();
             return;
         }
@@ -761,7 +790,7 @@ $this->registerJs(
             container: container,
             url: finalUrl,
             timeout: 10000,
-            push: false, // URL'yi değiştirme
+            push: false,
             replace: false
         });
     }
@@ -797,11 +826,9 @@ $this->registerJs(
             
             searchTimer = setTimeout(function () {
                 if (q === '') {
-                    // Arama kutusu boşaldığında ana sayfaya dön
                     console.log('Arama kutusu boş, ana sayfaya dönülüyor...');
                     returnToMainPage();
                 } else {
-                    // Arama yap
                     console.log('Arama yapılıyor:', q);
                     performSearch(q);
                 }
@@ -809,6 +836,7 @@ $this->registerJs(
         });
     }
     
+   
     $(document).off('click.fileActions').on('click.fileActions', '.file-action', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -840,7 +868,7 @@ $this->registerJs(
         }
     });
     
-    
+   
     window.openRenameModal = openRenameModal;
     window.openUpdateModal = openUpdateModal;
     window.openShareModal = openShareModal;
