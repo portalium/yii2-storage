@@ -32,32 +32,32 @@ class FilePicker extends InputWidget
         $this->callbackName = $this->options['callbackName'] ?? $this->callbackName;
         $this->fileExtensions = $this->options['fileExtensions'] ?? $this->fileExtensions;
         $this->isPicker = $this->options['isPicker'] ?? $this->isPicker;
-        
+
         // attributes özelliğini çeşitli kaynaklardan al
         if (isset($this->options['attributes'])) {
             // 1. Öncelik: options'dan
             $this->attributes = $this->options['attributes'];
         } elseif (isset($_GET['attributes'])) {
             // 2. Öncelik: GET parametresinden
-            $this->attributes = is_string($_GET['attributes']) ? 
+            $this->attributes = is_string($_GET['attributes']) ?
                 explode(',', $_GET['attributes']) : $_GET['attributes'];
         } elseif (isset($_POST['attributes'])) {
             // 3. Öncelik: POST parametresinden
-            $this->attributes = is_string($_POST['attributes']) ? 
+            $this->attributes = is_string($_POST['attributes']) ?
                 explode(',', $_POST['attributes']) : $_POST['attributes'];
         }
         // 4. Son olarak varsayılan değer zaten tanımlı
-        
+
         // attributes'un array olduğundan emin ol
         if (!is_array($this->attributes)) {
             $this->attributes = [$this->attributes];
         }
-        
+
         // Boş veya geçersiz attributes'u temizle
-        $this->attributes = array_filter($this->attributes, function($attr) {
+        $this->attributes = array_filter($this->attributes, function ($attr) {
             return !empty(trim($attr));
         });
-        
+
         // Eğer hiç geçerli attribute kalmadıysa varsayılan değeri kullan
         if (empty($this->attributes)) {
             $this->attributes = ['id_storage'];
@@ -419,4 +419,5 @@ JS;
 
         $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
     }
+    //
 }
