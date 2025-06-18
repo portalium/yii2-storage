@@ -17,6 +17,7 @@ StorageAsset::register($this);
 
 $this->title = Module::t('Storage');
 $this->params['breadcrumbs'][] = $this->title;
+
 ?>
 
 <?php
@@ -40,24 +41,26 @@ echo Html::tag(
 
 echo Button::widget([
     'label' => Html::tag('i', '', ['class' => 'fa fa-upload me-2', 'aria-hidden' => 'true']) .
-        Html::tag('span', Module::t('Upload')),
+        Html::tag('span', Module::t('Upload'), ['class' => 'btn-text']),
     'encodeLabel' => false,
     'options' => [
         'type' => 'button',
         'class' => 'btn btn-success btn-md d-flex',
         'onclick' => 'openUploadModal(event)',
+        'id' => 'uploadBtn',
     ],
 ]);
 
 echo Button::widget([
     'label' => Html::tag('i', '', ['class' => 'fa fa-folder me-2', 'aria-hidden' => 'true']) .
-        Html::tag('span', Module::t('New Folder')),
+        Html::tag('span', Module::t('New Folder'), ['class' => 'btn-text']),
     'encodeLabel' => false,
     'options' => [
         'type' => 'button',
         'class' => 'btn btn-primary btn-md d-flex',
         'style' => 'min-width: 106px;',
         'onclick' => 'openNewFolderModal(event)',
+        'id' => 'newFolderBtn',
     ],
 ]);
 echo Html::endTag('span');
@@ -250,6 +253,11 @@ $this->registerJs(
     };
     
     function openUploadModal() {
+       
+        const uploadBtn = $('#uploadBtn');
+     
+        uploadBtn.addClass('btn-loading');
+        
         let url = '/storage/default/upload-file';
         if (currentDirectoryId) {
             url += '?id_directory=' + currentDirectoryId;
@@ -268,10 +276,15 @@ $this->registerJs(
             url: url,
         }).done(function() {
             setTimeout(function() {
+               
+                uploadBtn.removeClass('btn-loading');
+                
                 showModal('uploadModal');
             }, 1000);
         }).fail(function(e) {
             console.log('Error Modal:', e);
+            
+            uploadBtn.removeClass('btn-loading');
         });
     }
 
@@ -321,6 +334,11 @@ $this->registerJs(
    
     function openNewFolderModal(event) {
         event.preventDefault();
+        
+       
+        const newFolderBtn = $('#newFolderBtn');
+        newFolderBtn.addClass('btn-loading');
+        
         let url = '/storage/default/new-folder';
         
         if (currentDirectoryId) {
@@ -338,6 +356,8 @@ $this->registerJs(
             url: url,
             type: 'GET',
             success: function(response) {
+               
+                newFolderBtn.removeClass('btn-loading');
                 
                 $('.modal[id^="newFolderModal"]').remove();
                 
@@ -346,8 +366,10 @@ $this->registerJs(
             },
             error: function(e) {
                 console.error('Error loading new folder modal:', e);
+                
+                newFolderBtn.removeClass('btn-loading');
             }
-        });
+        }); 
     }
     
     $(document).on('click', '#createFolderButton', function(e) {
@@ -890,5 +912,5 @@ $this->registerJs(
 JS,
     \yii\web\View::POS_END
 );
- 
+
 ?>
