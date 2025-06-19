@@ -24,7 +24,12 @@ echo Html::beginTag('div', ['class' => 'col-12']);
 
 if ($id_directory !== null) {
     $parentId = $parentDirectory && $parentDirectory->id_parent ? $parentDirectory->id_parent : null;
-    $backUrl = $parentId ? ['index', 'id_directory' => $parentId] : ['index'];
+
+    // DÜZELTME: isPicker parametresini ekledim isPicker yoktu 
+    $backUrl = $parentId ?
+        ['index', 'id_directory' => $parentId, 'isPicker' => $isPicker] :
+        ['index', 'isPicker' => $isPicker];
+
     echo Html::a(
         Html::tag('i', '', ['class' => 'fa fa-chevron-left']) . ' ',
         $backUrl,
@@ -50,9 +55,10 @@ if ($id_directory !== null) {
     echo Html::beginTag('nav', ['class' => 'ml-3 d-inline-block']);
     echo Html::beginTag('ol', ['class' => 'breadcrumb d-inline-flex mb-0']);
 
+
     echo Html::tag(
         'li',
-        Html::a(Module::t('Home'), ['index'], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = null;']),
+        Html::a(Module::t('Home'), ['index', 'isPicker' => $isPicker], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = null;']),
         ['class' => 'breadcrumb-item']
     );
 
@@ -60,9 +66,10 @@ if ($id_directory !== null) {
         if ($i === count($pathItems) - 1) {
             echo Html::tag('li', Html::encode($item['name']), ['class' => 'breadcrumb-item active']);
         } else {
+
             echo Html::tag(
                 'li',
-                Html::a(Html::encode($item['name']), ['index', 'id_directory' => $item['id']], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . $item['id'] . ';']),
+                Html::a(Html::encode($item['name']), ['index', 'id_directory' => $item['id'], 'isPicker' => $isPicker], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . $item['id'] . ';']),
                 ['class' => 'breadcrumb-item']
             );
         }
@@ -105,36 +112,39 @@ foreach ($directories as $model) {
         'onclick' => "toggleFolderMenu(event, $folderId)",
     ]);
 
-    $content .= Dropdown::widget([
-        'items' => [
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'openRenameFolderModal(' . $folderId . ')'],
-            ],
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'openMoveFolderModal(' . $folderId . ')'],
-            ],
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'openShareFolderModal(' . $folderId . ')'],
-            ],
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => [
-                    'onclick' => 'deleteFolder(' . $folderId . '); return false;',
-                    'data-id' => $folderId,
-                ],
+
+    $dropdownItems = [
+        [
+            'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
+            'url' => '#',
+            'encode' => false,
+            'linkOptions' => ['onclick' => 'openRenameFolderModal(' . $folderId . ')'],
+        ],
+        [
+            'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
+            'url' => '#',
+            'encode' => false,
+            'linkOptions' => ['onclick' => 'openMoveFolderModal(' . $folderId . ')'],
+        ],
+        [
+            'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
+            'url' => '#',
+            'encode' => false,
+            'linkOptions' => ['onclick' => 'openShareFolderModal(' . $folderId . ')'],
+        ],
+        [
+            'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
+            'url' => '#',
+            'encode' => false,
+            'linkOptions' => [
+                'onclick' => 'deleteFolder(' . $folderId . '); return false;',
+                'data-id' => $folderId,
             ],
         ],
+    ];
+
+    $content .= Dropdown::widget([
+        'items' => $dropdownItems,
         'options' => [
             'class' => 'folder-dropdown-menu',
             'id' => 'context-folder-menu-' . $folderId,
@@ -167,9 +177,11 @@ foreach ($files as $model) {
     $content .= Html::beginTag('div', [
         'class' => 'file-card',
         'data-id' => $model->id_storage,
-        'attributes' => json_encode([
+        'data-attributes' => json_encode([
             'id_storage' => $model->id_storage,
             'name' => $model->name,
+            'title' => $model->title,
+            'mime_type' => $model->mime_type,
         ]),
         'onclick' => $isPicker ? 'handleFileCardClick.call(this, event, ' . $model->id_storage . ')' : null,
     ]);
@@ -195,6 +207,7 @@ foreach ($files as $model) {
     ]);
 
     $content .= Html::endTag('div');
+
 
     $content .= Dropdown::widget([
         'items' => [
@@ -265,10 +278,19 @@ echo Html::beginTag('div', ['class' => 'col-12 d-flex justify-content-start']);
 
 $pagination = $fileDataProvider->pagination;
 
+
+$paginationParams = [];
+if ($isPicker) {
+    $paginationParams['isPicker'] = 1;
+}
+if ($id_directory) {
+    $paginationParams['id_directory'] = $id_directory;
+}
+
 echo LinkPager::widget([
     'pagination' => $pagination,
     'options' => ['class' => 'pagination pagination-custom'],
-    'linkOptions' => ['data-pjax' => true],
+    'linkOptions' => array_merge(['data-pjax' => true], $paginationParams),
     'prevPageLabel' => '<i class="fa fa-chevron-left"></i>',
     'nextPageLabel' => '<i class="fa fa-chevron-right"></i>',
     'maxButtonCount' => 5,
@@ -283,7 +305,17 @@ echo Html::endTag('div');
 
 echo Html::endTag('div');
 
+
 $this->registerJs(<<<JS
+
+window.currentIsPicker = $isPicker ? true : false;
+if ($isPicker) {
+    if (typeof window.setPickerContext === 'function') {
+        window.setPickerContext(true);
+    }
+    $('body').addClass('picker-context');
+}
+
 if (typeof selectFile === 'undefined') {
     window.selectFile = function (element, id_storage) {
         if (window.multiple) {
@@ -307,9 +339,11 @@ window.handleFileCardClick = function(event, id_storage) {
         event.target.classList.contains('file-icon') || 
         event.target.classList.contains('file-title')) { 
         var checkbox = document.querySelector(".file-select-checkbox[value='" + id_storage + "']");
-        checkbox.checked = !checkbox.checked;
-        if (typeof selectFile === "function") {
-            selectFile(checkbox, id_storage);
+        if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+            if (typeof selectFile === "function") {
+                selectFile(checkbox, id_storage);
+            }
         }
     }
 };
