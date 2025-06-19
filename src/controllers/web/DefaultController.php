@@ -313,24 +313,50 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultPickerModal') && !\Yii::$app->user->can('storageWebDefaultPickerModalOwn')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        $query = Storage::find();
-        $searchModel = new StorageSearch();
+
+      
         $id_directory = Yii::$app->request->get('id_directory');
-        $dataProvider = $searchModel->search($this->request->queryParams);
-        $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
+        $fileExtensions = Yii::$app->request->get('fileExtensions', []);
+        $isPicker = Yii::$app->request->get('isPicker', true);
+        $multiple = Yii::$app->request->get('multiple', false);
+        $isJson = Yii::$app->request->get('isJson', true);
+        $attributes = Yii::$app->request->get('attributes', ['id_storage']);
 
-        $extensions = Yii::$app->request->get('fileExtensions', []);
+   
+        Yii::info('PickerModal Parameters: ' . json_encode([
+            'id_directory' => $id_directory,
+            'fileExtensions' => $fileExtensions,
+            'isPicker' => $isPicker,
+            'multiple' => $multiple,
+            'isJson' => $isJson,
+            'attributes' => $attributes
+        ]), 'storage-debug');
 
-        if (!empty($extensions) && is_array($extensions)) {
+    
+        $query = Storage::find();
+        
+
+        $query->andWhere(['id_directory' => $id_directory]);
+
+
+        if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
-
-            foreach ($extensions as $extension) {
-                $orConditions[] = ['like', 'name', '.' . ltrim($extension, '.')];
+            foreach ($fileExtensions as $extension) {
+               
+                $cleanExtension = '.' . ltrim($extension, '.');
+                $orConditions[] = ['like', 'name', $cleanExtension];
             }
-
             $query->andWhere($orConditions);
+            
+ 
+            Yii::info('Applied file extension filter: ' . json_encode($orConditions), 'storage-debug');
         }
+
+    
+        $searchModel = new StorageSearch();
+        $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $fileDataProvider->query = $query; 
+        $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -342,6 +368,7 @@ class DefaultController extends Controller
             ],
         ]);
 
+    
         $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
@@ -351,15 +378,31 @@ class DefaultController extends Controller
             ],
         ]);
 
+
         $directories = StorageDirectory::find()
             ->andWhere(['id_parent' => $id_directory])
             ->orderBy(['id_directory' => SORT_DESC])
             ->all();
 
-        $files = Storage::find()
-            ->andWhere(['id_directory' => $id_directory])
-            ->orderBy(['id_storage' => SORT_DESC])
-            ->all();
+   
+        $filesQuery = Storage::find()->andWhere(['id_directory' => $id_directory]);
+        
+        if (!empty($fileExtensions) && is_array($fileExtensions)) {
+            $orConditions = ['or'];
+            foreach ($fileExtensions as $extension) {
+                $cleanExtension = '.' . ltrim($extension, '.');
+                $orConditions[] = ['like', 'name', $cleanExtension];
+            }
+            $filesQuery->andWhere($orConditions);
+        }
+        
+        $files = $filesQuery->orderBy(['id_storage' => SORT_DESC])->all();
+
+      
+        Yii::info('Found files count: ' . count($files), 'storage-debug');
+        if (!empty($fileExtensions)) {
+            Yii::info('File extensions filter applied. Files found: ' . count($files), 'storage-debug');
+        }
 
         $pagination = $dataProvider->getPagination();
 
@@ -369,6 +412,72 @@ class DefaultController extends Controller
             'directories' => $directories,
             'files' => $files,
             'pagination' => $pagination,
+            'fileExtensions' => $fileExtensions, // View'a gönder
+            'isPicker' => $isPicker,
+            'multiple' => $multiple,
+            'isJson' => $isJson,
+            'attributes' => $attributes,
+        ]);
+    }
+
+    /**
+     * Picker içeriğini yeniler (PJAX için)
+     */
+    public function actionPickerContent()
+    {
+        if (!\Yii::$app->user->can('storageWebDefaultPickerContent') && !\Yii::$app->user->can('storageWebDefaultPickerContentOwn')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
+
+        $id_directory = Yii::$app->request->get('id_directory');
+        $fileExtensions = Yii::$app->request->get('fileExtensions', []);
+        $isPicker = Yii::$app->request->get('isPicker', true);
+        $attributes = Yii::$app->request->get('attributes', ['id_storage']);
+
+
+        $query = Storage::find();
+        
+   
+        $query->andWhere(['id_directory' => $id_directory]);
+
+
+        if (!empty($fileExtensions) && is_array($fileExtensions)) {
+            $orConditions = ['or'];
+            foreach ($fileExtensions as $extension) {
+                $cleanExtension = '.' . ltrim($extension, '.');
+                $orConditions[] = ['like', 'name', $cleanExtension];
+            }
+            $query->andWhere($orConditions);
+        }
+
+      
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSize' => self::DEFAULT_PAGE_SIZE,
+            ],
+            'sort' => [
+                'defaultOrder' => ['id_storage' => SORT_DESC],
+            ],
+        ]);
+
+        
+        $directoryDataProvider = new ActiveDataProvider([
+            'query' => StorageDirectory::find()
+                ->andWhere(['id_parent' => $id_directory])
+                ->orderBy(['id_directory' => SORT_DESC]),
+            'pagination' => [
+                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
+            ],
+        ]);
+
+        return $this->renderAjax('@portalium/storage/widgets/views/_picker-content', [
+            'dataProvider' => $dataProvider,
+            'directoryDataProvider' => $directoryDataProvider,
+            'fileExtensions' => $fileExtensions,
+            'isPicker' => $isPicker,
+            'attributes' => $attributes,
         ]);
     }
 
@@ -400,6 +509,7 @@ class DefaultController extends Controller
         $q = Yii::$app->request->get('q', '');
         $id_directory = Yii::$app->request->get('id_directory');
         $isPicker = Yii::$app->request->get('isPicker', false);
+        $fileExtensions = Yii::$app->request->get('fileExtensions', []);
 
         $fileQuery = Storage::find();
         if (!empty($q)) {
@@ -407,6 +517,16 @@ class DefaultController extends Controller
         }
         if ($id_directory !== null) {
             $fileQuery->andWhere(['id_directory' => $id_directory]);
+        }
+
+        // FILE EXTENSION FİLTRELEME - SEARCH'DE DE UYGULA
+        if (!empty($fileExtensions) && is_array($fileExtensions)) {
+            $orConditions = ['or'];
+            foreach ($fileExtensions as $extension) {
+                $cleanExtension = '.' . ltrim($extension, '.');
+                $orConditions[] = ['like', 'name', $cleanExtension];
+            }
+            $fileQuery->andWhere($orConditions);
         }
 
         $fileDataProvider = new \yii\data\ActiveDataProvider([
@@ -560,5 +680,56 @@ class DefaultController extends Controller
             $file->delete();
         }
         $folder->delete();
+    }
+
+    /**
+     * Debug action - Test file extension filtering
+     * Bu action'ı geliştirme sırasında filtrelemeyi test etmek için kullanabilirsiniz
+     */
+    public function actionTestFilter()
+    {
+        if (!YII_DEBUG) {
+            throw new \yii\web\NotFoundHttpException();
+        }
+
+        $fileExtensions = Yii::$app->request->get('extensions', ['.jpg', '.png']);
+        $id_directory = Yii::$app->request->get('id_directory', null);
+
+        echo "<h3>File Extension Filter Test</h3>";
+        echo "<p>Testing extensions: " . implode(', ', $fileExtensions) . "</p>";
+        echo "<p>Directory ID: " . ($id_directory ?? 'null') . "</p>";
+
+        // Test query
+        $query = Storage::find();
+        $query->andWhere(['id_directory' => $id_directory]);
+
+        if (!empty($fileExtensions) && is_array($fileExtensions)) {
+            $orConditions = ['or'];
+            foreach ($fileExtensions as $extension) {
+                $cleanExtension = '.' . ltrim($extension, '.');
+                $orConditions[] = ['like', 'name', $cleanExtension];
+            }
+            $query->andWhere($orConditions);
+        }
+
+        echo "<h4>Generated SQL:</h4>";
+        echo "<pre>" . $query->createCommand()->rawSql . "</pre>";
+
+        $files = $query->all();
+        echo "<h4>Found Files (" . count($files) . "):</h4>";
+        echo "<ul>";
+        foreach ($files as $file) {
+            echo "<li>" . $file->name . " (Title: " . $file->title . ")</li>";
+        }
+        echo "</ul>";
+
+        // Test all files in directory
+        $allFiles = Storage::find()->andWhere(['id_directory' => $id_directory])->all();
+        echo "<h4>All Files in Directory (" . count($allFiles) . "):</h4>";
+        echo "<ul>";
+        foreach ($allFiles as $file) {
+            echo "<li>" . $file->name . " (Title: " . $file->title . ")</li>";
+        }
+        echo "</ul>";
     }
 }

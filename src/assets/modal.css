@@ -285,3 +285,195 @@
 .pagination-custom li a .fa {
     font-size: 12px;
 }
+
+
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.9;
+    overflow: hidden;
+    height: 38px !important;
+}
+
+.btn-loading .btn-text {
+    opacity: 0 !important;
+    visibility: hidden;
+}
+
+.btn-loading i {
+    opacity: 0 !important;
+    visibility: hidden;
+}
+
+/* Modern CSS-only loading animation */
+.btn-loading::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px !important;
+    height: 16px !important;
+    margin: -8px 0 0 -8px !important;
+    border: 2px solid rgba(40, 167, 69, 0.2);
+    border-top: 2px solid #28a745;
+    border-radius: 50%;
+    animation: btn-spin 1.2s linear infinite;
+    z-index: 10;
+}
+
+.btn-loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px !important;
+    height: 10px !important;
+    margin: -5px 0 0 -5px !important;
+    border: 2px solid rgba(40, 167, 69, 0.3);
+    border-left: 2px solid #28a745;
+    border-radius: 50%;
+    animation: btn-spin-reverse 0.8s linear infinite;
+    z-index: 11;
+}
+
+/* Success button için daha parlak yeşil */
+.btn-success.btn-loading::before {
+    border-color: rgba(34, 139, 34, 0.2);
+    border-top-color: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+}
+
+.btn-success.btn-loading::after {
+    border-color: rgba(34, 139, 34, 0.3);
+    border-left-color: #22c55e;
+    box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+}
+
+/* Primary button için siyah/gri tonları */
+.btn-primary.btn-loading::before {
+    border-color: rgba(52, 58, 64, 0.2);
+    border-top-color: #343a40;
+    box-shadow: 0 0 8px rgba(52, 58, 64, 0.4);
+}
+
+.btn-primary.btn-loading::after {
+    border-color: rgba(52, 58, 64, 0.3);
+    border-left-color: #343a40;
+    box-shadow: 0 0 4px rgba(52, 58, 64, 0.3);
+}
+
+@keyframes btn-spin {
+    0% { 
+        transform: rotate(0deg); 
+    }
+    100% { 
+        transform: rotate(360deg); 
+    }
+}
+
+@keyframes btn-spin-reverse {
+    0% { 
+        transform: rotate(360deg); 
+    }
+    100% { 
+        transform: rotate(0deg); 
+    }
+}
+
+/* Glow pulse effect */
+.btn-loading {
+    animation: btn-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes btn-glow {
+    from {
+        box-shadow: 0 0 5px rgba(40, 167, 69, 0.2), 0 0 10px rgba(40, 167, 69, 0.1);
+    }
+    to {
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.4), 0 0 20px rgba(40, 167, 69, 0.2);
+    }
+}
+
+.btn-success.btn-loading {
+    animation: btn-glow-success 2s ease-in-out infinite alternate;
+}
+
+@keyframes btn-glow-success {
+    from {
+        box-shadow: 0 0 5px rgba(34, 197, 94, 0.3), 0 0 10px rgba(34, 197, 94, 0.1);
+    }
+    to {
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.5), 0 0 25px rgba(34, 197, 94, 0.2);
+    }
+}
+
+.btn-primary.btn-loading {
+    animation: btn-glow-primary 2s ease-in-out infinite alternate;
+}
+
+@keyframes btn-glow-primary {
+    from {
+        box-shadow: 0 0 5px rgba(52, 58, 64, 0.3), 0 0 10px rgba(52, 58, 64, 0.1);
+    }
+    to {
+        box-shadow: 0 0 15px rgba(52, 58, 64, 0.5), 0 0 25px rgba(52, 58, 64, 0.2);
+    }
+}
+
+.input-group {
+    height: 38px !important;
+}
+
+.input-group .form-control {
+    height: 38px !important;
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+}
+
+.input-group-text {
+    height: 38px !important;
+    padding: 6px 12px !important;
+    display: flex;
+    align-items: center;
+}
+
+.btn-md {
+    height: 38px !important;
+    padding: 6px 16px !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    min-height: 38px !important;
+}
+
+.btn-md.d-flex {
+    align-items: center !important;
+    justify-content: center !important;
+}
+.btn-md .fa {
+    font-size: 14px !important;
+}
+
+.btn-md .btn-text {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+}
+
+#uploadBtn {
+    height: 38px !important;
+    min-width: 100px !important;
+}
+
+#newFolderBtn {
+    height: 38px !important;
+    min-width: 120px !important;
+}
+
+.col-md-5.d-flex.gap-2.mb-3 {
+    align-items: center !important;
+}
+
+#newFolderBtn .btn-text {
+    font-size: 12px !important;
+}
+
+
