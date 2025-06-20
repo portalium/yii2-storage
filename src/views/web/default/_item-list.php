@@ -14,6 +14,20 @@ use yii\widgets\LinkPager;
 $id_directory = Yii::$app->request->get('id_directory');
 $parentDirectory = null;
 
+
+$fileExtensions = Yii::$app->request->get('fileExtensions', []);
+
+
+if (is_string($fileExtensions) && !empty($fileExtensions)) {
+    $fileExtensions = explode(',', $fileExtensions);
+}
+if (!is_array($fileExtensions)) {
+    $fileExtensions = [];
+}
+
+
+$fileExtensionsParam = !empty($fileExtensions) ? implode(',', $fileExtensions) : '';
+
 if ($id_directory !== null) {
     $parentDirectory = StorageDirectory::findOne($id_directory);
 }
@@ -25,14 +39,18 @@ echo Html::beginTag('div', ['class' => 'col-12']);
 if ($id_directory !== null) {
     $parentId = $parentDirectory && $parentDirectory->id_parent ? $parentDirectory->id_parent : null;
 
-    // DÜZELTME: isPicker parametresini ekledim isPicker yoktu 
-    $backUrl = $parentId ?
-        ['index', 'id_directory' => $parentId, 'isPicker' => $isPicker] :
-        ['index', 'isPicker' => $isPicker];
+ 
+    $backUrlParams = ['index', 'isPicker' => $isPicker];
+    if ($parentId) {
+        $backUrlParams['id_directory'] = $parentId;
+    }
+    if (!empty($fileExtensionsParam)) {
+        $backUrlParams['fileExtensions'] = $fileExtensionsParam;
+    }
 
     echo Html::a(
         Html::tag('i', '', ['class' => 'fa fa-chevron-left']) . ' ',
-        $backUrl,
+        $backUrlParams,
         ['class' => 'btn btn-lg', 'data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . ($parentId ? $parentId : 'null') . ';']
     );
 
@@ -56,9 +74,14 @@ if ($id_directory !== null) {
     echo Html::beginTag('ol', ['class' => 'breadcrumb d-inline-flex mb-0']);
 
 
+    $homeUrlParams = ['index', 'isPicker' => $isPicker];
+    if (!empty($fileExtensionsParam)) {
+        $homeUrlParams['fileExtensions'] = $fileExtensionsParam;
+    }
+
     echo Html::tag(
         'li',
-        Html::a(Module::t('Home'), ['index', 'isPicker' => $isPicker], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = null;']),
+        Html::a(Module::t('Home'), $homeUrlParams, ['data-pjax' => true, 'onclick' => 'currentDirectoryId = null;']),
         ['class' => 'breadcrumb-item']
     );
 
@@ -66,10 +89,15 @@ if ($id_directory !== null) {
         if ($i === count($pathItems) - 1) {
             echo Html::tag('li', Html::encode($item['name']), ['class' => 'breadcrumb-item active']);
         } else {
+           
+            $breadcrumbUrlParams = ['index', 'id_directory' => $item['id'], 'isPicker' => $isPicker];
+            if (!empty($fileExtensionsParam)) {
+                $breadcrumbUrlParams['fileExtensions'] = $fileExtensionsParam;
+            }
 
             echo Html::tag(
                 'li',
-                Html::a(Html::encode($item['name']), ['index', 'id_directory' => $item['id'], 'isPicker' => $isPicker], ['data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . $item['id'] . ';']),
+                Html::a(Html::encode($item['name']), $breadcrumbUrlParams, ['data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . $item['id'] . ';']),
                 ['class' => 'breadcrumb-item']
             );
         }
@@ -104,14 +132,13 @@ foreach ($directories as $model) {
     $content .= Html::beginTag('div', [
         'class' => 'folder-container',
         'data-id' => $folderId,
-        'onclick' => "openFolder($folderId, event)",
+        'onclick' => "openFolder($folderId, event, '" . $fileExtensionsParam . "')",
     ]);
 
     $content .= Html::tag('i', '', [
         'class' => 'fa fa-ellipsis-h folder-ellipsis',
         'onclick' => "toggleFolderMenu(event, $folderId)",
     ]);
-
 
     $dropdownItems = [
         [
@@ -208,7 +235,6 @@ foreach ($files as $model) {
 
     $content .= Html::endTag('div');
 
-
     $content .= Dropdown::widget([
         'items' => [
             [
@@ -278,13 +304,16 @@ echo Html::beginTag('div', ['class' => 'col-12 d-flex justify-content-start']);
 
 $pagination = $fileDataProvider->pagination;
 
-
 $paginationParams = [];
 if ($isPicker) {
     $paginationParams['isPicker'] = 1;
 }
 if ($id_directory) {
     $paginationParams['id_directory'] = $id_directory;
+}
+
+if (!empty($fileExtensionsParam)) {
+    $paginationParams['fileExtensions'] = $fileExtensionsParam;
 }
 
 echo LinkPager::widget([
@@ -305,16 +334,44 @@ echo Html::endTag('div');
 
 echo Html::endTag('div');
 
-
 $this->registerJs(<<<JS
 
 window.currentIsPicker = $isPicker ? true : false;
+window.currentFileExtensions = '$fileExtensionsParam';
+
 if ($isPicker) {
     if (typeof window.setPickerContext === 'function') {
         window.setPickerContext(true);
     }
     $('body').addClass('picker-context');
 }
+
+
+window.openFolder = function(folderId, event, fileExtensions) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    var url = '$isPicker' == '1' ? 
+        '/storage/default/index?id_directory=' + folderId + '&isPicker=1' :
+        '/storage/default/index?id_directory=' + folderId;
+    
+
+    if (fileExtensions && fileExtensions.length > 0) {
+        url += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+    }
+    
+    window.currentDirectoryId = folderId;
+    
+
+    $.pjax({
+        url: url,
+        container: '#list-item-pjax',
+        push: true,
+        replace: false
+    });
+};
 
 if (typeof selectFile === 'undefined') {
     window.selectFile = function (element, id_storage) {

@@ -150,17 +150,14 @@ $this->registerJs(
                window.frameElement !== null;
     }
     
-  
     function showModal(modalId, timeout = 200) {
         setTimeout(function() {
             const modalEl = document.getElementById(modalId);
             if (modalEl) {
-                
                 const existingModal = bootstrap.Modal.getInstance(modalEl);
                 if (existingModal) {
                     existingModal.dispose();
                 }
-                
                 
                 const modalInstance = new bootstrap.Modal(modalEl, {
                     backdrop: true,
@@ -173,7 +170,6 @@ $this->registerJs(
         }, timeout);
     }
     
-  
     function hideModal(modalId) {
         const modalEl = document.getElementById(modalId);
         if (modalEl) {
@@ -182,7 +178,6 @@ $this->registerJs(
                 modalInstance.hide();
             }
             
-           
             setTimeout(() => {
                 if (modalEl && modalEl.parentNode && modalEl.id !== 'file-picker-modal') {
                     modalEl.parentNode.removeChild(modalEl);
@@ -191,6 +186,7 @@ $this->registerJs(
         }
     }
     
+   
     function getBaseUrl() {
         let url = '/storage/default/index';
         if (currentDirectoryId) {
@@ -200,6 +196,14 @@ $this->registerJs(
             const separator = url.includes('?') ? '&' : '?';
             url += separator + 'isPicker=1';
         }
+        
+       
+        const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
+        if (fileExtensions) {
+            const separator = url.includes('?') ? '&' : '?';
+            url += separator + 'fileExtensions=' + encodeURIComponent(fileExtensions);
+        }
+        
         return url;
     }
     
@@ -236,6 +240,13 @@ $this->registerJs(
             url += separator + 'isPicker=1';
         }
         
+     
+        const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
+        if (fileExtensions) {
+            const separator = url.includes('?') ? '&' : '?';
+            url += separator + 'fileExtensions=' + encodeURIComponent(fileExtensions);
+        }
+        
         isSearching = false;
         $('#searchFileInput').val('');
         
@@ -253,9 +264,7 @@ $this->registerJs(
     };
     
     function openUploadModal() {
-       
         const uploadBtn = $('#uploadBtn');
-     
         uploadBtn.addClass('btn-loading');
         
         let url = '/storage/default/upload-file';
@@ -276,14 +285,11 @@ $this->registerJs(
             url: url,
         }).done(function() {
             setTimeout(function() {
-               
                 uploadBtn.removeClass('btn-loading');
-                
                 showModal('uploadModal');
             }, 1000);
         }).fail(function(e) {
             console.log('Error Modal:', e);
-            
             uploadBtn.removeClass('btn-loading');
         });
     }
@@ -331,11 +337,9 @@ $this->registerJs(
         });
     });
 
-   
     function openNewFolderModal(event) {
         event.preventDefault();
         
-       
         const newFolderBtn = $('#newFolderBtn');
         newFolderBtn.addClass('btn-loading');
         
@@ -356,17 +360,13 @@ $this->registerJs(
             url: url,
             type: 'GET',
             success: function(response) {
-               
                 newFolderBtn.removeClass('btn-loading');
-                
                 $('.modal[id^="newFolderModal"]').remove();
-                
                 $('#new-folder-pjax').html(response);
                 showModal('newFolderModal');
             },
             error: function(e) {
                 console.error('Error loading new folder modal:', e);
-                
                 newFolderBtn.removeClass('btn-loading');
             }
         }); 
@@ -416,7 +416,6 @@ $this->registerJs(
         });
     });
 
-   
     function openRenameFolderModal(id) {
         event.preventDefault();
         let url = '/storage/default/rename-folder?id=' + id;
@@ -436,7 +435,6 @@ $this->registerJs(
             type: 'GET',
             success: function(response) {
                 $('.modal[id^="renameFolderModal"]').remove();
-                
                 $('#rename-folder-pjax').html(response);
                 setTimeout(function () {
                     if ($('#renameFolderModal').length) {
@@ -532,7 +530,6 @@ $this->registerJs(
         });
     }
 
-   
     function openRenameModal(id) {
         event.preventDefault();
         let url = '/storage/default/rename-file?id=' + id;
@@ -552,7 +549,6 @@ $this->registerJs(
             type: 'GET',
             success: function(response) {
                 $('.modal[id^="renameModal"]').remove();
-                
                 $('#rename-file-pjax').html(response);
                 setTimeout(function () {
                     if ($('#renameModal').length) {
@@ -597,7 +593,6 @@ $this->registerJs(
         });
     });
         
- 
     function openUpdateModal(id ) {
         event.preventDefault();
         let url = '/storage/default/update-file?id=' + id;
@@ -617,7 +612,6 @@ $this->registerJs(
             type: 'GET',
             success: function(response) {
                 $('.modal[id^="updateModal"]').remove();
-                
                 $('#update-file-pjax').html(response);
                 setTimeout(function () {
                     if ($('#updateModal').length) {
@@ -663,7 +657,6 @@ $this->registerJs(
         });
     });
 
-   
     function openShareModal(id) {
         event.preventDefault();
         let url = '/storage/default/share-file?id=' + id;
@@ -682,7 +675,6 @@ $this->registerJs(
             type: 'GET',
             success: function(response) {
                 $('.modal[id^="shareModal"]').remove();
-                
                 $('#share-file-pjax').html(response);
                 setTimeout(function () {
                     if ($('#shareModal').length) {
@@ -768,10 +760,12 @@ $this->registerJs(
         });
     }
         
+    // Verileri burda gönderiyorum  
     function refreshCurrentView() {
         if (isSearching) {
             const searchValue = $('#searchFileInput').val().trim();
             if (searchValue) {
+             
                 performSearch(searchValue);
             } else {
                 returnToMainPage();
@@ -787,6 +781,7 @@ $this->registerJs(
         }
     }
     
+    
     function performSearch(query) {
         if (!query || query.trim() === '') {
             returnToMainPage();
@@ -795,6 +790,8 @@ $this->registerJs(
         
         isSearching = true;
         const isPicker = $('#searchFileInput').data('is-picker') ? 1 : 0;
+        
+        // fileExtensions parametresini ekledim  
         const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
         let finalUrl = '/storage/default/search?q=' + encodeURIComponent(query) + '&isPicker=' + isPicker;
         
@@ -802,9 +799,12 @@ $this->registerJs(
             finalUrl += '&id_directory=' + currentDirectoryId;
         }
         
+    
         if (fileExtensions) {
             finalUrl += '&fileExtensions=' + encodeURIComponent(fileExtensions);
         }
+        
+        console.log('Search URL with extensions:', finalUrl); 
         
         const container = isInWidgetContext() ? '#list-file-pjax' : '#list-item-pjax';
         
@@ -825,6 +825,13 @@ $this->registerJs(
                 let refreshUrl = '/storage/default/file-list';
                 if (currentIsPicker) {
                     refreshUrl += '?isPicker=1';
+                }
+                
+               
+                const fileExtensions = Array.isArray(window.fileExtensions) ? window.fileExtensions.join(',') : '';
+                if (fileExtensions) {
+                    const separator = refreshUrl.includes('?') ? '&' : '?';
+                    refreshUrl += separator + 'fileExtensions=' + encodeURIComponent(fileExtensions);
                 }
                 
                 $.pjax.reload({
@@ -858,7 +865,6 @@ $this->registerJs(
         });
     }
     
-   
     $(document).off('click.fileActions').on('click.fileActions', '.file-action', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -890,7 +896,6 @@ $this->registerJs(
         }
     });
     
-   
     window.openRenameModal = openRenameModal;
     window.openUpdateModal = openUpdateModal;
     window.openShareModal = openShareModal;
