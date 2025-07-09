@@ -51,7 +51,7 @@ if ($id_directory !== null) {
     echo Html::a(
         Html::tag('i', '', ['class' => 'fa fa-chevron-left']) . ' ',
         $backUrlParams,
-        ['class' => 'btn btn-lg', 'data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . ($parentId ? $parentId : 'null') . ';']
+        ['class' => 'btn btn-lg', 'data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . ($parentId ? $parentId : 'null') . ';', 'data-pjax-push-state' => 'false', 'data-pjax-replace-state' => 'false']
     );
 
     $pathItems = [];
@@ -81,7 +81,7 @@ if ($id_directory !== null) {
 
     echo Html::tag(
         'li',
-        Html::a(Module::t('Home'), $homeUrlParams, ['data-pjax' => true, 'onclick' => 'currentDirectoryId = null;']),
+        Html::a(Module::t('Home'), $homeUrlParams, ['data-pjax' => true, 'onclick' => 'currentDirectoryId = null;', 'data-pjax-push-state' => 'false', 'data-pjax-replace-state' => 'false']),
         ['class' => 'breadcrumb-item']
     );
 
@@ -97,7 +97,7 @@ if ($id_directory !== null) {
 
             echo Html::tag(
                 'li',
-                Html::a(Html::encode($item['name']), $breadcrumbUrlParams, ['data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . $item['id'] . ';']),
+                Html::a(Html::encode($item['name']), $breadcrumbUrlParams, ['data-pjax' => true, 'onclick' => 'currentDirectoryId = ' . $item['id'] . ';', 'data-pjax-push-state' => 'false', 'data-pjax-replace-state' => 'false']),
                 ['class' => 'breadcrumb-item']
             );
         }

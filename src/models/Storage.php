@@ -40,9 +40,24 @@ class Storage extends \yii\db\ActiveRecord
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => '6',
         'application/vnd.ms-powerpoint' => '7',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation' => '8',
+        'video/mp4' => '9',
+        'audio/mpeg' => '10',
+        'video/x-msvideo' => '11',
+        'video/quicktime' => '12',
+        'video/x-matroska' => '13',
+        'application/zip' => '14',
+        'application/x-rar-compressed' => '15',
+        'application/x-7z-compressed' => '16',
+        'application/x-tar' => '17',
+        'application/gzip' => '18',
+        'text/plain' => '19',
+        'text/csv' => '20',
+        'text/html' => '21',
+        'text/xml' => '22',
+        'application/json' => '23',
     ];
 
-    public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+    public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar'];
 
     public function behaviors()
     {
@@ -114,19 +129,20 @@ class Storage extends \yii\db\ActiveRecord
         $path = realpath(Yii::$app->basePath . '/../data');
         $filename = md5(uniqid(rand(), true)) . '.' . $this->file->extension;
         $hash = md5_file($this->file->tempName);
-
-        if (!in_array($this->file->extension, self::$allowExtensions))
+        if (!in_array($this->file->extension, self::$allowExtensions)) {
+            Yii::warning('File extension not allowed: ' . $this->file->extension, __METHOD__);
             return false;
+        }
 
-        if (!$this->file->saveAs($path . '/' . $filename))
+        if (!$this->file->saveAs($path . '/' . $filename)) {
+            Yii::warning('File could not be saved: ' . $this->file->tempName, __METHOD__);
             return false;
-
+        }
         $this->name = $filename;
         $this->hash_file = $hash;
         $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
         $this->id_workspace = Yii::$app->workspace->id;
         $this->id_user = Yii::$app->user->id;
-
         return $this->save();
     }
 
@@ -144,6 +160,7 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
+        Yii::warning('MIME type requested for file: ' . $filename . ' with extension: ' . $ext, __METHOD__);
         switch ($ext) {
             case 'jpg':
             case 'jpeg':
@@ -164,6 +181,38 @@ class Storage extends \yii\db\ActiveRecord
                 return 'application/vnd.ms-powerpoint';
             case 'pptx':
                 return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            case 'mp4':
+                Yii::warning('MIME type for mp4 requested', __METHOD__);
+                return 'video/mp4';
+            case 'mp3':
+                return 'audio/mpeg';
+            case 'avi':
+                return 'video/x-msvideo';
+            case 'mov':
+                return 'video/quicktime';
+            case 'mkv':
+                return 'video/x-matroska';
+            case 'zip':
+                return 'application/zip';
+            case 'rar':
+                return 'application/x-rar-compressed';
+            case '7z':  
+                return 'application/x-7z-compressed';
+            case 'tar':
+                return 'application/x-tar';
+            case 'gz':
+                return 'application/gzip';
+            case 'txt':
+                return 'text/plain';
+            case 'csv':
+                return 'text/csv';
+            case 'html':
+            case 'htm':
+                return 'text/html';
+            case 'xml':
+                return 'application/xml';
+            case 'json':
+                return 'application/json';
             default:
                 if (function_exists('finfo_open')) {
                     $finfo = finfo_open(FILEINFO_MIME);
@@ -268,8 +317,7 @@ class Storage extends \yii\db\ActiveRecord
                         'class' => 'non-image'
                     ];
             }
-        }
-        else {
+        } else {
             return [
                 'url' => 'https://img.icons8.com/?size=100&id=12141&format=png&color=000000',
                 'class' => 'non-image'

@@ -152,7 +152,8 @@ const cleanupModal = function(modalId = null) {
 // Ana sayfa event'lerini geri yükleme fonksiyonu
 const restoreMainPageEvents = function() {
     // Ana sayfa için event'leri yeniden bağla (picker dışında)
-    if (!window.isPicker || window.isPicker === false) {
+    if ((!window.isPicker || window.isPicker === false) && window.loadedRestoreMainPageEvents == false) {
+        window.loadedRestoreMainPageEvents = true;
         // Ana sayfa dropdown event'lerini yeniden bağla
         $(document).off('click.main-dropdown').on('click.main-dropdown', '.dropdown-toggle:not(#file-picker-modal .dropdown-toggle), .file-ellipsis:not(#file-picker-modal .file-ellipsis), .folder-ellipsis:not(#file-picker-modal .folder-ellipsis)', function(e) {
             e.preventDefault();

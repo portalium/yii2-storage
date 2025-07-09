@@ -30,6 +30,7 @@ Modal::begin([
                 'class' => 'btn btn-success',
                 'id' => 'uploadButton',
                 'type' => 'button',
+                'onclick' => 'uploadFile(event)',
             ],
         ]),
     'dialogOptions' => ['class' => 'modal-dialog-centered'],
