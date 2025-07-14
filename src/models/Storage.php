@@ -324,4 +324,27 @@ class Storage extends \yii\db\ActiveRecord
             ];
         }
     }
+
+    public static function findForApi()
+    {
+        $query = parent::find();
+
+//        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
+            return $query;
+//        }
+
+        if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
+            // get public files
+            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+        }
+        $workspaces = WorkspaceUser::find()->select('id_workspace')->where(['id_user' => Yii::$app->user->id])->asArray()->all();
+        $workspaces = ArrayHelper::getColumn($workspaces, 'id_workspace');
+
+        if ($workspaces) {
+            // $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $activeWorkspaceId])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+            return $query->andWhere([Module::$tablePrefix . 'storage.id_workspace' => $workspaces])->orWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+        } else {
+            return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
+        }
+    }
 }

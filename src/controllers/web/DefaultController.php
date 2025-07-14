@@ -21,17 +21,17 @@ class DefaultController extends Controller
     public function actionIndex()
     {
         if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $model = new Storage();
         $searchModel = new StorageSearch();
         $id_directory = Yii::$app->request->get('id_directory');
         $isPicker = Yii::$app->request->get('isPicker', false);
-        
+
         // ★ YENİ: fileExtensions parametresini al ★
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
-        
+
         // Normalize fileExtensions
         if (is_string($fileExtensions) && !empty($fileExtensions)) {
             $fileExtensions = explode(',', $fileExtensions);
@@ -39,15 +39,15 @@ class DefaultController extends Controller
         if (!is_array($fileExtensions)) {
             $fileExtensions = [];
         }
-        
+
         // Boş string'leri temizle
-        $fileExtensions = array_filter($fileExtensions, function($ext) {
+        $fileExtensions = array_filter($fileExtensions, function ($ext) {
             return !empty(trim($ext));
         });
-        
+
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
-        
+
         // ★ YENİ: fileExtensions filtresini uygula ★
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
@@ -56,14 +56,14 @@ class DefaultController extends Controller
                 // ★ DOĞRU: % işaretini başa koy ★
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
-            
+
             if (count($orConditions) > 1) {
                 $fileDataProvider->query->andWhere($orConditions);
             }
         }
-        
+
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
-        
+
         $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
@@ -72,7 +72,7 @@ class DefaultController extends Controller
                 'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
         ]);
-        
+
         if (Yii::$app->request->isPjax) {
             return $this->renderAjax('_item-list', [
                 'directoryDataProvider' => $directoryDataProvider,
@@ -93,7 +93,7 @@ class DefaultController extends Controller
     public function actionUploadFile()
     {
         if (!\Yii::$app->user->can('storageWebDefaultUploadFile') && !\Yii::$app->user->can('storageWebDefaultUploadFileOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $post = Yii::$app->request->post();
         $type = $post['Storage']['type'] ?? 'file';
@@ -151,7 +151,7 @@ class DefaultController extends Controller
     public function actionDownloadFile()
     {
         if (!\Yii::$app->user->can('storageWebDefaultDownloadFile') && !\Yii::$app->user->can('storageWebDefaultDownloadFileOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $id = Yii::$app->request->post('id');
         $file = Storage::findOne($id);
@@ -171,7 +171,7 @@ class DefaultController extends Controller
     public function actionRenameFile($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultRenameFile') && !\Yii::$app->user->can('storageWebDefaultRenameFileOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = Storage::findOne($id);
 
@@ -199,7 +199,7 @@ class DefaultController extends Controller
     public function actionUpdateFile($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultUpdateFile') && !\Yii::$app->user->can('storageWebDefaultUpdateFileOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = Storage::findOne($id);
         if (!$model) {
@@ -254,7 +254,7 @@ class DefaultController extends Controller
     public function actionShareFile($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultShareFile') && !\Yii::$app->user->can('storageWebDefaultShareFileOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = Storage::findOne($id);
         return $this->renderPartial('_share', [
@@ -265,7 +265,7 @@ class DefaultController extends Controller
     public function actionCopyFile()
     {
         if (!\Yii::$app->user->can('storageWebDefaultCopyFile') && !\Yii::$app->user->can('storageWebDefaultCopyFileOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         if (!Yii::$app->request->isPost) {
@@ -307,7 +307,7 @@ class DefaultController extends Controller
     public function actionDeleteFile()
     {
         if (!\Yii::$app->user->can('storageWebDefaultDeleteFile') && !\Yii::$app->user->can('storageWebDefaultDeleteFileOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         if (!Yii::$app->request->isPost) {
@@ -345,7 +345,7 @@ class DefaultController extends Controller
     public function actionPickerModal()
     {
         if (!\Yii::$app->user->can('storageWebDefaultPickerModal') && !\Yii::$app->user->can('storageWebDefaultPickerModalOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $id_directory = Yii::$app->request->get('id_directory');
@@ -364,7 +364,7 @@ class DefaultController extends Controller
         }
 
         // Boş string'leri temizle
-        $fileExtensions = array_filter($fileExtensions, function($ext) {
+        $fileExtensions = array_filter($fileExtensions, function ($ext) {
             return !empty(trim($ext));
         });
 
@@ -379,7 +379,7 @@ class DefaultController extends Controller
                 // ★ DOĞRU: Dosya adının SONUNDA extension var mı kontrol et ★
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
-            
+
             if (count($orConditions) > 1) {
                 $query->andWhere($orConditions);
             }
@@ -387,7 +387,7 @@ class DefaultController extends Controller
 
         $searchModel = new StorageSearch();
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        $fileDataProvider->query = $query; 
+        $fileDataProvider->query = $query;
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
 
         $dataProvider = new ActiveDataProvider([
@@ -416,7 +416,7 @@ class DefaultController extends Controller
 
         // Files için aynı filtreyi uygula
         $filesQuery = Storage::find()->andWhere(['id_directory' => $id_directory]);
-        
+
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
@@ -428,12 +428,13 @@ class DefaultController extends Controller
                 $filesQuery->andWhere($orConditions);
             }
         }
-        
+
         $files = $filesQuery->orderBy(['id_storage' => SORT_DESC])->all();
 
         $pagination = $dataProvider->getPagination();
 
-        return $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
+        ob_start(); // çıktıyı yakala
+        echo $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
             'dataProvider' => $dataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'directories' => $directories,
@@ -445,6 +446,16 @@ class DefaultController extends Controller
             'isJson' => $isJson,
             'attributes' => $attributes,
         ]);
+        $output = ob_get_clean();
+
+        // bootstrap.css satırını REGEX ile sil
+        $output = preg_replace(
+            '#<link[^>]+href=["\']?/assets/[^"\']+/bootstrap\.css[^"\']*["\'][^>]*>#i',
+            '',
+            $output
+        );
+
+        return $output;
     }
 
     /**
@@ -453,7 +464,7 @@ class DefaultController extends Controller
     public function actionPickerContent()
     {
         if (!\Yii::$app->user->can('storageWebDefaultPickerContent') && !\Yii::$app->user->can('storageWebDefaultPickerContentOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $id_directory = Yii::$app->request->get('id_directory');
@@ -461,7 +472,7 @@ class DefaultController extends Controller
         $isPicker = Yii::$app->request->get('isPicker', true);
         $attributes = Yii::$app->request->get('attributes', ['id_storage']);
 
- 
+
         if (is_string($fileExtensions) && !empty($fileExtensions)) {
             $fileExtensions = explode(',', $fileExtensions);
         }
@@ -472,12 +483,12 @@ class DefaultController extends Controller
         $query = Storage::find();
         $query->andWhere(['id_directory' => $id_directory]);
 
-     
+
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim(trim($extension), '.');
-                
+
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
             if (count($orConditions) > 1) {
@@ -516,36 +527,36 @@ class DefaultController extends Controller
     public function actionFileList()
     {
         if (!\Yii::$app->user->can('storageWebDefaultFileList') && !\Yii::$app->user->can('storageWebDefaultFileListOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        
-        
+
+
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
-        
-       
+
+
         if (is_string($fileExtensions) && !empty($fileExtensions)) {
             $fileExtensions = explode(',', $fileExtensions);
         }
         if (!is_array($fileExtensions)) {
             $fileExtensions = [];
         }
-        
+
         $query = Storage::find();
-        
-      
+
+
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim(trim($extension), '.');
-               
+
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
-            
+
             if (count($orConditions) > 1) {
                 $query->andWhere($orConditions);
             }
         }
-        
+
         $dataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $query,
             'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE],
@@ -561,7 +572,7 @@ class DefaultController extends Controller
     public function actionSearch()
     {
         if (!\Yii::$app->user->can('storageWebDefaultSearch') && !\Yii::$app->user->can('storageWebDefaultSearchOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
 
@@ -570,7 +581,7 @@ class DefaultController extends Controller
         $isPicker = Yii::$app->request->get('isPicker', false);
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
 
-        
+
         if (is_string($fileExtensions) && !empty($fileExtensions)) {
             $fileExtensions = explode(',', $fileExtensions);
         }
@@ -586,12 +597,12 @@ class DefaultController extends Controller
             $fileQuery->andWhere(['id_directory' => $id_directory]);
         }
 
-        
+
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim(trim($extension), '.');
-                
+
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
             if (count($orConditions) > 1) {
@@ -632,7 +643,7 @@ class DefaultController extends Controller
     public function actionNewFolder()
     {
         if (!\Yii::$app->user->can('storageWebDefaultNewFolder') && !\Yii::$app->user->can('storageWebDefaultNewFolderOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = new StorageDirectory();
 
@@ -649,7 +660,8 @@ class DefaultController extends Controller
 
                 while (StorageDirectory::find()
                     ->where(['id_parent' => $model->id_parent, 'name' => $name])
-                    ->exists()) {
+                    ->exists()
+                ) {
                     $name = $baseName . ' (' . $counter . ')';
                     $counter++;
                 }
@@ -661,7 +673,6 @@ class DefaultController extends Controller
                 } else {
                     Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
                 }
-
             } else {
                 Yii::$app->session->setFlash('error', Module::t('Failed to create folder!'));
             }
@@ -675,7 +686,7 @@ class DefaultController extends Controller
     public function actionRenameFolder($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultRenameFolder') && !\Yii::$app->user->can('storageWebDefaultRenameFolderOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = StorageDirectory::findOne(['id_directory' => $id]);
         if (!$model) {
@@ -692,7 +703,8 @@ class DefaultController extends Controller
                     while (StorageDirectory::find()
                         ->where(['name' => $name, 'id_parent' => $model->id_parent])
                         ->andWhere(['<>', 'id_directory', $id])
-                        ->exists()) {
+                        ->exists()
+                    ) {
                         $name = $baseName . ' (' . $counter . ')';
                         $counter++;
                     }
@@ -716,7 +728,7 @@ class DefaultController extends Controller
     public function actionDeleteFolder($id, $id_directory = null)
     {
         if (!\Yii::$app->user->can('storageWebDefaultDeleteFolder') && !\Yii::$app->user->can('storageWebDefaultDeleteFolderOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
@@ -735,7 +747,7 @@ class DefaultController extends Controller
     protected function deleteFolderRecursive($folder)
     {
         if (!\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursive') && !\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursiveOwn')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $subFolders = StorageDirectory::findAll(['id_parent' => $folder->id_directory]);
         foreach ($subFolders as $subFolder) {
@@ -750,6 +762,33 @@ class DefaultController extends Controller
             $file->delete();
         }
         $folder->delete();
+    }
+
+    public function actionGetFile($id, $access_token = null)
+    {
+        try {
+
+            $file = $this->findModel($id);
+        } catch (\Exception $e) {
+            //            throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
+            Yii::$app->response->statusCode = 404;
+            Yii::$app->response->content = Module::t('The requested file does not exist.');
+            return Yii::$app->response;
+        }
+
+        /*  if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file])) {
+            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        } */
+
+        $path = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+
+        if (file_exists($path)) {
+            return Yii::$app->response->sendFile($path, $file->title . '.' . pathinfo($path, PATHINFO_EXTENSION));
+        } else {
+            Yii::$app->response->statusCode = 404;
+            Yii::$app->response->content = Module::t('The requested file does not exist.');
+            return Yii::$app->response;
+        }
     }
 
     /**
@@ -769,7 +808,7 @@ class DefaultController extends Controller
         echo "<p>Testing extensions: " . implode(', ', $fileExtensions) . "</p>";
         echo "<p>Directory ID: " . ($id_directory ?? 'null') . "</p>";
 
-        
+
         $query = Storage::find();
         $query->andWhere(['id_directory' => $id_directory]);
 
@@ -777,7 +816,7 @@ class DefaultController extends Controller
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim($extension, '.');
-                
+
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
             $query->andWhere($orConditions);
@@ -801,5 +840,13 @@ class DefaultController extends Controller
             echo "<li>" . $file->name . " (Title: " . $file->title . ")</li>";
         }
         echo "</ul>";
+    }
+
+    protected function findModel($id)
+    {
+        if (($model = Storage::findOne($id)) !== null) {
+            return $model;
+        }
+        throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
     }
 }

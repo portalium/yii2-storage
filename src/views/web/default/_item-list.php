@@ -289,6 +289,7 @@ foreach ($files as $model) {
     $content .= Html::img($iconData['url'], [
         'alt' => $model->title,
         'class' => 'file-icon ' . $iconData['class'],
+        'style' => 'width: 100%; height: 100%;',
     ]);
 
     $content .= Html::endTag('div');
