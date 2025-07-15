@@ -23,6 +23,6 @@ class StorageAsset extends AssetBundle
 //
 
     public $depends = [
-        // 'portalium\theme\bundles\AppAsset',
+        'portalium\theme\bundles\AppAsset',
     ];
 }

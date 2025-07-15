@@ -196,7 +196,7 @@ class Storage extends \yii\db\ActiveRecord
                 return 'application/zip';
             case 'rar':
                 return 'application/x-rar-compressed';
-            case '7z':  
+            case '7z':
                 return 'application/x-7z-compressed';
             case 'tar':
                 return 'application/x-tar';
@@ -225,6 +225,14 @@ class Storage extends \yii\db\ActiveRecord
                 }
         }
     }
+
+    public function getFilePath()
+    {
+        // $path =  Yii::$app->request->baseUrl . '/' . Yii::$app->setting->getValue('storage::path');
+        // return $path . '/' . $this->name;
+        return '/storage/default/get-file?id=' . $this->id_storage;
+    }
+
     public function deleteFile()
     {
         $filePath = Yii::$app->basePath . '/../data/' . $this->name;
@@ -329,9 +337,9 @@ class Storage extends \yii\db\ActiveRecord
     {
         $query = parent::find();
 
-//        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
-            return $query;
-//        }
+        //        if (Yii::$app->user->can('storageStorageFindAll', ['id_module' => 'storage'])) {
+        return $query;
+        //        }
 
         if (!Yii::$app->user->can('storageStorageFindOwner', ['id_module' => 'storage'])) {
             // get public files

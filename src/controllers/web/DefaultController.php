@@ -454,6 +454,29 @@ class DefaultController extends Controller
             '',
             $output
         );
+        // font-awesome.min.css
+        // site.css
+        // custom.css
+        // dashboard.css
+        // sidebar.css
+        // panel.css
+        // modal.css
+        // jquery.js
+        // yii.js
+        // bootstrap.bundle.js
+        // tab.js
+        // jquery.min.js
+        $output = preg_replace(
+            '#<link[^>]+href=["\']?/assets/[^"\']+/(font-awesome\.min\.css|site\.css|custom\.css|dashboard\.css|sidebar\.css|panel\.css|jquery\.js|yii\.js|bootstrap\.bundle\.js|tab\.js|jquery\.min\.js)[^"\']*["\'][^>]*>#i',
+            '',
+            $output
+        );
+        // jQuery ve Bootstrap JS dosyalarını kaldır
+        $output = preg_replace(
+            '#<script[^>]+src=["\']?/assets/[^"\']+/(jquery\.js|yii\.js|bootstrap\.bundle\.js|tab\.js|jquery\.min\.js)[^"\']*["\'][^>]*>#i',
+            '',
+            $output
+        );
 
         return $output;
     }
