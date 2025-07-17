@@ -20,6 +20,7 @@ class m220227_125705_storage extends Migration
         $this->createTable('{{%' . Module::$tablePrefix . 'storage_directory}}', [
             'id_directory' => $this->primaryKey(11),
             'id_parent' => $this->integer(11)->null(),
+            'id_user'=> $this->integer(11)->notNull(),
             'name' => $this->string(256)->notNull(),
             'date_create' => $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
             'date_update' => $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
@@ -33,7 +34,20 @@ class m220227_125705_storage extends Migration
             'id_directory',
             'SET NULL'
         );
-
+        $this->addForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage_directory-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}',
+            'id_user',
+            '{{%' . UserModule::$tablePrefix . 'user}}',
+            'id_user',
+            'RESTRICT'
+        );
+        $this->createIndex(
+            '{{%idx-' . Module::$tablePrefix . 'storage_directory-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}',
+            'id_user'
+        );
+        
         $this->createTable('{{%' . Module::$tablePrefix . 'storage}}',[
             'id_storage'=> $this->primaryKey(11),
             'name'=> $this->string(255)->notNull(),
@@ -88,6 +102,11 @@ class m220227_125705_storage extends Migration
 
         $this->dropForeignKey(
             '{{%fk-' . Module::$tablePrefix . 'storage_directory-id_parent}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}'
+        );
+
+        $this->dropForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage_directory-id_user}}',
             '{{%' . Module::$tablePrefix . 'storage_directory}}'
         );
 

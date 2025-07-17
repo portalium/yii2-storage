@@ -20,8 +20,8 @@ class DefaultController extends Controller
 
     public function actionIndex()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultIndex')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $model = new Storage();
@@ -92,14 +92,22 @@ class DefaultController extends Controller
 
     public function actionUploadFile()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultUploadFile') && !\Yii::$app->user->can('storageWebDefaultUploadFileOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultUploadFile')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $post = Yii::$app->request->post();
         $type = $post['Storage']['type'] ?? 'file';
         $model = ($type === 'folder') ? new StorageDirectory() : new Storage();
         $id_directory = Yii::$app->request->post('id_directory') ?: null;
         $model->id_directory = $id_directory;
+
+        if ($id_directory !== null) {
+            $directoryModel = StorageDirectory::findOne($id_directory);
+            if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn',['model'=>$directoryModel])) {
+                throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            }
+        }
+
         if (Yii::$app->request->isPost) {
             $model->load($post);
             $uploadedFiles = UploadedFile::getInstancesByName('Storage[file]');
@@ -150,11 +158,12 @@ class DefaultController extends Controller
 
     public function actionDownloadFile()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultDownloadFile') && !\Yii::$app->user->can('storageWebDefaultDownloadFileOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
         $id = Yii::$app->request->post('id');
         $file = Storage::findOne($id);
+        if (!\Yii::$app->user->can('storageWebDefaultDownloadFile') && !\Yii::$app->user->can('storageWebDefaultDownloadFileOwn',["model"=>$file])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
 
         if ($file) {
             $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
@@ -170,11 +179,11 @@ class DefaultController extends Controller
 
     public function actionRenameFile($id)
     {
-        if (!\Yii::$app->user->can('storageWebDefaultRenameFile') && !\Yii::$app->user->can('storageWebDefaultRenameFileOwn')) {
+        $model = Storage::findOne($id);
+        if (!\Yii::$app->user->can('storageWebDefaultRenameFile') && !\Yii::$app->user->can('storageWebDefaultRenameFileOwn',["model"=>$model])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        $model = Storage::findOne($id);
-
+        
         if (!$model) {
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
             return '';
@@ -198,10 +207,10 @@ class DefaultController extends Controller
 
     public function actionUpdateFile($id)
     {
-        if (!\Yii::$app->user->can('storageWebDefaultUpdateFile') && !\Yii::$app->user->can('storageWebDefaultUpdateFileOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
         $model = Storage::findOne($id);
+        if (!\Yii::$app->user->can('storageWebDefaultUpdateFile') && !\Yii::$app->user->can('storageWebDefaultUpdateFileOwn',["model"=>$model])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
         if (!$model) {
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
             return '';
@@ -253,10 +262,10 @@ class DefaultController extends Controller
 
     public function actionShareFile($id)
     {
-        if (!\Yii::$app->user->can('storageWebDefaultShareFile') && !\Yii::$app->user->can('storageWebDefaultShareFileOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
         $model = Storage::findOne($id);
+        if (!\Yii::$app->user->can('storageWebDefaultShareFile') && !\Yii::$app->user->can('storageWebDefaultShareFileOwn',["model"=>$model])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
         return $this->renderPartial('_share', [
             'model' => $model,
         ]);
@@ -264,13 +273,8 @@ class DefaultController extends Controller
 
     public function actionCopyFile()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultCopyFile') && !\Yii::$app->user->can('storageWebDefaultCopyFileOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
-
-        if (!Yii::$app->request->isPost) {
+        if (!Yii::$app->request->isPost)
             throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
-        }
 
         $id = Yii::$app->request->post('id');
 
@@ -281,9 +285,8 @@ class DefaultController extends Controller
 
         $sourceModel = Storage::findOne($id);
 
-        if (!$sourceModel) {
-            Yii::$app->session->setFlash('error', Module::t('File not found!'));
-            return;
+        if (!\Yii::$app->user->can('storageWebDefaultCopyFile') && !\Yii::$app->user->can('storageWebDefaultCopyFileOwn',["model"=> $sourceModel ])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $storagePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path');
@@ -306,14 +309,6 @@ class DefaultController extends Controller
 
     public function actionDeleteFile()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultDeleteFile') && !\Yii::$app->user->can('storageWebDefaultDeleteFileOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
-
-        if (!Yii::$app->request->isPost) {
-            throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
-        }
-
         $fileId = Yii::$app->request->post('id');
 
         if (!$fileId) {
@@ -322,6 +317,14 @@ class DefaultController extends Controller
         }
 
         $file = Storage::findOne($fileId);
+
+        if (!\Yii::$app->user->can('storageWebDefaultDeleteFile') && !\Yii::$app->user->can('storageWebDefaultDeleteFileOwn',["model"=>$file])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
+        if (!Yii::$app->request->isPost) {
+            throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
+        }
 
         if ($file) {
             $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
@@ -344,8 +347,8 @@ class DefaultController extends Controller
 
     public function actionPickerModal()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultPickerModal') && !\Yii::$app->user->can('storageWebDefaultPickerModalOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultPickerModal')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $id_directory = Yii::$app->request->get('id_directory');
@@ -475,8 +478,8 @@ class DefaultController extends Controller
      */
     public function actionPickerContent()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultPickerContent') && !\Yii::$app->user->can('storageWebDefaultPickerContentOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultPickerContent')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $id_directory = Yii::$app->request->get('id_directory');
@@ -538,8 +541,8 @@ class DefaultController extends Controller
 
     public function actionFileList()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultFileList') && !\Yii::$app->user->can('storageWebDefaultFileListOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultFileList')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
 
@@ -583,8 +586,8 @@ class DefaultController extends Controller
 
     public function actionSearch()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultSearch') && !\Yii::$app->user->can('storageWebDefaultSearchOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultSearch')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         Yii::$app->response->format = \yii\web\Response::FORMAT_HTML;
 
@@ -654,8 +657,8 @@ class DefaultController extends Controller
 
     public function actionNewFolder()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultNewFolder') && !\Yii::$app->user->can('storageWebDefaultNewFolderOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultNewFolder')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = new StorageDirectory();
 
@@ -664,8 +667,14 @@ class DefaultController extends Controller
                 $id_directory = Yii::$app->request->post('id_directory');
                 if ($id_directory === 'null' || $id_directory == 0)
                     $model->id_parent = null;
-                else
+                else{
                     $model->id_parent = $id_directory;
+                    $directoryModel = StorageDirectory::findOne($id_directory);
+                    if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn',['model'=>$directoryModel])) {
+                         throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+                    }
+                }
+
                 $baseName = trim($model->name) !== '' ? $model->name : Module::t('New Folder');
                 $name = $baseName;
                 $counter = 1;
@@ -695,12 +704,15 @@ class DefaultController extends Controller
         ]);
     }
 
+    // +++
     public function actionRenameFolder($id)
     {
-        if (!\Yii::$app->user->can('storageWebDefaultRenameFolder') && !\Yii::$app->user->can('storageWebDefaultRenameFolderOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
         $model = StorageDirectory::findOne(['id_directory' => $id]);
+
+        if (!\Yii::$app->user->can('storageWebDefaultRenameFolder') && !\Yii::$app->user->can('storageWebDefaultRenameFolderOwn',["model"=>$model])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
         if (!$model) {
             Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
             return '';
@@ -739,12 +751,14 @@ class DefaultController extends Controller
 
     public function actionDeleteFolder($id, $id_directory = null)
     {
-        if (!\Yii::$app->user->can('storageWebDefaultDeleteFolder') && !\Yii::$app->user->can('storageWebDefaultDeleteFolderOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        $folder = StorageDirectory::findOne(['id_directory' => $id]);
+
+        if (!\Yii::$app->user->can('storageWebDefaultDeleteFolder') && !\Yii::$app->user->can('storageWebDefaultDeleteFolderOwn',["model"=>$folder])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
-        $folder = StorageDirectory::findOne(['id_directory' => $id]);
+
 
         if (!$folder) {
             Yii::$app->session->setFlash('error', Module::t('Folder not found!'));
@@ -758,8 +772,8 @@ class DefaultController extends Controller
 
     protected function deleteFolderRecursive($folder)
     {
-        if (!\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursive') && !\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursiveOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        if (!\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursive') && !\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursiveOwn',["model"=>$folder])) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $subFolders = StorageDirectory::findAll(['id_parent' => $folder->id_directory]);
         foreach ($subFolders as $subFolder) {
