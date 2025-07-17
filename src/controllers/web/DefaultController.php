@@ -171,7 +171,7 @@ class DefaultController extends Controller
     public function actionRenameFile($id)
     {
         if (!\Yii::$app->user->can('storageWebDefaultRenameFile') && !\Yii::$app->user->can('storageWebDefaultRenameFileOwn')) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = Storage::findOne($id);
 
@@ -448,35 +448,24 @@ class DefaultController extends Controller
         ]);
         $output = ob_get_clean();
 
-        // bootstrap.css satırını REGEX ile sil
-        $output = preg_replace(
-            '#<link[^>]+href=["\']?/assets/[^"\']+/bootstrap\.css[^"\']*["\'][^>]*>#i',
-            '',
-            $output
-        );
-        // font-awesome.min.css
-        // site.css
-        // custom.css
-        // dashboard.css
-        // sidebar.css
-        // panel.css
-        // modal.css
-        // jquery.js
-        // yii.js
-        // bootstrap.bundle.js
-        // tab.js
-        // jquery.min.js
-        $output = preg_replace(
-            '#<link[^>]+href=["\']?/assets/[^"\']+/(font-awesome\.min\.css|site\.css|custom\.css|dashboard\.css|sidebar\.css|panel\.css|jquery\.js|yii\.js|bootstrap\.bundle\.js|tab\.js|jquery\.min\.js)[^"\']*["\'][^>]*>#i',
-            '',
-            $output
-        );
-        // jQuery ve Bootstrap JS dosyalarını kaldır
-        $output = preg_replace(
-            '#<script[^>]+src=["\']?/assets/[^"\']+/(jquery\.js|yii\.js|bootstrap\.bundle\.js|tab\.js|jquery\.min\.js)[^"\']*["\'][^>]*>#i',
-            '',
-            $output
-        );
+        if ($isPicker) {
+            $output = preg_replace(
+                '#<link[^>]+href=["\']?/assets/[^"\']+/bootstrap\.css[^"\']*["\'][^>]*>#i',
+                '',
+                $output
+            );
+            $output = preg_replace(
+                '#<link[^>]+href=["\']?/assets/[^"\']+/(font-awesome\.min\.css|site\.css|custom\.css|dashboard\.css|sidebar\.css|panel\.css|jquery\.js|yii\.js|bootstrap\.bundle\.js|tab\.js|jquery\.min\.js)[^"\']*["\'][^>]*>#i',
+                '',
+                $output
+            );
+            // jQuery ve Bootstrap JS dosyalarını kaldır
+            $output = preg_replace(
+                '#<script[^>]+src=["\']?/assets/[^"\']+/(jquery\.js|yii\.js|bootstrap\.bundle\.js|tab\.js|jquery\.min\.js)[^"\']*["\'][^>]*>#i',
+                '',
+                $output
+            );
+        }
 
         return $output;
     }

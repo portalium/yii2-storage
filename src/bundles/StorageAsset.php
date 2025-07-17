@@ -8,8 +8,6 @@ class StorageAsset extends AssetBundle
 {
     public $sourcePath = '@vendor/portalium/yii2-storage/src/assets/';
 
-    
-
     public $css = [
         'modal.css'
     ];

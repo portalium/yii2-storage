@@ -11,6 +11,7 @@ use yii\widgets\LinkPager;
 /** @var \yii\data\ActiveDataProvider $fileDataProvider */
 /** @var bool $isPicker */
 
+
 $id_directory = Yii::$app->request->get('id_directory');
 $parentDirectory = null;
 
@@ -334,13 +335,10 @@ echo Html::endTag('div');
 echo Html::endTag('div');
 
 echo Html::endTag('div');
-
+$this->registerJsVar('isPicker', $isPicker ? 1 : 0);
+$this->registerJsVar('currentFileExtensions', $fileExtensionsParam);
 $this->registerJs(<<<JS
-
-window.currentIsPicker = $isPicker ? true : false;
-window.currentFileExtensions = '$fileExtensionsParam';
-
-if ($isPicker) {
+if (window.isPicker) {
     if (typeof window.setPickerContext === 'function') {
         window.setPickerContext(true);
     }
