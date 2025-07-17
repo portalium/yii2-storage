@@ -14,7 +14,6 @@ class m220228_125709_storage_rule_rbac extends Migration
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
 
         $permissions = [
-            'storageWebDefaultIndex',
             'storageWebDefaultUploadFile',
             'storageWebDefaultDownloadFile',
             'storageWebDefaultRenameFile',

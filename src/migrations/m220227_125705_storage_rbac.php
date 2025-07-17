@@ -11,6 +11,7 @@ class m220227_125705_storage_rbac extends Migration
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $permissionNames = [
             'storageWebDefaultIndex',
+            'storageWebDefaultIndexOwn',
             'storageWebDefaultUploadFile',
             'storageWebDefaultDownloadFile',
             'storageWebDefaultRenameFile',
@@ -42,6 +43,7 @@ class m220227_125705_storage_rbac extends Migration
         $auth = Yii::$app->authManager;
         $permissionNames = [
             'storageWebDefaultIndex',
+            'storageWebDefaultIndexOwn',
             'storageWebDefaultUploadFile',
             'storageWebDefaultDownloadFile',
             'storageWebDefaultRenameFile',
