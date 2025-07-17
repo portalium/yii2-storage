@@ -28,7 +28,8 @@ class m220228_125709_storage_rule_rbac extends Migration
             'storageWebDefaultNewFolder',
             'storageWebDefaultRenameFolder',
             'storageWebDefaultDeleteFolder',
-            'storageWebDefaultdeleteFolderRecursive'
+            'storageWebDefaultdeleteFolderRecursive',
+            'storageWebDefaultManageDirectory',
         ];
 
         foreach ($permissions as $permissionKey) {
@@ -62,7 +63,8 @@ class m220228_125709_storage_rule_rbac extends Migration
             'storageWebDefaultNewFolder',
             'storageWebDefaultRenameFolder',
             'storageWebDefaultDeleteFolder',
-            'storageWebDefaultdeleteFolderRecursive'
+            'storageWebDefaultdeleteFolderRecursive',
+            'storageWebDefaultManageDirectory',
         ];
 
         foreach ($permissions as $permissionKey) {
