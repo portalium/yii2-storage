@@ -12,13 +12,17 @@ class StorageAsset extends AssetBundle
         'modal.css'
     ];
     public $js = [
-        'storage.js'
+        'storage.js',
+        'storageActions.js'
     ];
 
     public $cssOptions = [
         'appendTimestamp' => true,
     ];
-//
+//  
+    public $jsOptions = [
+        'appendTimestamp' => true,
+    ];
 
     public $depends = [
         'portalium\theme\bundles\AppAsset',

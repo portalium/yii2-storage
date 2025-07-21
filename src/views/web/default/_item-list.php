@@ -10,6 +10,8 @@ use yii\widgets\LinkPager;
 /** @var \yii\data\ActiveDataProvider $directoryDataProvider */
 /** @var \yii\data\ActiveDataProvider $fileDataProvider */
 /** @var bool $isPicker */
+/** @var string $actionId */
+$actionId = $actionId ?? "index";
 
 
 $id_directory = Yii::$app->request->get('id_directory');
@@ -39,9 +41,7 @@ echo Html::beginTag('div', ['class' => 'col-12']);
 
 if ($id_directory !== null) {
     $parentId = $parentDirectory && $parentDirectory->id_parent ? $parentDirectory->id_parent : null;
-
- 
-    $backUrlParams = ['index', 'isPicker' => $isPicker];
+    $backUrlParams = [$actionId, 'isPicker' => $isPicker];
     if ($parentId) {
         $backUrlParams['id_directory'] = $parentId;
     }
@@ -337,6 +337,7 @@ echo Html::endTag('div');
 echo Html::endTag('div');
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
 $this->registerJsVar('currentFileExtensions', $fileExtensionsParam);
+$this->registerJsVar('actionId', $actionId);
 $this->registerJs(<<<JS
 if (window.isPicker) {
     if (typeof window.setPickerContext === 'function') {
@@ -351,10 +352,15 @@ window.openFolder = function(folderId, event, fileExtensions) {
         event.preventDefault();
         event.stopPropagation();
     }
-    
-    var url = '$isPicker' == '1' ? 
-        '/storage/default/index?id_directory=' + folderId + '&isPicker=1' :
-        '/storage/default/index?id_directory=' + folderId;
+
+    var currentActionId = window.actionId || 'index';
+    var isPicker = window.isPicker || 0;
+
+    var url = '/storage/default/' + currentActionId + '?id_directory=' + folderId;
+
+    if (isPicker === 1) {
+        url += '&isPicker=1';
+    }
     
 
     if (fileExtensions && fileExtensions.length > 0) {

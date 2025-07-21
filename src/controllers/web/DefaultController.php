@@ -20,6 +20,88 @@ class DefaultController extends Controller
 
     public function actionIndex()
     {
+        if (!\Yii::$app->user->can('storageWebDefaultIndexOwn')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
+        $model = new Storage();
+        $searchModel = new StorageSearch();
+        $id_directory = Yii::$app->request->get('id_directory');
+        $isPicker = Yii::$app->request->get('isPicker', false);
+
+        // ★ YENİ: fileExtensions parametresini al ★
+        $fileExtensions = Yii::$app->request->get('fileExtensions', []);
+
+        // Normalize fileExtensions
+        if (is_string($fileExtensions) && !empty($fileExtensions)) {
+            $fileExtensions = explode(',', $fileExtensions);
+        }
+        if (!is_array($fileExtensions)) {
+            $fileExtensions = [];
+        }
+
+        // Boş string'leri temizle
+        $fileExtensions = array_filter($fileExtensions, function ($ext) {
+            return !empty(trim($ext));
+        });
+
+
+        $id_user = Yii::$app->user->id;
+        $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $fileDataProvider->query->andWhere(['id_directory' => $id_directory])->andWhere(['id_user' => $id_user]);
+        
+
+        // ★ YENİ: fileExtensions filtresini uygula ★
+        if (!empty($fileExtensions) && is_array($fileExtensions)) {
+            $orConditions = ['or'];
+            foreach ($fileExtensions as $extension) {
+                $cleanExtension = '.' . ltrim(trim($extension), '.');
+                // ★ DOĞRU: % işaretini başa koy ★
+                $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
+            }
+
+            if (count($orConditions) > 1) {
+                $fileDataProvider->query->andWhere($orConditions);
+            }
+        }
+
+        $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
+
+        $directoryDataProvider = new ActiveDataProvider([
+            'query' => StorageDirectory::find()
+                ->andWhere(['id_parent' => $id_directory])
+                ->andWhere(['id_user' => $id_user])
+                ->orderBy(['id_directory' => SORT_DESC]),
+            'pagination' => [
+                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
+            ],
+        ]);
+
+        if (Yii::$app->request->isPjax) {
+            if (Yii::$app->request->get('_pjax') === '#pjax-flash-message') {
+                return \portalium\site\widgets\FlashMessage::widget();
+            }
+
+            return $this->renderAjax('_item-list', [
+                'directoryDataProvider' => $directoryDataProvider,
+                'fileDataProvider' => $fileDataProvider,
+                'isPicker' => $isPicker,
+                'actionId' => "index"
+            ]);
+        }
+
+        return $this->render('index', [
+            'model' => $model,
+            'dataProvider' => $searchModel->search($this->request->queryParams),
+            'fileDataProvider' => $fileDataProvider,
+            'directoryDataProvider' => $directoryDataProvider,
+            'isPicker' => $isPicker,
+            'actionId' => 'index',
+        ]);
+    }
+
+    public function actionManage()
+    {
         if (!\Yii::$app->user->can('storageWebDefaultIndex')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
@@ -64,6 +146,7 @@ class DefaultController extends Controller
 
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
 
+
         $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
@@ -74,10 +157,15 @@ class DefaultController extends Controller
         ]);
 
         if (Yii::$app->request->isPjax) {
+            if (Yii::$app->request->get('_pjax') === '#pjax-flash-message') {
+                return \portalium\site\widgets\FlashMessage::widget();
+            }
+
             return $this->renderAjax('_item-list', [
                 'directoryDataProvider' => $directoryDataProvider,
                 'fileDataProvider' => $fileDataProvider,
                 'isPicker' => $isPicker,
+                'actionId' => "manage"
             ]);
         }
 
@@ -87,6 +175,7 @@ class DefaultController extends Controller
             'fileDataProvider' => $fileDataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'isPicker' => $isPicker,
+            'actionId' => 'manage',
         ]);
     }
 
