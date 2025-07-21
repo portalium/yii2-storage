@@ -11,7 +11,7 @@ use yii\widgets\LinkPager;
 /** @var \yii\data\ActiveDataProvider $fileDataProvider */
 /** @var bool $isPicker */
 /** @var string $actionId */
-$actionId = $actionId ?? "index";
+$actionId = $actionId ?? 'index';
 
 
 $id_directory = Yii::$app->request->get('id_directory');
@@ -90,7 +90,7 @@ if ($id_directory !== null) {
         if ($i === count($pathItems) - 1) {
             echo Html::tag('li', Html::encode($item['name']), ['class' => 'breadcrumb-item active']);
         } else {
-           
+
             $breadcrumbUrlParams = ['index', 'id_directory' => $item['id'], 'isPicker' => $isPicker];
             if (!empty($fileExtensionsParam)) {
                 $breadcrumbUrlParams['fileExtensions'] = $fileExtensionsParam;

@@ -14,6 +14,8 @@ use yii\helpers\Url;
 /** @var bool $isPicker */
 /** @var string $actionId */
 
+$actionId = $actionId ?? 'index';
+
 StorageAsset::register($this);
 
 $this->title = Module::t('Storage');

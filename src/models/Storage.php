@@ -333,6 +333,17 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
+    public function fileExists()
+    {
+        $path = realpath(Yii::$app->basePath . '/../data');
+        return file_exists($path . '/' . $this->name);
+    }
+
+    public function getExtension()
+    {
+        return pathinfo($this->name, PATHINFO_EXTENSION);
+    }
+
     public static function findForApi()
     {
         $query = parent::find();
