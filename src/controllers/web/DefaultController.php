@@ -78,10 +78,15 @@ class DefaultController extends Controller
         ]);
 
         if (Yii::$app->request->isPjax) {
+            if (Yii::$app->request->get('_pjax') === '#pjax-flash-message') {
+                return \portalium\site\widgets\FlashMessage::widget();
+            }
+
             return $this->renderAjax('_item-list', [
                 'directoryDataProvider' => $directoryDataProvider,
                 'fileDataProvider' => $fileDataProvider,
                 'isPicker' => $isPicker,
+                'actionId' => "index"
             ]);
         }
 
@@ -91,6 +96,7 @@ class DefaultController extends Controller
             'fileDataProvider' => $fileDataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'isPicker' => $isPicker,
+            'actionId' => 'index',
         ]);
     }
 
@@ -151,10 +157,15 @@ class DefaultController extends Controller
         ]);
 
         if (Yii::$app->request->isPjax) {
+            if (Yii::$app->request->get('_pjax') === '#pjax-flash-message') {
+                return \portalium\site\widgets\FlashMessage::widget();
+            }
+
             return $this->renderAjax('_item-list', [
                 'directoryDataProvider' => $directoryDataProvider,
                 'fileDataProvider' => $fileDataProvider,
                 'isPicker' => $isPicker,
+                'actionId' => "manage"
             ]);
         }
 
@@ -164,6 +175,7 @@ class DefaultController extends Controller
             'fileDataProvider' => $fileDataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'isPicker' => $isPicker,
+            'actionId' => 'manage',
         ]);
     }
 
