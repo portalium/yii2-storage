@@ -235,6 +235,14 @@
     display: inline-block;
 }
 
+#updateModal-label,
+#uploadModal-label,
+#renameModal-label,
+#newFolderModal-label,
+#file-picker-modal-label {
+    margin-left: 0px;
+}
+
 .pagination-custom li a,
 .pagination-custom li span {
     display: flex;

@@ -29,10 +29,8 @@ class DefaultController extends Controller
         $id_directory = Yii::$app->request->get('id_directory');
         $isPicker = Yii::$app->request->get('isPicker', false);
 
-        // ★ YENİ: fileExtensions parametresini al ★
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
 
-        // Normalize fileExtensions
         if (is_string($fileExtensions) && !empty($fileExtensions)) {
             $fileExtensions = explode(',', $fileExtensions);
         }
@@ -40,7 +38,6 @@ class DefaultController extends Controller
             $fileExtensions = [];
         }
 
-        // Boş string'leri temizle
         $fileExtensions = array_filter($fileExtensions, function ($ext) {
             return !empty(trim($ext));
         });
@@ -50,13 +47,10 @@ class DefaultController extends Controller
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory])->andWhere(['id_user' => $id_user]);
 
-
-        // ★ YENİ: fileExtensions filtresini uygula ★
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim(trim($extension), '.');
-                // ★ DOĞRU: % işaretini başa koy ★
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
 
@@ -463,7 +457,6 @@ class DefaultController extends Controller
             $fileExtensions = [];
         }
 
-        // Boş string'leri temizle
         $fileExtensions = array_filter($fileExtensions, function ($ext) {
             return !empty(trim($ext));
         });
@@ -471,18 +464,24 @@ class DefaultController extends Controller
         $query = Storage::find();
         $query->andWhere(['id_directory' => $id_directory]);
 
-        // ★ DÜZELTME: LIKE operatörünü doğru kullan ★
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim(trim($extension), '.');
-                // ★ DOĞRU: Dosya adının SONUNDA extension var mı kontrol et ★
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
 
             if (count($orConditions) > 1) {
                 $query->andWhere($orConditions);
             }
+        }
+
+        if (!\Yii::$app->user->can('storageWebDefaultIndexOwn') || $isPicker) {
+            $query->andWhere([
+                'or',
+                ['id_user' => Yii::$app->user->id],
+                ['id_workspace' => Yii::$app->workspace->id]
+            ]);
         }
 
         $searchModel = new StorageSearch();
@@ -499,11 +498,19 @@ class DefaultController extends Controller
                 'defaultOrder' => ['id_storage' => SORT_DESC],
             ],
         ]);
-
+        $directoryQuery = StorageDirectory::find()
+            ->andWhere(['id_parent' => $id_directory])
+            ->orderBy(['id_directory' => SORT_DESC]);
+        if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') || $isPicker) {
+            $directoryQuery->andWhere(['id_user' => Yii::$app->user->id]);
+            /* $directoryQuery->andWhere([
+                'or',
+                ['id_user' => Yii::$app->user->id],
+                ['id_workspace' => Yii::$app->workspace->id]
+            ]); */
+        }
         $directoryDataProvider = new ActiveDataProvider([
-            'query' => StorageDirectory::find()
-                ->andWhere(['id_parent' => $id_directory])
-                ->orderBy(['id_directory' => SORT_DESC]),
+            'query' => $directoryQuery,
             'pagination' => [
                 'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],

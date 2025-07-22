@@ -315,6 +315,7 @@ class Storage extends \yii\db\ActiveRecord
                         'class' => 'non-image'
                     ];
                 case 'image/jpeg':
+                case 'image/jpg':
                 case 'image/png':
                     return [
                         'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,

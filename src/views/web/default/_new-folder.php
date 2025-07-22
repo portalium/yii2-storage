@@ -14,15 +14,18 @@ Modal::begin([
     'title' => Module::t('Create New Folder'),
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
-    'closeButton' => false,
+    'clientOptions' => [
+        'backdrop' => 'static',
+        'keyboard' => false,
+    ],
     'footer' =>
-        Button::widget([
-            'label' => Module::t('Close'),
-            'options' => [
-                'class' => 'btn btn-danger',
-                'data-bs-dismiss' => 'modal'
-            ],
-        ]) . ' ' .
+    Button::widget([
+        'label' => Module::t('Close'),
+        'options' => [
+            'class' => 'btn btn-danger',
+            'onclick' => 'hideModal("newFolderModal")',
+        ],
+    ]) . ' ' .
         Button::widget([
             'label' => Module::t('Create'),
             'options' => [

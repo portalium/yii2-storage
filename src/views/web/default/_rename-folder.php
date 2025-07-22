@@ -14,22 +14,25 @@ if (isset($model)) {
         'title' => Module::t('Rename Folder'),
         'options' => ['class' => 'fade'],
         'bodyOptions' => ['class' => 'modal-body'],
-        'closeButton' => false,
+        'clientOptions' => [
+            'backdrop' => 'static',
+            'keyboard' => false,
+        ],
         'footer' => Button::widget([
-                'label' => Module::t('Close'),
-                'options' => [
-                    'class' => 'btn btn-danger',
-                    'data-bs-dismiss' => 'modal'
-                ],
-            ]) . ' ' . Button::widget([
-                'label' => Module::t('Rename'),
-                'options' => [
-                    'class' => 'btn btn-success',
-                    'id' => 'renameFolderButton',
-                    'type' => 'button',
-                    "data-id" => $model->id_directory
-                ],
-            ]),
+            'label' => Module::t('Close'),
+            'options' => [
+                'class' => 'btn btn-danger',
+                'onclick' => 'hideModal("renameFolderModal")',
+            ],
+        ]) . ' ' . Button::widget([
+            'label' => Module::t('Rename'),
+            'options' => [
+                'class' => 'btn btn-success',
+                'id' => 'renameFolderButton',
+                'type' => 'button',
+                "data-id" => $model->id_directory
+            ],
+        ]),
         'dialogOptions' => ['class' => 'modal-dialog-centered']
     ]);
 

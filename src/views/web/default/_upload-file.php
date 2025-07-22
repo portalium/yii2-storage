@@ -16,12 +16,15 @@ Modal::begin([
     'title' => Module::t('Upload File'),
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body'],
-    'closeButton' => false,
+    'clientOptions' => [
+        'backdrop' => 'static',
+        'keyboard' => false,
+    ],
     'footer' => Button::widget([
             'label' => Module::t('Close'),
             'options' => [
                 'class' => 'btn btn-danger',
-                'data-bs-dismiss' => 'modal',
+                'onclick' => 'hideModal("uploadModal")',
             ],
         ]) . ' ' . Button::widget([
             'label' => Html::tag('i', '', ['class' => 'fa fa-cloud-upload-alt']) . ' ' . Module::t('Upload'),

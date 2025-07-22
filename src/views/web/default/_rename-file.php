@@ -15,12 +15,15 @@ if (isset($model)) {
         'title' => Module::t('Rename'),
         'options' => ['class' => 'fade'],
         'bodyOptions' => ['class' => 'modal-body'],
-        'closeButton' => false,
+        'clientOptions' => [
+            'backdrop' => 'static',
+            'keyboard' => false,
+        ],
         'footer' => Button::widget([
                 'label' => Module::t('Close'),
                 'options' => [
                     'class' => 'btn btn-danger',
-                    'data-bs-dismiss' => 'modal'
+                    'onclick' => 'hideModal("renameModal")',
                 ],
             ]) . ' ' . Button::widget([
                 'label' => Module::t('Rename'),

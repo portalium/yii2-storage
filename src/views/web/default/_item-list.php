@@ -355,7 +355,6 @@ window.openFolder = function(folderId, event, fileExtensions) {
 
     var currentActionId = window.actionId || 'index';
     var isPicker = window.isPicker || 0;
-
     var url = '/storage/default/' + currentActionId + '?id_directory=' + folderId;
 
     if (isPicker === 1) {

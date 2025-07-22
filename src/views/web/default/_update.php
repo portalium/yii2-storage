@@ -13,21 +13,24 @@ if (isset($model)) {
         'title' => Module::t('Update'),
         'options' => ['class' => 'fade'],
         'bodyOptions' => ['class' => 'modal-body'],
-        'closeButton' => false,
+        'clientOptions' => [
+            'backdrop' => 'static',
+            'keyboard' => false,
+        ],
         'footer' => Button::widget([
-                'label' => Module::t('Close'),
-                'options' => [
-                    'class' => 'btn btn-danger',
-                    'data-bs-dismiss' => 'modal'
-                ],
-            ]) . ' ' . Button::widget([
-                'label' => Module::t('Update'),
-                'options' => [
-                    'class' => 'btn btn-success',
-                    'id' => 'updateButton',
-                    'type' => 'button',
-                ],
-            ]),
+            'label' => Module::t('Close'),
+            'options' => [
+                'class' => 'btn btn-danger',
+                'onclick' => 'hideModal("updateModal")',
+            ],
+        ]) . ' ' . Button::widget([
+            'label' => Module::t('Update'),
+            'options' => [
+                'class' => 'btn btn-success',
+                'id' => 'updateButton',
+                'type' => 'button',
+            ],
+        ]),
         'dialogOptions' => ['class' => 'modal-dialog-centered']
     ]);
 
@@ -41,11 +44,5 @@ if (isset($model)) {
 
     ActiveForm::end();
     Modal::end();
-}
-else
+} else
     Yii::$app->session->setFlash('error', Module::t('File not found!'));
-
-
-
-
-

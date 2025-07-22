@@ -1,4 +1,3 @@
-window.isPicker = false;
 var currentDirectoryId = null;
 var currentIsPicker = $("#searchFileInput").data("is-picker") === 1;
 var searchTimer;
@@ -23,8 +22,8 @@ function showModal(modalId, timeout = 200) {
       }
 
       const modalInstance = new bootstrap.Modal(modalEl, {
-        backdrop: true,
-        keyboard: true,
+        backdrop: "static",
+        keyboard: false,
       });
       modalInstance.show();
     } else {
@@ -34,6 +33,7 @@ function showModal(modalId, timeout = 200) {
 }
 
 function hideModal(modalId) {
+  console.log("Hiding modal:", modalId);
   const modalEl = document.getElementById(modalId);
   if (modalEl) {
     const modalInstance = bootstrap.Modal.getInstance(modalEl);
