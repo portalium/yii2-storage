@@ -15,7 +15,9 @@ class StorageAsset extends AssetBundle
         'storage.js',
         'storageActions.js'
     ];
-
+    public $publishOptions = [
+        'forceCopy' => YII_DEBUG
+    ];
     public $cssOptions = [
         'appendTimestamp' => true,
     ];

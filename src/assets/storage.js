@@ -4,15 +4,32 @@ function toggleContextMenu(e, id) {
     document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
         if (menu.id !== 'context-menu-' + id) {
             menu.classList.remove('show');
+            const card = menu.closest('.file-card'); // kartı bul
+            if (card) card.onmouseleave = null;
         }
     });
+    
     const menu = document.getElementById('context-menu-' + id);
-    if (menu) {
+    const card = e.currentTarget.closest('.file-card');
+
+    if (menu && card) {
         menu.classList.toggle('show');
+
+        if (menu.classList.contains('show')) {
+            card.onmouseleave = function () {
+                menu.classList.remove('show');
+                card.onmouseleave = null;
+            };
+        } else {
+            card.onmouseleave = null;
+        }
     }
-    const closeContextMenus = function(event) {
+
+    const closeContextMenus = function () {
         document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
             menu.classList.remove('show');
+            const card = menu.closest('.file-card');
+            if (card) card.onmouseleave = null;
         });
         document.removeEventListener('click', closeContextMenus);
     };
