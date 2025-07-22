@@ -12,16 +12,13 @@
     position: relative;
     border: 1px solid #ddd;
     border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    height: 210px;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
     text-align: center;
     transition: transform 0.3s ease;
     cursor: pointer;
+    aspect-ratio: 1 / 1;
 }
 
 .file-manager .file-card:hover {
@@ -30,8 +27,7 @@
 
 .file-manager .file-card.active,
 .file-manager .file-card:has(.file-select-checkbox:checked) {
-    border: 2px solid #0d6efd;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+    border: 2px solid #198754;
 }
 
 .file-manager .file-card .card-header {
@@ -47,6 +43,15 @@
     background: rgba(238, 238, 238, 0.9);
     border-radius: 8px 8px 0 0;
     height: 40px;
+    opacity: 0;              
+    pointer-events: none;    
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+.file-manager .file-card:hover .card-header {
+    opacity: 1;              
+    pointer-events: auto; 
 }
 
 .file-manager .file-card .card-header .fa-ellipsis-h {
@@ -77,6 +82,7 @@
     background-color: white;
     transition: all 0.2s ease;
     margin-right: 10px;
+    display:none;
 }
 
 .file-manager .file-select-checkbox:checked {
@@ -100,18 +106,9 @@
     border-color: #0d6efd;
 }
 
-.file-manager .file-card img.file-icon.image-file {
-    max-width: 90%;
-    max-height: 90%;
-    object-fit: contain;
-    padding-top: 30px;
-    border-radius: 3px;
-}
-
 .file-manager .file-card img.file-icon.non-image {
     width: 70px;
     height: 70px;
-    margin-top: 20px;
 }
 
 .file-manager .file-title {
@@ -130,6 +127,7 @@
     right: 10px;
     top: 30px;
     animation: fadeIn 0.2s ease;
+    z-index: 9999 !important;
 }
 
 .file-manager .custom-dropdown-menu.show {
@@ -477,3 +475,25 @@
 }
 
 
+
+.file-manager .file-card img.file-icon.image-file{
+    position: absolute;
+    inset: 0;
+    object-fit: cover;
+    padding: 0,0px;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+}
+
+
+.file-manager .file-card,
+.file-manager .folder-container {
+    position: relative;
+    z-index: 1;
+}
+
+.file-manager .file-card:hover,
+.file-manager .folder-container:hover {
+    z-index: 2;
+}

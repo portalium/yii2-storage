@@ -23,23 +23,27 @@ $this->params['breadcrumbs'][] = $this->title;
 
 ?>
 <div class="file-manager">
+    <div class="file-controls"> 
 <?php
-echo Html::beginTag('span', [
-    'class' => 'col-md-5 d-flex gap-2 mb-3'
+echo Html::beginTag('div', [
+    'class' => 'd-flex align-items-center gap-2 mb-3 flex-wrap'
 ]);
 
 echo Html::tag(
-    'span',
+    'div',
     Html::textInput('file', '', [
         'class' => 'form-control',
         'id' => 'searchFileInput',
         'placeholder' => Module::t('Search file..'),
         'data-is-picker' => $isPicker ? '1' : '0',
     ]) .
-        Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), [
-            'class' => 'input-group-text'
-        ]),
-    ['class' => 'input-group']
+    Html::tag('span', Html::tag('i', '', ['class' => 'fa fa-search', 'aria-hidden' => 'true']), [
+        'class' => 'input-group-text'
+    ]),
+    [
+        'class' => 'input-group',
+        'style' => 'min-width: 300px; max-width: 400px; flex-grow: 1;',
+    ]
 );
 
 echo Button::widget([
@@ -66,8 +70,13 @@ echo Button::widget([
         'id' => 'newFolderBtn',
     ],
 ]);
-echo Html::endTag('span');
 
+echo Html::endTag('div');
+echo Html::endTag('div'); // file-controls
+
+echo Html::beginTag('div', [
+    'class' => 'file-list'
+]);
 Pjax::begin([
     'id' => 'upload-file-pjax',
     'history' => false,
@@ -109,6 +118,7 @@ echo $this->render('_item-list', [
 ]);
 
 Pjax::end();
+echo Html::endTag('div'); // file-list
 
 Pjax::begin([
     'id' => 'rename-file-pjax',
