@@ -48,13 +48,14 @@ class Storage extends \yii\db\ActiveRecord
         'application/zip' => '14',
         'application/x-rar-compressed' => '15',
         'application/x-7z-compressed' => '16',
-        'application/x-tar' => '17',
+        'image/jpg' => '17',
         'application/gzip' => '18',
         'text/plain' => '19',
         'text/csv' => '20',
         'text/html' => '21',
         'text/xml' => '22',
         'application/json' => '23',
+        'application/x-tar' => '24',
     ];
 
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar'];
