@@ -26,7 +26,7 @@ $this->params['breadcrumbs'][] = $this->title;
     <div class="file-controls"> 
 <?php
 echo Html::beginTag('div', [
-    'class' => 'd-flex align-items-center gap-2 mb-3 flex-wrap'
+    'class' => 'd-flex align-items-center gap-2 flex-wrap'
 ]);
 
 echo Html::tag(
