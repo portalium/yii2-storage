@@ -447,7 +447,7 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultPickerModal')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-
+        
         $id_directory = Yii::$app->request->get('id_directory');
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
         $isPicker = Yii::$app->request->get('isPicker', true);
@@ -469,6 +469,7 @@ class DefaultController extends Controller
         });
 
         $query = Storage::find();
+        $query->andWhere(['id_user' => Yii::$app->user->id]);
         $query->andWhere(['id_directory' => $id_directory]);
 
         // ★ DÜZELTME: LIKE operatörünü doğru kullan ★
@@ -503,6 +504,7 @@ class DefaultController extends Controller
         $directoryDataProvider = new ActiveDataProvider([
             'query' => StorageDirectory::find()
                 ->andWhere(['id_parent' => $id_directory])
+                ->andWhere(['id_user' => Yii::$app->user->id])
                 ->orderBy(['id_directory' => SORT_DESC]),
             'pagination' => [
                 'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
@@ -511,11 +513,12 @@ class DefaultController extends Controller
 
         $directories = StorageDirectory::find()
             ->andWhere(['id_parent' => $id_directory])
+            ->andWhere(['id_user' => Yii::$app->user->id])
             ->orderBy(['id_directory' => SORT_DESC])
             ->all();
 
         // Files için aynı filtreyi uygula
-        $filesQuery = Storage::find()->andWhere(['id_directory' => $id_directory]);
+        $filesQuery = Storage::find()->andWhere(['id_directory' => $id_directory])->andWhere(['id_user' => Yii::$app->user->id]);
 
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];

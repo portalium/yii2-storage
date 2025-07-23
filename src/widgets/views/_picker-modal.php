@@ -62,6 +62,7 @@
         //'pagination'  => $pagination,  // Veriyi gönderiyoruz
 
         'isPicker' => true,
+        'actionId' => 'index'
     ]);
     // deneme
 
