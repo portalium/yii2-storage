@@ -1,238 +1,239 @@
 
 .file-manager .container-fluid {
-    padding: 5px;
+  padding: 5px;
 }
 
 .file-manager .file-card-wrapper {
-    position: relative;
-    margin-bottom: 15px;
+  position: relative;
+  margin-bottom: 15px;
 }
 
 .file-manager .file-card {
-    position: relative;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    text-align: center;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-    aspect-ratio: 1 / 1;
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  aspect-ratio: 1 / 1;
 }
 
 .file-manager .file-card:hover {
-    transform: scale(1.03);
+  transform: scale(1.03);
 }
 
 .file-manager .file-card.active,
 .file-manager .file-card:has(.file-select-checkbox:checked) {
-    border: 2px solid #198754;
+  border: 2px solid #198754;
 }
 
 .file-manager .file-card .card-header {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    font-size: 14px;
-    background: rgba(238, 238, 238, 0.9);
-    border-radius: 8px 8px 0 0;
-    height: 40px;
-    opacity: 0;              
-    pointer-events: none;    
-    transition: opacity 0.3s ease;
-    z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  font-size: 14px;
+  background: rgba(238, 238, 238, 0.9);
+  border-radius: 8px 8px 0 0;
+  height: 40px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 2;
 }
 
 .file-manager .file-card:hover .card-header {
-    opacity: 1;              
-    pointer-events: auto; 
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.file-manager .file-card .card-header .fa-ellipsis-h {
-    font-size: 18px;
-    cursor: pointer;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background-color 0.2s ease;
+.file-manager .file-card .card-header .fa-ellipsis-v {
+  font-size: 18px;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
 }
 
-.file-manager .file-card .card-header .fa-ellipsis-h:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+.file-manager .file-card .card-header .fa-ellipsis-v:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .file-manager .file-select-checkbox {
-    position: relative;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    border: 2px solid #ccc;
-    border-radius: 4px;
-    background-color: white;
-    transition: all 0.2s ease;
-    margin-right: 10px;
-    display:none;
+  position: relative;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  transition: all 0.2s ease;
+  margin-right: 10px;
+  display: none;
 }
 
 .file-manager .file-select-checkbox:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+  background-color: #0d6efd;
+  border-color: #0d6efd;
 }
 
 .file-manager .file-select-checkbox:checked::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 5px;
-    width: 5px;
-    height: 10px;
-    border: solid white;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .file-manager .file-select-checkbox:hover {
-    border-color: #0d6efd;
+  border-color: #0d6efd;
 }
 
 .file-manager .file-card img.file-icon.non-image {
-    width: 70px;
-    height: 70px;
+  width: 70px;
+  height: 70px;
 }
 
 .file-manager .file-title {
-    display: inline-block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 160px;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
 }
 
 .file-manager .file-title.picker {
-    max-width: 100px;
+  max-width: 100px;
 }
 
 .file-manager .custom-dropdown-menu {
-    right: 10px;
-    top: 30px;
-    animation: fadeIn 0.2s ease;
-    z-index: 9999 !important;
+  right: 10px;
+  top: 30px;
+  animation: fadeIn 0.2s ease;
+  z-index: 10 !important;
 }
 
 .file-manager .custom-dropdown-menu.show {
-    display: block;
+  display: block;
 }
 
 .file-manager .custom-dropdown-menu .menu-item {
-    padding: 8px 15px;
-    cursor: pointer;
-    font-size: 13px;
+  padding: 8px 15px;
+  cursor: pointer;
+  font-size: 13px;
 }
 
 .file-manager .custom-dropdown-menu .menu-item:hover {
-    background-color: #f5f5f5;
+  background-color: #f5f5f5;
 }
 
 .file-manager .custom-dropdown-menu .divider {
-    height: 1px;
-    background-color: #e5e5e5;
-    margin: 5px 0;
+  height: 1px;
+  background-color: #e5e5e5;
+  margin: 5px 0;
 }
 
 .file-manager .folder-container {
-    position: relative;
-    max-width: 120px;
-    height: 100px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    align-items: center;
-    transition: transform 0.3s ease;
-    margin: 0 auto 20px;
+  position: relative;
+  max-width: 120px;
+  height: 100px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  transition: transform 0.3s ease;
+  margin: 0 auto 20px;
 }
 
 .file-manager .folder-container:hover {
-    transform: translateY(-3px);
+  transform: translateY(-3px);
 }
 
 .file-manager .folder {
-    position: absolute;
-    width: 90px;
-    height: 75px;
-    background-color: #ffca28;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 211, 89, 0.8);
-    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 25%);
-    top: 0;
-    left: 15px;
+  position: absolute;
+  width: 90px;
+  height: 75px;
+  background-color: #ffca28;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 211, 89, 0.8);
+  background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 25%);
+  top: 0;
+  left: 15px;
 }
 
 .file-manager .folder-notch {
-    position: absolute;
-    width: 30px;
-    height: 10px;
-    border-top-right-radius: 3px;
-    top: -5px;
-    left: 15px;
-    border-top: 1px solid rgba(255, 211, 89, 0.8);
-    background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 100%);
+  position: absolute;
+  width: 30px;
+  height: 10px;
+  border-top-right-radius: 3px;
+  top: -5px;
+  left: 15px;
+  border-top: 1px solid rgba(255, 211, 89, 0.8);
+  background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 100%);
 }
 
 .file-manager .folder-title {
-    position: absolute;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100px;
-    font-size: 14px;
-    padding-left: 25px;
+  position: absolute;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100px;
+  font-size: 14px;
+  padding-left: 25px;
 }
 
 .file-manager .folder-ellipsis {
-    position: absolute;
-    top: -15px;
-    left: 100px;
-    cursor: pointer;
-    font-size: 16px;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.7);
+  position: absolute;
+  top: -15px;
+  left: 100px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.7);
 }
 
 .file-manager .folder-ellipsis:hover {
-    background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.9);
 }
 .file-manager .folder-dropdown-menu {
-    top: 5px;
-    animation: fadeIn 0.2s ease;
+  top: 5px;
+  animation: fadeIn 0.2s ease;
 }
 .file-manager .folder-dropdown-menu.show {
-    display: block;
+  display: block;
 }
 .pagination-custom {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
+  margin-left: auto;
 }
 
 .pagination-custom li {
-    display: inline-block;
+  display: inline-block;
 }
 
 #updateModal-label,
@@ -240,268 +241,331 @@
 #renameModal-label,
 #newFolderModal-label,
 #file-picker-modal-label {
-    margin-left: 0px;
+  margin-left: 0px;
 }
 
 .pagination-custom li a,
 .pagination-custom li span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 0;
-    color: #666;
-    background: transparent;
-    border: 1px solid #ddd;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    font-size: 13px;
-    margin-left: -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 0;
+  color: #666;
+  background: transparent;
+  border: 1px solid #ddd;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  margin-left: -1px;
 }
 
 .pagination-custom li:first-child a,
 .pagination-custom li:first-child span {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-    margin-left: 0;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  margin-left: 0;
 }
 
 .pagination-custom li:last-child a,
 .pagination-custom li:last-child span {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
 }
 
 .pagination-custom li.active a,
 .pagination-custom li.active span {
-    background: #3498db;
-    border-color: #3498db;
-    color: white;
-    font-weight: bold;
+  background: #3498db;
+  border-color: #3498db;
+  color: white;
+  font-weight: bold;
 }
 
 .pagination-custom li.disabled span,
 .pagination-custom li.disabled a {
-    color: #ccc;
-    border-color: #eee;
-    cursor: not-allowed;
+  color: #ccc;
+  border-color: #eee;
+  cursor: not-allowed;
 }
 
 .pagination-custom li a .fa {
-    font-size: 12px;
+  font-size: 12px;
 }
 
-
 .btn-loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.9;
-    overflow: hidden;
-    height: 38px !important;
+  position: relative;
+  pointer-events: none;
+  opacity: 0.9;
+  overflow: hidden;
+  height: 38px !important;
 }
 
 .btn-loading .btn-text {
-    opacity: 0 !important;
-    visibility: hidden;
+  opacity: 0 !important;
+  visibility: hidden;
 }
 
 .btn-loading i {
-    opacity: 0 !important;
-    visibility: hidden;
+  opacity: 0 !important;
+  visibility: hidden;
 }
 
 /* Modern CSS-only loading animation */
 .btn-loading::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 16px !important;
-    height: 16px !important;
-    margin: -8px 0 0 -8px !important;
-    border: 2px solid rgba(40, 167, 69, 0.2);
-    border-top: 2px solid #28a745;
-    border-radius: 50%;
-    animation: btn-spin 1.2s linear infinite;
-    z-index: 10;
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px !important;
+  height: 16px !important;
+  margin: -8px 0 0 -8px !important;
+  border: 2px solid rgba(40, 167, 69, 0.2);
+  border-top: 2px solid #28a745;
+  border-radius: 50%;
+  animation: btn-spin 1.2s linear infinite;
+  z-index: 10;
 }
 
 .btn-loading::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 10px !important;
-    height: 10px !important;
-    margin: -5px 0 0 -5px !important;
-    border: 2px solid rgba(40, 167, 69, 0.3);
-    border-left: 2px solid #28a745;
-    border-radius: 50%;
-    animation: btn-spin-reverse 0.8s linear infinite;
-    z-index: 11;
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px !important;
+  height: 10px !important;
+  margin: -5px 0 0 -5px !important;
+  border: 2px solid rgba(40, 167, 69, 0.3);
+  border-left: 2px solid #28a745;
+  border-radius: 50%;
+  animation: btn-spin-reverse 0.8s linear infinite;
+  z-index: 11;
 }
 
 /* Success button için daha parlak yeşil */
 .btn-success.btn-loading::before {
-    border-color: rgba(34, 139, 34, 0.2);
-    border-top-color: #22c55e;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+  border-color: rgba(34, 139, 34, 0.2);
+  border-top-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
 }
 
 .btn-success.btn-loading::after {
-    border-color: rgba(34, 139, 34, 0.3);
-    border-left-color: #22c55e;
-    box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 139, 34, 0.3);
+  border-left-color: #22c55e;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
 }
 
 /* Primary button için siyah/gri tonları */
 .btn-primary.btn-loading::before {
-    border-color: rgba(52, 58, 64, 0.2);
-    border-top-color: #343a40;
-    box-shadow: 0 0 8px rgba(52, 58, 64, 0.4);
+  border-color: rgba(52, 58, 64, 0.2);
+  border-top-color: #343a40;
+  box-shadow: 0 0 8px rgba(52, 58, 64, 0.4);
 }
 
 .btn-primary.btn-loading::after {
-    border-color: rgba(52, 58, 64, 0.3);
-    border-left-color: #343a40;
-    box-shadow: 0 0 4px rgba(52, 58, 64, 0.3);
+  border-color: rgba(52, 58, 64, 0.3);
+  border-left-color: #343a40;
+  box-shadow: 0 0 4px rgba(52, 58, 64, 0.3);
 }
 
 @keyframes btn-spin {
-    0% { 
-        transform: rotate(0deg); 
-    }
-    100% { 
-        transform: rotate(360deg); 
-    }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes btn-spin-reverse {
-    0% { 
-        transform: rotate(360deg); 
-    }
-    100% { 
-        transform: rotate(0deg); 
-    }
+  0% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 /* Glow pulse effect */
 .btn-loading {
-    animation: btn-glow 2s ease-in-out infinite alternate;
+  animation: btn-glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes btn-glow {
-    from {
-        box-shadow: 0 0 5px rgba(40, 167, 69, 0.2), 0 0 10px rgba(40, 167, 69, 0.1);
-    }
-    to {
-        box-shadow: 0 0 10px rgba(40, 167, 69, 0.4), 0 0 20px rgba(40, 167, 69, 0.2);
-    }
+  from {
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.2), 0 0 10px rgba(40, 167, 69, 0.1);
+  }
+  to {
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.4), 0 0 20px rgba(40, 167, 69, 0.2);
+  }
 }
 
 .btn-success.btn-loading {
-    animation: btn-glow-success 2s ease-in-out infinite alternate;
+  animation: btn-glow-success 2s ease-in-out infinite alternate;
 }
 
 @keyframes btn-glow-success {
-    from {
-        box-shadow: 0 0 5px rgba(34, 197, 94, 0.3), 0 0 10px rgba(34, 197, 94, 0.1);
-    }
-    to {
-        box-shadow: 0 0 15px rgba(34, 197, 94, 0.5), 0 0 25px rgba(34, 197, 94, 0.2);
-    }
+  from {
+    box-shadow: 0 0 5px rgba(34, 197, 94, 0.3), 0 0 10px rgba(34, 197, 94, 0.1);
+  }
+  to {
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.5), 0 0 25px rgba(34, 197, 94, 0.2);
+  }
 }
 
 .btn-primary.btn-loading {
-    animation: btn-glow-primary 2s ease-in-out infinite alternate;
+  animation: btn-glow-primary 2s ease-in-out infinite alternate;
 }
 
 @keyframes btn-glow-primary {
-    from {
-        box-shadow: 0 0 5px rgba(52, 58, 64, 0.3), 0 0 10px rgba(52, 58, 64, 0.1);
-    }
-    to {
-        box-shadow: 0 0 15px rgba(52, 58, 64, 0.5), 0 0 25px rgba(52, 58, 64, 0.2);
-    }
+  from {
+    box-shadow: 0 0 5px rgba(52, 58, 64, 0.3), 0 0 10px rgba(52, 58, 64, 0.1);
+  }
+  to {
+    box-shadow: 0 0 15px rgba(52, 58, 64, 0.5), 0 0 25px rgba(52, 58, 64, 0.2);
+  }
 }
 
 .input-group {
-    height: 38px !important;
+  height: 38px !important;
 }
 
 .input-group .form-control {
-    height: 38px !important;
-    padding: 6px 12px !important;
-    font-size: 14px !important;
+  height: 38px !important;
+  padding: 6px 12px !important;
+  font-size: 14px !important;
 }
 
 .input-group-text {
-    height: 38px !important;
-    padding: 6px 12px !important;
-    display: flex;
-    align-items: center;
+  height: 38px !important;
+  padding: 6px 12px !important;
+  display: flex;
+  align-items: center;
 }
 
 .btn-md {
-    height: 38px !important;
-    padding: 6px 16px !important;
-    font-size: 14px !important;
-    line-height: 1.4 !important;
-    min-height: 38px !important;
+  height: 38px !important;
+  padding: 6px 16px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  min-height: 38px !important;
 }
 
 .btn-md.d-flex {
-    align-items: center !important;
-    justify-content: center !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 .btn-md .fa {
-    font-size: 14px !important;
+  font-size: 14px !important;
 }
 
 .btn-md .btn-text {
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
 }
 
 #uploadBtn {
-    height: 38px !important;
-    min-width: 100px !important;
+  height: 38px !important;
+  min-width: 100px !important;
 }
 
 #newFolderBtn {
-    height: 38px !important;
-    min-width: 120px !important;
+  height: 38px !important;
+  min-width: 120px !important;
 }
 
 .col-md-5.d-flex.gap-2.mb-3 {
-    align-items: center !important;
+  align-items: center !important;
 }
 
 #newFolderBtn .btn-text {
-    font-size: 12px !important;
+  font-size: 12px !important;
 }
 
-
-
-.file-manager .file-card img.file-icon.image-file{
-    position: absolute;
-    inset: 0;
-    object-fit: cover;
-    padding: 0,0px;
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
+.file-manager .file-card img.file-icon.image-file {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  padding: 0px;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
 }
-
 
 .file-manager .file-card,
 .file-manager .folder-container {
-    position: relative;
-    z-index: 1;
+  position: relative;
+  z-index: 0;
 }
 
 .file-manager .file-card:hover,
 .file-manager .folder-container:hover {
-    z-index: 2;
+  z-index: 1;
+}
+
+.folder-item {
+  position: relative;
+  background: rgb(240, 240, 240);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  height: 48px;
+}
+
+.folder-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.folder-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 12px;
+}
+
+.folder-name {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  color: #000000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 10px;
+  flex: 1;
+}
+
+.more-options {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.more-options i {
+  font-size: 16px;
+  color: #5f6368;
+}
+
+.folder-item:hover .more-options {
+  opacity: 1;
+}
+
+.folders-section > div {
+  padding: 0px;
+}
+
+.folder-item .folder-dropdown-menu {
+  position: absolute;
+  left: 98%;
+  top: 0;
+}
+@media (max-width: 768px) {
+  .folder-item .folder-dropdown-menu {
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }

@@ -6,6 +6,7 @@ use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Dropdown;
 use yii\helpers\Url;
 use yii\widgets\LinkPager;
+use portalium\storage\bundles\IconAsset;
 
 /** @var \yii\data\ActiveDataProvider $directoryDataProvider */
 /** @var \yii\data\ActiveDataProvider $fileDataProvider */
@@ -13,6 +14,7 @@ use yii\widgets\LinkPager;
 /** @var string $actionId */
 $actionId = $actionId ?? 'index';
 
+$bundle = \portalium\storage\bundles\IconAsset::register($this);
 
 $id_directory = Yii::$app->request->get('id_directory');
 $parentDirectory = null;
@@ -116,7 +118,11 @@ echo Html::beginTag('div', ['class' => 'col-12']);
 echo Html::endTag('div');
 echo Html::endTag('div');
 
-echo Html::beginTag('div', ['class' => 'row']);
+echo Html::beginTag('div', ['class' => 'container-fluid','style'=>'padding:0px;']); 
+echo Html::beginTag('div', ['class' => 'folders-section mb-4']);
+
+echo Html::tag('h3', 'Klasörler', ['class' => 'h6 text-muted mb-3']); 
+echo Html::beginTag('div', ['class' => 'row g-3']); 
 
 $directories = $directoryDataProvider->models;
 
@@ -126,20 +132,27 @@ foreach ($directories as $model) {
     $folderName = Html::encode($model->name);
 
     $content = Html::beginTag('div', [
-        'class' => 'col-md-1 mb-6',
+        'class' => ($isPicker ? 'col-md-3 col-sm-6 col-12 mb-3' : 'col-md-2 col-sm-3 col-6 mb-3'),
         'id' => 'folder-' . $folderId,
     ]);
 
     $content .= Html::beginTag('div', [
-        'class' => 'folder-container',
+        'class' => 'folder-item d-flex align-items-center',
         'data-id' => $folderId,
-        'onclick' => "openFolder($folderId, event, '" . $fileExtensionsParam . "')",
+        'ondblclick' => "openFolder($folderId, event, '" . $fileExtensionsParam . "')",
     ]);
 
-    $content .= Html::tag('i', '', [
-        'class' => 'fa fa-ellipsis-h folder-ellipsis',
-        'onclick' => "toggleFolderMenu(event, $folderId)",
-    ]);
+    $content .= Html::img( $bundle->baseUrl . '/folder-icon.png', ['class' => 'folder-icon', 'alt' => 'folder-icon']);
+
+    $content .= Html::tag('span', $folderName, ['class' => 'folder-name']);
+
+    $content .= Html::button(
+        Html::tag('i', '', ['class' => 'fa fa-ellipsis-v']),
+        [
+            'class' => 'more-options',
+            'onclick' => "toggleFolderMenu(event, $folderId)",
+        ]
+    );
 
     $dropdownItems = [
         [
@@ -179,15 +192,15 @@ foreach ($directories as $model) {
         ],
     ]);
 
-    $content .= Html::tag('div', '', ['class' => 'folder']);
-    $content .= Html::tag('div', '', ['class' => 'folder-notch']);
-    $content .= Html::tag('div', $folderName, ['class' => 'folder-title']);
-    $content .= Html::endTag('div');
-    $content .= Html::endTag('div');
-    echo $content;
+    $content .= Html::endTag('div'); 
+    $content .= Html::endTag('div'); 
+    echo $content; 
 }
 
+echo Html::endTag('div'); 
 echo Html::endTag('div');
+echo Html::endTag('div');
+
 
 echo Html::beginTag('div', ['class' => 'row mb-3']);
 echo Html::beginTag('div', ['class' => 'col-12']);
@@ -228,7 +241,7 @@ foreach ($files as $model) {
     $content .= Html::tag('span', Html::encode($title), ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')]);
 
     $content .= Html::tag('i', '', [
-        'class' => 'fa fa-ellipsis-h',
+        'class' => 'fa fa-ellipsis-v',
         'id' => 'menu-trigger-' . $model->id_storage,
         'data-title' => $title,
         'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
