@@ -56,9 +56,10 @@ class Storage extends \yii\db\ActiveRecord
         'text/xml' => '22',
         'application/json' => '23',
         'application/x-tar' => '24',
+        'image/svg+xml' => '25',
     ];
 
-    public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar'];
+    public static $allowExtensions = ['jpg', 'jpeg', 'png', 'svg', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar'];
 
     public function behaviors()
     {
@@ -289,47 +290,49 @@ class Storage extends \yii\db\ActiveRecord
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
         $path = Yii::$app->basePath . '/../data/' . $this->name;
+        $iconPath = Yii::$app->view->getAssetManager()->getBundle(\portalium\storage\bundles\IconAsset::class)->baseUrl;
         if (file_exists($path)) {
             switch ($mimeType) {
                 case 'application/pdf':
                     return [
-                        'url' => 'https://img.icons8.com/?size=100&id=13417&format=png&color=000000',
+                        'url' => $iconPath . '/pdf-icon.png',
                         'class' => 'non-image'
                     ];
                 case 'application/msword':
                 case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
                     return [
-                        'url' => 'https://img.icons8.com/?size=100&id=13674&format=png&color=000000',
+                        'url' => $iconPath . '/doc-icon.png',
                         'class' => 'non-image'
                     ];
                 case 'application/vnd.ms-excel':
                 case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                     return [
-                        'url' => 'https://img.icons8.com/?size=100&id=13654&format=png&color=000000',
+                        'url' => $iconPath . '/xls-icon.png',
                         'class' => 'non-image'
                     ];
                 case 'application/vnd.ms-powerpoint':
                 case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
                     return [
-                        'url' => 'https://img.icons8.com/?size=100&id=81726&format=png&color=000000',
+                        'url' => $iconPath . '/ppt-icon.png',
                         'class' => 'non-image'
                     ];
                 case 'image/jpeg':
                 case 'image/jpg':
                 case 'image/png':
+                case 'image/svg+xml':
                     return [
                         'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,
                         'class' => 'image-file'
                     ];
                 default:
                     return [
-                        'url' => 'https://img.icons8.com/?size=100&id=12141&format=png&color=000000',
+                        'url' => $iconPath . '/unknown-icon.png',
                         'class' => 'non-image'
                     ];
             }
         } else {
             return [
-                'url' => 'https://img.icons8.com/?size=100&id=12141&format=png&color=000000',
+                'url' => $iconPath . '/unknown-icon.png',
                 'class' => 'non-image'
             ];
         }
