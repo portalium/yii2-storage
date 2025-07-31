@@ -46,30 +46,48 @@ echo Html::tag(
     ]
 );
 
-echo Button::widget([
-    'label' => Html::tag('i', '', ['class' => 'fa fa-upload me-2', 'aria-hidden' => 'true']) .
-        Html::tag('span', Module::t('Upload'), ['class' => 'btn-text']),
-    'encodeLabel' => false,
-    'options' => [
-        'type' => 'button',
-        'class' => 'btn btn-success btn-md d-flex',
-        'onclick' => 'openUploadModal(event)',
-        'id' => 'uploadBtn',
-    ],
-]);
+echo Html::beginTag('div', ['class' => 'dropdown d-inline']);
 
-echo Button::widget([
-    'label' => Html::tag('i', '', ['class' => 'fa fa-folder me-2', 'aria-hidden' => 'true']) .
-        Html::tag('span', Module::t('New Folder'), ['class' => 'btn-text']),
-    'encodeLabel' => false,
-    'options' => [
+echo Html::button(
+    Html::tag('i', '', ['class' => 'fa fa-plus me-2']) .
+    Html::tag('span', Module::t('New'), ['class' => 'btn-text']),
+    [
+        'class' => 'btn btn-primary btn-md d-flex align-items-center',
         'type' => 'button',
-        'class' => 'btn btn-primary btn-md d-flex',
-        'style' => 'min-width: 106px;',
-        'onclick' => 'openNewFolderModal(event)',
-        'id' => 'newFolderBtn',
-    ],
-]);
+        'id' => 'newDropdownBtn',
+        'data-bs-toggle' => 'dropdown',
+        'aria-expanded' => 'false',
+    ]
+);
+
+echo Html::beginTag('ul', ['class' => 'dropdown-menu custom-dropdown-align', 'aria-labelledby' => 'newDropdownBtn']);
+
+echo Html::tag(
+    'li',
+    Html::a(
+        Html::tag('i', '', ['class' => 'fa fa-folder me-2']) . Module::t('New Folder'),
+        '#',
+        ['class' => 'dropdown-item', 'onclick' => 'openNewFolderModal(event)', 'id' => 'newFolderBtn']
+    )
+);
+
+echo Html::tag(
+    'li',
+    Html::a(
+        Html::tag('i', '', ['class' => 'fa fa-upload me-2']) . Module::t('Upload File'),
+        '#',
+        ['class' => 'dropdown-item', 'onclick' => 'uploadFileMenu(event)', 'id' => 'uploadFileBtn']
+    )
+);
+
+echo Html::tag(
+    'li',
+    Html::a(
+        Html::tag('i', '', ['class' => 'fa fa-upload me-2']) . Module::t('Upload Folder'),
+        '#',
+        ['class' => 'dropdown-item', 'onclick' => 'uploadFolderMenu(event)', 'id' => 'uploadFolderBtn']
+    )
+);
 
 echo Html::endTag('div');
 echo Html::endTag('div'); // file-controls

@@ -145,77 +145,143 @@ window.openFolder = function (id_directory, event) {
   });
 };
 
-function openUploadModal() {
-  const uploadBtn = $("#uploadBtn");
-  uploadBtn.addClass("btn-loading");
+function uploadFileMenu(event) {
+  event.preventDefault();
 
-  let url = "/storage/default/upload-file";
-  if (currentDirectoryId) {
-    url += "?id_directory=" + currentDirectoryId;
-  } else {
-    url += "?id_directory=null";
+  let fileInput = document.getElementById("hiddenUploadInput");
+  if (fileInput) {
+    fileInput.remove();
   }
 
-  if (currentIsPicker) {
-    url += "&isPicker=1";
-  }
+  fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.id = "hiddenUploadInput";
+  fileInput.style.display = "none";
+  fileInput.multiple = true;
+  document.body.appendChild(fileInput);
 
-  $.pjax
-    .reload({
-      container: "#upload-file-pjax",
-      type: "GET",
-      url: url,
-    })
-    .done(function () {
-      setTimeout(function () {
-        uploadBtn.removeClass("btn-loading");
-        showModal("uploadModal");
-      }, 1000);
-    })
-    .fail(function (e) {
-      console.log("Error Modal:", e);
-      uploadBtn.removeClass("btn-loading");
-    });
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files.length > 0) {
+      const files = Array.from(fileInput.files);
+
+      let completed = 0;
+      files.forEach(file => {
+        const formData = new FormData();
+        formData.append("Storage[file]", file);
+        formData.append("Storage[title]", file.name);
+        formData.append("id_directory", currentDirectoryId ? currentDirectoryId : "");
+
+        if (currentIsPicker) {
+          formData.append("isPicker", "1");
+        }
+
+        $.ajax({
+          url: "/storage/default/upload-file",
+          type: "POST",
+          data: formData,
+          contentType: false,
+          processData: false,
+          headers: {
+            "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content")
+          },
+          success: function () {
+            completed++;
+            if (completed === files.length) {
+              if (isSearching) {
+                const searchValue = $("#searchFileInput").val().trim();
+                if (searchValue) {
+                  performSearch(searchValue);
+                  return;
+                }
+              }
+
+              const reloadUrl = getBaseUrl();
+              $.pjax.reload({
+                container: "#list-item-pjax",
+                url: reloadUrl,
+                replace: false,
+                push: false,
+              });
+            }
+          },
+          error: function (xhr) {
+            console.error("Yükleme hatası:", xhr);
+          },
+        });
+      });
+    }
+  });
+
+  fileInput.click();
 }
 
-function uploadFile(e) {
-  e.preventDefault();
-  var form = document.getElementById("uploadForm");
-  var formData = new FormData(form);
 
-  if (currentDirectoryId !== null)
-    formData.append("id_directory", currentDirectoryId);
-  else formData.append("id_directory", "");
+function uploadFolderMenu(event) {
+  event.preventDefault();
 
-  if (currentIsPicker) {
-    formData.append("isPicker", "1");
+  let fileInput = document.getElementById("hiddenUploadInput");
+  if (fileInput) {
+    fileInput.remove();
   }
 
-  $.ajax({
-    url: form.action,
-    type: "POST",
-    data: formData,
-    contentType: false,
-    processData: false,
-    success: function () {
-      hideModal("uploadModal");
-      if (isSearching) {
-        const searchValue = $("#searchFileInput").val().trim();
-        if (searchValue) {
-          performSearch(searchValue);
-          return;
-        }
+  fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.id = "hiddenUploadInput";
+  fileInput.style.display = "none";
+  fileInput.webkitdirectory = true;
+  fileInput.multiple = false;
+  document.body.appendChild(fileInput);
+
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files.length > 0) {
+      const formData = new FormData();
+
+      Array.from(fileInput.files).forEach(file => {
+        formData.append("Storage[file][]", file); 
+      });
+
+
+      formData.append("Storage[type]", "folder");
+      formData.append("id_directory", currentDirectoryId ? currentDirectoryId : "");
+
+      if (currentIsPicker) {
+        formData.append("isPicker", "1");
       }
 
-      const reloadUrl = getBaseUrl();
-      $.pjax.reload({
-        container: "#list-item-pjax",
-        url: reloadUrl,
-        replace: false,
-        push: false,
+      $.ajax({
+        url: "/storage/default/upload-file",
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        headers: {
+          "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content")
+        },
+        success: function () {
+          if (isSearching) {
+            const searchValue = $("#searchFileInput").val().trim();
+            if (searchValue) {
+              performSearch(searchValue);
+              return;
+            }
+          }
+
+          const reloadUrl = getBaseUrl();
+          $.pjax.reload({
+            container: "#list-item-pjax",
+            url: reloadUrl,
+            replace: false,
+            push: false,
+          });
+        },
+        error: function (xhr) {
+          console.error("Yükleme hatası:", xhr);
+        },
       });
-    },
+    }
   });
+
+  fileInput.click();
 }
 
 function openNewFolderModal(event) {

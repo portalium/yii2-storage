@@ -16,6 +16,7 @@
             display: flex;
             flex-direction: column;
             height: 700px; /* Modal yüksekliğine göre ayarla */
+            overflow: scroll;
         }
 
         .file-controls {

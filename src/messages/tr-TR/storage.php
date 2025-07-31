@@ -52,6 +52,8 @@ return [
     'File' => 'Dosya',
     "Folders" => 'Klasörler',
     'Files' => 'Dosyalar',
+    'Your Folders' => 'Klasörleriniz',
+    "Your Files" => 'Dosyalarınız',
     'New Folder' => 'Yeni Klasör',
     'Name' => 'İsim',
     'Folder and its contents deleted successfully!' => 'Klasör ve içeriği başarıyla silindi.',
