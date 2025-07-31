@@ -10,7 +10,7 @@
 
 .file-manager .file-card {
   position: relative;
-  border: 1px solid #ddd;
+  border: 0px solid #ddd;
   border-radius: 8px;
   height: 100%;
   display: flex;
@@ -276,8 +276,8 @@
 
 .pagination-custom li.active a,
 .pagination-custom li.active span {
-  background: #3498db;
-  border-color: #3498db;
+  background: #28a745;
+  border-color: #28a745;
   color: white;
   font-weight: bold;
 }
@@ -469,6 +469,26 @@
   min-width: 100px !important;
 }
 
+#newDropdownBtn {
+  height: 38px !important;
+  min-width: 90px !important;
+  background: rgb(240, 240, 240);
+  z-index: 0;
+}
+
+#newDropdownBtn:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.2s ease-in-out;
+    z-index: 1;
+    background-color: #e0e0e0;
+}
+
+.custom-dropdown-align {
+  left: -2px !important;
+  top: -2px !important; 
+  transform: translateY(0) !important;
+}
+
 #newFolderBtn {
   height: 38px !important;
   min-width: 120px !important;
@@ -489,7 +509,8 @@
   padding: 0px;
   width: 100%;
   height: 100%;
-  border-radius: 8px;
+  border-radius: 2px;
+  padding-bottom: 20px;
 }
 
 .file-manager .file-card,
@@ -569,3 +590,188 @@
     transform: translateX(-50%);
   }
 }
+
+.folder-item {
+            position: relative;
+            background-color: #f0f4f9;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: box-shadow 0.2s ease;
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            height: 48px;
+        }
+
+        .folder-item:hover {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background-color: #eaeaea;
+        }
+
+        .folder-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+        }
+
+        .folder-name {
+            font-size: 14px;
+            color: #000000;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .more-options {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .more-options i {
+            font-size: 16px;
+            color: #5f6368;
+        }
+
+        .folder-item:hover .more-options {
+            opacity: 1;
+        }
+
+        .file-item {
+            position: relative;
+            background-color: #f0f4f9;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            padding: 3%;
+            padding-bottom: 10px;
+        }
+
+        .file-item:hover {
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            background-color: #eaeaea;
+        }
+
+        .file-header {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .file-header .file-title {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 8px;
+        }
+
+        .file-header .file-info {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            flex: 1;
+        }
+
+.file-preview {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    display: flex;
+    overflow: hidden;
+    margin-left: -3px;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    object-fit: contain; /* veya cover, ihtiyaca göre */
+    border-radius: 10px;
+    display: block;
+}
+
+
+        .file-more-options {
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 6px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+        }
+
+        .file-more-options:hover {
+            background: rgba(60, 64, 67, .08);
+            opacity: 1;
+        }
+
+        .file-create-date {
+            font-size: 10px;
+        }
+
+        .file-icon {
+            font-size: 16px;
+            margin-left: 5px;
+            margin-right: 14px;
+            color: #9e9e9e; 
+        }
+
+        .file-icon.word {
+            color: #2b579a;
+        }
+
+        .file-icon.excel {
+            color: #217346;
+        }
+
+        .file-icon.pdf {
+            color: #dc3545;
+        }
+
+        .file-icon.powerpoint {
+            color: #d24726;
+        }
+
+        .file-icon.video {
+            color: #ea4335;
+        }
+
+        .file-icon.image {
+            color: #34a853;
+        }
+
+        .file-icon.document {
+            color: #4285f4;
+        }
+
+        .file-icon.code {
+            color: #ff6d01;
+        }
+
+        .file-icon.archive {
+            color: #5514cc;
+        }
+
+        .file-icon.audio {
+            color: #c809c1;
+        }

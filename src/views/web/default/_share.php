@@ -84,46 +84,105 @@ if (isset($model)) {
 
     echo Html::label(Module::t('General Access'), null, ['class' => 'fw-bold mb-3 text-secondary mt-4']);
 
-    echo Html::tag(
-        'div',
-        Html::tag(
-            'div',
-            Html::tag(
-                'div',
-                Html::tag('i', '', [
-                    'class' => 'access-icon fa fa-lock bg-light rounded-circle p-2',
-                    'style' => 'font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;'
-                ]) .
-                Html::tag(
-                    'div',
+echo Html::tag('div',
+    Html::tag('div',
+        Html::tag('i', '', [
+            'id' => 'access-icon', 
+            'class' => 'access-icon fa fa-lock bg-light rounded-circle p-2',
+            'style' => 'font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;'
+        ]) .
+        Html::tag('div',
+            Html::beginTag('div', ['class' => 'dropdown d-inline']) .
+
+                Html::button(
                     Html::tag('span', Module::t('Restricted'), [
+                        'id' => 'access-text',
                         'class' => 'access-text fw-semibold d-block',
                         'data-public' => Module::t('Public'),
-                        'data-private' => Module::t('Restricted')
-                    ]) .
-                    Html::tag('small', Module::t('Only people with access can open it using this link'), [
-                        'class' => 'access-desc text-muted d-block',
-                        'data-public' => Module::t('Anyone with the link can view the content'),
-                        'data-private' => Module::t('Only people with access can open it using this link')
+                        'data-private' => Module::t('Restricted'),
                     ]),
-                    ['class' => 'ms-3']
-                ),
-                ['class' => 'd-flex align-items-center']
-            ),
-            ['class' => 'mb-3']
-        ) .
-        Html::dropDownList('accessLevel', 'private', [
-            'private' => Module::t('Restricted'),
-            'public' => Module::t('Public')
-        ], [
-            'class' => 'access-select form-select form-select-lg mt-4',
-            'onchange' => 'handleAccessChange(this)'
-        ]),
-        ['class' => 'file-access']
-    );
+                    [
+                        'class' => 'btn btn-light border-0 p-0 text-start',
+                        'type' => 'button',
+                        'id' => 'accessDropdownBtn',
+                        'data-bs-toggle' => 'dropdown',
+                        'aria-expanded' => 'false',
+                        'style' => 'box-shadow:none;'
+                    ]
+                ) .
+
+                Html::beginTag('ul', [  
+                    'class' => 'dropdown-menu custom-dropdown-align2 position-absolute mt-1',
+                    'aria-labelledby' => 'accessDropdownBtn',
+                    'style' => 'min-width: 175px; top: 100%; z-index: 1000;'
+                ]).
+
+                    Html::tag('li',
+                        Html::a(
+                            Html::tag('i', '', ['class' => 'fa fa-lock me-2']) . Module::t('Restricted'),
+                            '#',
+                            [
+                                'class' => 'dropdown-item',
+                                'onclick' => 'setAccessLevel("private")'
+                            ]
+                        )
+                    ) .
+
+                    Html::tag('li',
+                        Html::a(
+                            Html::tag('i', '', ['class' => 'fa fa-globe me-2']) . Module::t('Public'),
+                            '#',
+                            [
+                                'class' => 'dropdown-item',
+                                'onclick' => 'setAccessLevel("public")'
+                            ]
+                        )
+                    ) .
+
+                Html::endTag('ul') .
+
+            Html::endTag('div') .
+
+            Html::tag('small', Module::t('Only people with access can open it using this link'), [
+                'id' => 'access-desc',
+                'class' => 'access-desc text-muted d-block mt-1',
+                'data-public' => Module::t('Anyone with the link can view the content'),
+                'data-private' => Module::t('Only people with access can open it using this link')
+            ]),
+            ['class' => 'ms-3']
+        ),
+        ['class' => 'd-flex align-items-center']
+    ),
+    ['class' => 'file-access mb-3']
+);
+
+
+
 
     Modal::end();
 }
 else
     Yii::$app->session->setFlash('error', Module::t('File not found!'));
 ?>
+
+<script>
+function setAccessLevel(level) {
+    const accessText = document.getElementById('access-text');
+    const accessDesc = document.getElementById('access-desc');
+    const accessIcon = document.getElementById('access-icon');
+
+    if (!accessText || !accessDesc || !accessIcon) return;
+
+    accessText.textContent = accessText.dataset[level];
+    accessDesc.textContent = accessDesc.dataset[level];
+
+    if (level === 'public') {
+        accessIcon.classList.remove('fa-lock');
+        accessIcon.classList.add('fa-globe');
+    } else {
+        accessIcon.classList.remove('fa-globe');
+        accessIcon.classList.add('fa-lock');
+    }
+}
+</script>
+

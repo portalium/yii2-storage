@@ -37,9 +37,8 @@ if ($id_directory !== null) {
     $parentDirectory = StorageDirectory::findOne($id_directory);
 }
 
-echo Html::beginTag('div', ['class' => 'container-fluid']);
-echo Html::beginTag('div', ['class' => 'row mb-3']);
-echo Html::beginTag('div', ['class' => 'col-12']);
+echo Html::beginTag('div', ['class' => 'container-fluid mt-3']);
+
 
 if ($id_directory !== null) {
     $parentId = $parentDirectory && $parentDirectory->id_parent ? $parentDirectory->id_parent : null;
@@ -110,18 +109,10 @@ if ($id_directory !== null) {
     echo Html::endTag('nav');
 }
 
-echo Html::endTag('div');
-echo Html::endTag('div');
 
-echo Html::beginTag('div', ['class' => 'row mb-3']);
-echo Html::beginTag('div', ['class' => 'col-12']);
-echo Html::endTag('div');
-echo Html::endTag('div');
-
-echo Html::beginTag('div', ['class' => 'container-fluid','style'=>'padding:0px;']); 
 echo Html::beginTag('div', ['class' => 'folders-section mb-4']);
 
-echo Html::tag('h3', 'Klasörler', ['class' => 'h6 text-muted mb-3']); 
+echo Html::tag('h3', 'Klasörleriniz', ['class' => 'h6 text-muted mb-3']); 
 echo Html::beginTag('div', ['class' => 'row g-3']); 
 
 $directories = $directoryDataProvider->models;
@@ -199,24 +190,18 @@ foreach ($directories as $model) {
 
 echo Html::endTag('div'); 
 echo Html::endTag('div');
-echo Html::endTag('div');
 
-
-echo Html::beginTag('div', ['class' => 'row mb-3']);
-echo Html::beginTag('div', ['class' => 'col-12']);
-echo Html::endTag('div');
-echo Html::endTag('div');
-
-echo Html::beginTag('div', ['class' => 'row']);
-
+echo Html::beginTag('div', ['class' => 'files-section']);
+echo Html::tag('h3', 'Dosyalarınız', ['class' => 'h6 text-muted mb-3']); 
+echo Html::beginTag('div', ['class' => 'row g-3']);
 $files = $fileDataProvider->models;
 
 foreach ($files as $model) {
-    $content = Html::beginTag('div', ['class' => ($isPicker ? 'col-md-3 col-sm-6 col-12 mb-3' : 'col-md-2 col-sm-3 col-6 mb-3')]);
+    $content = Html::beginTag('div', ['class' => ($isPicker ? 'col-md-3 col-sm-6 col-12 mb-3' : 'col-md-2 col-sm-3 col-6 mb-3'). ' file-card', // <-- burada file-card eklendi
+]);
 
-    $content .= Html::beginTag('div', ['class' => 'file-card-wrapper']);
     $content .= Html::beginTag('div', [
-        'class' => 'file-card',
+        'class' => 'file-item',
         'data-id' => $model->id_storage,
         'data-attributes' => json_encode([
             'id_storage' => $model->id_storage,
@@ -227,7 +212,8 @@ foreach ($files as $model) {
         'onclick' => $isPicker ? 'handleFileCardClick.call(this, event, ' . $model->id_storage . ')' : null,
     ]);
 
-    $content .= Html::beginTag('div', ['class' => 'card-header']);
+    $content .= Html::beginTag('div', ['class' => 'file-header']);
+    $content .= Html::beginTag('div', ['class' => 'file-info']);
 
     if ($isPicker) {
         $content .= Html::checkbox('selection', false, [
@@ -237,17 +223,25 @@ foreach ($files as $model) {
         ]);
     }
 
+    $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
     $title = $model->title ?: 'Başlık yok';
     $content .= Html::tag('span', Html::encode($title), ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')]);
+    $content .= Html::endTag('div'); // file-info sonu
 
-    $content .= Html::tag('i', '', [
+    $content .= Html::button(
+    Html::tag('i', '', [
         'class' => 'fa fa-ellipsis-v',
         'id' => 'menu-trigger-' . $model->id_storage,
         'data-title' => $title,
+    ]),
+    [
+        'class' => 'file-more-options',
         'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
-    ]);
+    ]
+);
 
-    $content .= Html::endTag('div');
+
+    $content .= Html::endTag('div'); // file-header sonu
 
     $content .= Dropdown::widget([
         'items' => [
@@ -299,19 +293,22 @@ foreach ($files as $model) {
         ],
     ]);
 
+
+    $content .= Html::beginTag('div',['class'=>'file-preview']);
     $iconData = $model->getIconUrl();
     $content .= Html::img($iconData['url'], [
         'alt' => $model->title,
         'class' => 'file-icon ' . $iconData['class'],
         'style' => 'width: 100%; height: 100%;',
     ]);
-
     $content .= Html::endTag('div');
+
     $content .= Html::endTag('div');
     $content .= Html::endTag('div');
     echo $content;
 }
 
+echo Html::endTag('div');
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'row']);
@@ -347,7 +344,8 @@ echo LinkPager::widget([
 echo Html::endTag('div');
 echo Html::endTag('div');
 
-echo Html::endTag('div');
+echo Html::endTag('div'); // container-fluid sonu
+
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
 $this->registerJsVar('currentFileExtensions', $fileExtensionsParam);
 $this->registerJsVar('actionId', $actionId);

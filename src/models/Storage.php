@@ -338,6 +338,45 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
+    public function getIconClass()
+{
+    $mimeType = $this->mime_type;
+    if (is_numeric($mimeType)) {
+        $mimeType = array_search($mimeType, self::MIME_TYPE);
+    }
+
+    switch ($mimeType) {
+        case 'application/pdf':
+            return 'fa fa-file-pdf-o file-icon pdf';
+        case 'application/msword':
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+            return 'fa fa-file-word-o file-icon word';
+        case 'application/vnd.ms-excel':
+        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            return 'fa fa-file-excel-o file-icon excel';
+        case 'application/vnd.ms-powerpoint':
+        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+            return 'fa fa-file-powerpoint-o file-icon powerpoint';
+        case 'image/jpeg':
+        case 'image/jpg':
+        case 'image/png':
+        case 'image/svg+xml':
+            return 'fa fa-file-image-o file-icon image';
+        case 'video/mp4':
+        case 'video/x-matroska':
+        case 'video/x-msvideo':
+        case 'video/mov':
+            return 'fa fa-file-video-o file-icon video';
+        case 'audio/mpeg':
+            return 'fa fa-file-audio-o file-icon audio';
+        case 'application/x-rar-compressed':
+        case 'application/zip':
+            return 'fa fa-file-archive-o file-icon archive';
+        default:
+            return 'fa fa-file file-icon';
+    }
+}
+
     public function fileExists()
     {
         $path = realpath(Yii::$app->basePath . '/../data');
