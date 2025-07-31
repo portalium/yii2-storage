@@ -45,7 +45,7 @@ if (isset($model)) {
             ]),
     ]);
 
-    echo Html::textInput('searchUser', '', [
+    /* echo Html::textInput('searchUser', '', [
         'class' => 'form-control form-control-lg mb-3',
         'id' => 'searchUser',
         'placeholder' => Module::t('Add person or group'),
@@ -80,7 +80,7 @@ if (isset($model)) {
             ['class' => 'd-flex justify-content-between align-items-center p-2']
         );
     }
-    echo Html::endTag('span');
+    echo Html::endTag('span'); */
 
     echo Html::label(Module::t('General Access'), null, ['class' => 'fw-bold mb-3 text-secondary mt-4']);
 
