@@ -496,7 +496,7 @@ if (!window.saveSelect) {
         }
 
         $('#' + window.inputId).val(value);
-
+        console.log('Selected files:', selectedFiles, 'Value:', value);
         if (window.callbackName && typeof window[window.callbackName] === 'function') {
             window[window.callbackName](selectedFiles);
         }
