@@ -112,7 +112,7 @@ if ($id_directory !== null) {
 
 echo Html::beginTag('div', ['class' => 'folders-section mb-4']);
 
-echo Html::tag('h3', 'Klasörleriniz', ['class' => 'h6 text-muted mb-3']); 
+echo Html::tag('h3', Module::t('Your Folders'), ['class' => 'h6 text-muted mb-3']); 
 echo Html::beginTag('div', ['class' => 'row g-3']); 
 
 $directories = $directoryDataProvider->models;
@@ -192,7 +192,7 @@ echo Html::endTag('div');
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'files-section']);
-echo Html::tag('h3', 'Dosyalarınız', ['class' => 'h6 text-muted mb-3']); 
+echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
 echo Html::beginTag('div', ['class' => 'row g-3']);
 $files = $fileDataProvider->models;
 

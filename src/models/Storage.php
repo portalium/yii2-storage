@@ -371,6 +371,8 @@ class Storage extends \yii\db\ActiveRecord
             return 'fa fa-file-audio-o file-icon audio';
         case 'application/x-rar-compressed':
         case 'application/zip':
+        case 'application/gzip':
+        case 'application/x-tar':
             return 'fa fa-file-archive-o file-icon archive';
         default:
             return 'fa fa-file file-icon';
