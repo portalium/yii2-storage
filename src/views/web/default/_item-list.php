@@ -148,12 +148,12 @@ foreach ($directories as $model) {
             'encode' => false,
             'linkOptions' => ['onclick' => 'openRenameFolderModal(' . $folderId . ')'],
         ],
-        [
+        /* [
             'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
             'url' => '#',
             'encode' => false,
             'linkOptions' => ['onclick' => 'openMoveFolderModal(' . $folderId . ')'],
-        ],
+        ], */
         [
             'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
             'url' => '#',
@@ -256,11 +256,11 @@ foreach ($files as $model) {
                 'encode' => false,
                 'linkOptions' => ['onclick' => 'openUpdateModal(' . $model->id_storage . ')'],
             ],
-            [
+            /* [
                 'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
                 'url' => '#',
                 'encode' => false,
-            ],
+            ], */
             [
                 'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
                 'url' => '#',
