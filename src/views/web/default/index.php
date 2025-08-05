@@ -46,6 +46,9 @@ echo Html::tag(
     ]
 );
 
+
+
+
 echo Html::beginTag('div', ['class' => 'dropdown d-inline']);
 
 echo Html::button(
@@ -59,6 +62,8 @@ echo Html::button(
         'aria-expanded' => 'false',
     ]
 );
+
+
 
 echo Html::beginTag('ul', ['class' => 'dropdown-menu custom-dropdown-align', 'aria-labelledby' => 'newDropdownBtn']);
 
@@ -90,6 +95,33 @@ echo Html::tag(
 );
 
 echo Html::endTag('div');
+
+echo Html::beginTag('div', ['class' => 'view-toggle mb-3 d-flex','style' => 'margin-left:auto;']);
+
+echo Html::button(
+    Html::tag('i', '', ['class' => 'fa fa-th me-2']) .
+    Html::tag('span', Module::t('Grid View'), ['class' => 'btn-text']),
+    [
+        'id' => 'btn-grid',
+        'class' => 'btn btn-selected btn-sm me-2 d-flex align-items-center',
+        'type' => 'button',
+        'onclick' => 'setViewMode("grid")',
+    ]
+);
+
+echo Html::button(
+    Html::tag('i', '', ['class' => 'fa fa-list me-2']) .
+    Html::tag('span', Module::t('List View'), ['class' => 'btn-text']),
+    [
+        'id' => 'btn-list',
+        'class' => 'btn btn-unselected btn-sm d-flex align-items-center',
+        'type' => 'button',
+        'onclick' => 'setViewMode("list")',
+    ]
+);
+
+echo Html::endTag('div');
+
 echo Html::endTag('div'); // file-controls
 
 echo Html::beginTag('div', [
@@ -164,3 +196,42 @@ Pjax::end();
 
 ?>
 </div>
+
+<script>
+function setViewMode(mode) {
+    const el = document.getElementById('files-section');
+    const el2 = document.getElementById('folders-section')
+    el2.classList.remove('grid-view', 'list-view');
+    el2.classList.add(mode + '-view');;
+    el.classList.remove('grid-view', 'list-view');
+    el.classList.add(mode + '-view');
+
+    const row = el.querySelector('.row');
+    if (row) {
+        row.classList.remove('g-3');
+        if (mode === 'grid') row.classList.add('g-3');
+    }
+
+    const gridBtn = document.getElementById('btn-grid');
+    const listBtn = document.getElementById('btn-list');
+
+    if (mode === 'grid') {
+        gridBtn.classList.remove('btn-unselected');
+        gridBtn.classList.add('btn-selected');
+
+        listBtn.classList.remove('btn-selected');
+        listBtn.classList.add('btn-unselected');
+    } else {
+        listBtn.classList.remove('btn-unselected');
+        listBtn.classList.add('btn-selected');
+
+        gridBtn.classList.remove('btn-selected');
+        gridBtn.classList.add('btn-unselected');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    setViewMode('grid');
+});
+</script>
+

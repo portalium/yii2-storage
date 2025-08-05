@@ -318,11 +318,14 @@ function openNewFolderModal(event) {
   });
 }
 
-$(document).on("click", "#createFolderButton", function (e) {
+// Yeni klasör oluşturma butonuna tıklanıldığında
+$(document).off("click", "#createFolderButton").on("click", "#createFolderButton", function (e) {
   e.preventDefault();
 
-  var form = document.getElementById("newFolderForm");
-  var formData = new FormData(form);
+  const form = document.getElementById("newFolderForm");
+  if (!form) return;
+
+  const formData = new FormData(form);
 
   if (currentDirectoryId) {
     formData.append("id_directory", currentDirectoryId);
