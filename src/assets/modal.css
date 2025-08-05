@@ -19,6 +19,7 @@
   transition: transform 0.3s ease;
   cursor: pointer;
   aspect-ratio: 1 / 1;
+  overflow: visible;
 }
 
 .file-manager .file-card:hover {
@@ -502,16 +503,7 @@
   font-size: 12px !important;
 }
 
-.file-manager .file-card img.file-icon.image-file {
-  position: absolute;
-  inset: 0;
-  object-fit: cover;
-  padding: 0px;
-  width: 100%;
-  height: 100%;
-  border-radius: 2px;
-  padding-bottom: 20px;
-}
+
 
 .file-manager .file-card,
 .file-manager .folder-container {
@@ -581,13 +573,38 @@
 
 .folder-item .folder-dropdown-menu {
   position: absolute;
-  left: 98%;
   top: 0;
+  left: 58%;
+  transform: translateX(-50%);
 }
+
+@media (min-width: 2560px) {
+  .folder-item .folder-dropdown-menu {
+    left: 75%;
+  }
+}
+
+@media (min-width: 1920px) and (max-width: 2559px) {
+  .folder-item .folder-dropdown-menu {
+    left: 42%;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1440px) {
+  .folder-item .folder-dropdown-menu {
+    left: 35%;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .folder-item .folder-dropdown-menu {
+    left: 10%;
+  }
+}
+
 @media (max-width: 768px) {
   .folder-item .folder-dropdown-menu {
     left: 50%;
-    transform: translateX(-50%);
   }
 }
 
@@ -643,15 +660,21 @@
             opacity: 1;
         }
 
+        
+
         .file-item {
-            position: relative;
-            background-color: #f0f4f9;
-            border-radius: 8px;
-            overflow: hidden;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            padding: 3%;
-            padding-bottom: 10px;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          box-sizing: border-box;
+          overflow: visible;
+          padding: 3%;
+          padding-bottom: 10px;
+          background-color: #f0f4f9;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+          cursor: pointer;
         }
 
         .file-item:hover {
@@ -685,21 +708,20 @@
         }
 
 .file-preview {
-    position: relative;
-    width: 100%;
-    height: 200px;
-    display: flex;
+    flex: 1; 
     overflow: hidden;
-    margin-left: -3px;
+    border-radius: 8px;
+    display: flex;
     align-items: center;
     justify-content: center;
+    margin-top: 8px;
 }
 
 .file-preview img {
     max-width: 100%;
     max-height: 100%;
     height: auto;
-    object-fit: contain; /* veya cover, ihtiyaca göre */
+    object-fit: contain;
     border-radius: 10px;
     display: block;
 }
@@ -731,8 +753,8 @@
 
         .file-icon {
             font-size: 16px;
-            margin-left: 5px;
-            margin-right: 14px;
+            margin-left: 8px;
+            margin-right: 8px;
             color: #9e9e9e; 
         }
 
@@ -775,3 +797,87 @@
         .file-icon.audio {
             color: #c809c1;
         }
+
+.files-section.list-view .file-card {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    overflow: visible;
+    max-height: 50px;
+}
+
+.files-section.list-view .file-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.files-section.list-view .file-item:hover {
+    box-shadow: none;
+    background-color: #eaeaea;
+}
+
+.files-section.list-view .file-header{
+  width: 100%;
+}
+.files-section.list-view .file-info {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+
+.file-manager .files-section.list-view .file-card:hover {
+  transform: scale(1);
+}
+
+
+.files-section.list-view .file-preview {
+    display: none !important;
+    /*
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    margin-right: 16px;
+    align-items: center;
+    */
+}
+
+.btn-selected{
+  background-color:#c2e7ff !important;
+  color :#000000;
+  border: #000000 solid 1px;
+}
+
+.btn-unselected{
+  border: #000000 solid 1px;
+}
+.btn-selected:hover{
+  background-color: #b3d7ef !important;
+  border-color: #000000;
+}
+
+.btn-unselected:hover{
+  background-color: #ededed !important;
+  border-color: #000000;
+}
+
+.file-card {
+    height: 100%; 
+    display: flex;
+    flex-direction: column;
+}
+
+
+.file-preview .file-icon.image-file {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 8px;
+}

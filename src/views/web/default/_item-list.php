@@ -110,12 +110,14 @@ if ($id_directory !== null) {
 }
 
 
-echo Html::beginTag('div', ['class' => 'folders-section mb-4']);
-
-echo Html::tag('h3', Module::t('Your Folders'), ['class' => 'h6 text-muted mb-3']); 
-echo Html::beginTag('div', ['class' => 'row g-3']); 
+echo Html::beginTag('div', ['class' => 'folders-section mb-4', 'id' => 'folders-section']);
 
 $directories = $directoryDataProvider->models;
+
+if (!empty($directories)) {
+echo Html::tag('h3', Module::t('Your Folders'), ['class' => 'h6 text-muted mb-3']); 
+echo Html::beginTag('div', ['class' => 'row g-3']); 
+}
 
 foreach ($directories as $model) {
     /** @var \portalium\storage\models\StorageDirectory $model */
@@ -191,14 +193,22 @@ foreach ($directories as $model) {
 echo Html::endTag('div'); 
 echo Html::endTag('div');
 
-echo Html::beginTag('div', ['class' => 'files-section']);
-echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
-echo Html::beginTag('div', ['class' => 'row g-3']);
+echo Html::beginTag('div', ['class' => 'files-section', 'id' => 'files-section']);
+
 $files = $fileDataProvider->models;
 
+if (!empty($files)) {
+echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
+echo Html::beginTag('div', ['class' => 'row g-3']);
+}
+
 foreach ($files as $model) {
-    $content = Html::beginTag('div', ['class' => ($isPicker ? 'col-md-3 col-sm-6 col-12 mb-3' : 'col-md-2 col-sm-3 col-6 mb-3'). ' file-card', // <-- burada file-card eklendi
-]);
+    $content = Html::beginTag('div', [
+        'class' => ($isPicker 
+            ? 'col-lg-3 col-md-4 col-sm-6 col-12 mb-3' 
+            : 'col-lg-2 col-md-3 col-sm-6 col-6 mb-3'
+        ) . ' file-card',
+    ]);
 
     $content .= Html::beginTag('div', [
         'class' => 'file-item',
