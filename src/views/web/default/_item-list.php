@@ -198,21 +198,22 @@ echo Html::beginTag('div', ['class' => 'files-section', 'id' => 'files-section']
 $files = $fileDataProvider->models;
 
 if (!empty($files)) {
-echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
-echo Html::beginTag('div', ['class' => 'row g-3']);
+    echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
+    echo Html::beginTag('div', ['class' => 'row g-3']);
 }
 
 foreach ($files as $model) {
+    $fileCardClasses = $isPicker 
+        ? 'col-lg-3 col-md-4 col-sm-6 col-12 mb-3' 
+        : 'col-lg-2 col-md-3 col-sm-6 col-6 mb-3';
+
     $content = Html::beginTag('div', [
-        'class' => ($isPicker 
-            ? 'col-lg-3 col-md-4 col-sm-6 col-12 mb-3' 
-            : 'col-lg-2 col-md-3 col-sm-6 col-6 mb-3'
-        ) . ' file-card',
+        'class' => $fileCardClasses . ' file-card',
+        'data-id' => $model->id_storage,
     ]);
 
     $content .= Html::beginTag('div', [
         'class' => 'file-item',
-        'data-id' => $model->id_storage,
         'data-attributes' => json_encode([
             'id_storage' => $model->id_storage,
             'name' => $model->name,
@@ -236,23 +237,24 @@ foreach ($files as $model) {
     $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
     $title = $model->title ?: 'Başlık yok';
     $content .= Html::tag('span', Html::encode($title), ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')]);
-    $content .= Html::endTag('div'); // file-info sonu
+
+    $content .= Html::endTag('div'); // .file-info
 
     $content .= Html::button(
-    Html::tag('i', '', [
-        'class' => 'fa fa-ellipsis-v',
-        'id' => 'menu-trigger-' . $model->id_storage,
-        'data-title' => $title,
-    ]),
-    [
-        'class' => 'file-more-options',
-        'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
-    ]
-);
+        Html::tag('i', '', [
+            'class' => 'fa fa-ellipsis-v',
+            'id' => 'menu-trigger-' . $model->id_storage,
+            'data-title' => $title,
+        ]),
+        [
+            'class' => 'file-more-options',
+            'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
+        ]
+    );
 
+    $content .= Html::endTag('div'); // .file-header
 
-    $content .= Html::endTag('div'); // file-header sonu
-
+    // Dropdown menüsü
     $content .= Dropdown::widget([
         'items' => [
             [
@@ -303,24 +305,27 @@ foreach ($files as $model) {
         ],
     ]);
 
-
-    $content .= Html::beginTag('div',['class'=>'file-preview']);
+    // Önizleme
+    $content .= Html::beginTag('div', ['class' => 'file-preview']);
     $iconData = $model->getIconUrl();
     $content .= Html::img($iconData['url'], [
         'alt' => $model->title,
         'class' => 'file-icon ' . $iconData['class'],
         'style' => 'width: 100%; height: 100%;',
     ]);
-    $content .= Html::endTag('div');
+    $content .= Html::endTag('div'); // .file-preview
 
-    $content .= Html::endTag('div');
-    $content .= Html::endTag('div');
+    $content .= Html::endTag('div'); // .file-item
+    $content .= Html::endTag('div'); // .file-card
+
     echo $content;
 }
 
-echo Html::endTag('div');
-echo Html::endTag('div');
+if (!empty($files)) {
+    echo Html::endTag('div'); // .row
+}
 
+echo Html::endTag('div'); // .files-section
 echo Html::beginTag('div', ['class' => 'row']);
 echo Html::beginTag('div', ['class' => 'col-12 d-flex justify-content-start']);
 
