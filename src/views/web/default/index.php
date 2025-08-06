@@ -199,10 +199,12 @@ Pjax::end();
 
 <script>
 function setViewMode(mode) {
+    localStorage.setItem('viewMode', mode);
+
     const el = document.getElementById('files-section');
-    const el2 = document.getElementById('folders-section')
+    const el2 = document.getElementById('folders-section');
     el2.classList.remove('grid-view', 'list-view');
-    el2.classList.add(mode + '-view');;
+    el2.classList.add(mode + '-view');
     el.classList.remove('grid-view', 'list-view');
     el.classList.add(mode + '-view');
 
@@ -231,7 +233,8 @@ function setViewMode(mode) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    setViewMode('grid');
+    const savedMode = localStorage.getItem('viewMode') || 'grid';
+    setViewMode(savedMode);
 });
 </script>
 
