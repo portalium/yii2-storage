@@ -55,7 +55,7 @@ echo Html::button(
     Html::tag('i', '', ['class' => 'fa fa-plus me-2']) .
     Html::tag('span', Module::t('New'), ['class' => 'btn-text']),
     [
-        'class' => 'btn btn-primary btn-md d-flex align-items-center',
+        'class' => 'newDropdownClass',
         'type' => 'button',
         'id' => 'newDropdownBtn',
         'data-bs-toggle' => 'dropdown',

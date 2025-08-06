@@ -470,18 +470,22 @@
   min-width: 100px !important;
 }
 
-#newDropdownBtn {
+.newDropdownClass {
+  position: relative;
   height: 38px !important;
   min-width: 90px !important;
-  background: rgb(240, 240, 240);
-  z-index: 0;
+  background: #fff;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: #dee2e6 solid;
+  border-width: 1px;
+  border-radius: 3px;
 }
 
 #newDropdownBtn:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: box-shadow 0.2s ease-in-out;
-    z-index: 1;
-    background-color: #e0e0e0;
+    background-color: #ededed;
 }
 
 .custom-dropdown-align {
@@ -901,21 +905,30 @@
 
 .btn-selected{
   background-color:#c2e7ff !important;
-  color :#000000;
-  border: #000000 solid 1px;
+  padding: 6px 6px !important;
+  font-size: 11px;
+  border: #dee2e6 solid !important;
+  border-width: 1px !important;
+  border-radius: 3px !important;
+  height: 38px;
 }
 
 .btn-unselected{
-  border: #000000 solid 1px;
+  padding: 6px 6px !important;
+  font-size: 11px;
+  border: #dee2e6 solid !important;
+  border-width: 1px !important;
+  border-radius: 3px !important;
+  height: 38px;
 }
 .btn-selected:hover{
   background-color: #b3d7ef !important;
-  border-color: #000000;
+  
 }
 
 .btn-unselected:hover{
   background-color: #ededed !important;
-  border-color: #000000;
+  
 }
 
 .file-card {
