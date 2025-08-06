@@ -26,8 +26,8 @@
   transform: scale(1.03);
 }
 
-.file-manager .file-card.active,
-.file-manager .file-card:has(.file-select-checkbox:checked) {
+.file-manager .file-card .file-item.active,
+.file-manager .file-card .file-item:has(.file-select-checkbox:checked) {
   border: 2px solid #198754;
 }
 
@@ -574,7 +574,7 @@
 .folder-item .folder-dropdown-menu {
   position: absolute;
   top: 0;
-  left: 58%;
+  left: 54%;
   transform: translateX(-50%);
 }
 
@@ -641,14 +641,18 @@
         }
 
         .more-options {
-            position: absolute;
-            top: 8px;
-            right: 8px;
             background: none;
             border: none;
             cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s ease;
+            transition: all 0.2s ease;
+            padding: 6px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
         }
 
         .more-options i {
@@ -656,11 +660,36 @@
             color: #5f6368;
         }
 
-        .folder-item:hover .more-options {
+        .more-options:hover {
+            
+            background: rgba(60, 64, 67, .08);
             opacity: 1;
-        }
+            
+        } 
 
-        
+        .folder-item .more-options::after {
+    content: attr(data-title);
+    position: absolute;
+    bottom: 120%; 
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 2;
+}
+
+.folder-item .more-options:hover::after {
+    opacity: 1;
+}
+
+      
 
         .file-item {
           height: 100%;
@@ -745,6 +774,28 @@
         .file-more-options:hover {
             background: rgba(60, 64, 67, .08);
             opacity: 1;
+        }
+
+        .file-more-options::after {
+          content: attr(data-title);
+          position: absolute;
+          bottom: 120%;
+          left: 95%;
+          transform: translateX(-50%);
+          background-color: #333;
+          color: #fff;
+          padding: 5px 8px;
+          border-radius: 4px;
+          font-size: 11px;
+          white-space: nowrap;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease;
+          z-index: 2;
+        }
+
+        .file-more-options:hover::after {
+        opacity: 1;
         }
 
         .file-create-date {

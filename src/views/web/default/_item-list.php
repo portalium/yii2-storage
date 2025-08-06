@@ -132,19 +132,23 @@ foreach ($directories as $model) {
     $content .= Html::beginTag('div', [
         'class' => 'folder-item d-flex align-items-center',
         'data-id' => $folderId,
-        'ondblclick' => "openFolder($folderId, event, '" . $fileExtensionsParam . "')",
+        'ondblclick' => "if (!(event.target.closest('.more-options'))) { openFolder($folderId, event, '" . $fileExtensionsParam . "'); }",
     ]);
 
-    $content .= Html::img( $bundle->baseUrl . '/folder-icon.png', ['class' => 'folder-icon', 'alt' => 'folder-icon']);
+    $content .= Html::img($bundle->baseUrl . '/folder-icon.png', [
+        'class' => 'folder-icon',
+        'alt' => 'folder-icon'
+    ]);
 
     $content .= Html::tag('span', $folderName, ['class' => 'folder-name']);
 
     $content .= Html::button(
-        Html::tag('i', '', ['class' => 'fa fa-ellipsis-v']),
-        [
-            'class' => 'more-options',
-            'onclick' => "toggleFolderMenu(event, $folderId)",
-        ]
+    Html::tag('i', '', ['class' => 'fa fa-ellipsis-v']),
+    [
+        'class' => 'more-options',
+        'onclick' => "toggleFolderMenu(event, $folderId)",
+        'data-title' => Module::t('More Options'),
+    ]
     );
 
     $dropdownItems = [
@@ -210,6 +214,12 @@ foreach ($files as $model) {
     $content = Html::beginTag('div', [
         'class' => $fileCardClasses . ' file-card',
         'data-id' => $model->id_storage,
+        'data-attributes' => json_encode([
+            'id_storage' => $model->id_storage,
+            'name' => $model->name,
+            'title' => $model->title,
+            'mime_type' => $model->mime_type,
+        ])
     ]);
 
     $content .= Html::beginTag('div', [
@@ -249,6 +259,7 @@ foreach ($files as $model) {
         [
             'class' => 'file-more-options',
             'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
+            'data-title' => Module::t('More Options'),
         ]
     );
 

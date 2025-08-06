@@ -281,15 +281,25 @@ class Storage extends \yii\db\ActiveRecord
         }
         return false;
     }
+
     private function generateNewTitle($originalTitle)
     {
-        $baseName = $originalTitle;
-        $newTitle = $baseName . '_1';
+        $info = pathinfo($originalTitle);
+        $extension = isset($info['extension']) ? '.' . $info['extension'] : '';
+        
+        $filename = $info['filename'];
+        if (preg_match('/^(.*)\((\d+)\)$/', $filename, $matches)) {
+            $filename = $matches[1];
+        }
+
         $counter = 1;
+        $newTitle = "{$filename}({$counter}){$extension}";
+
         while (self::find()->where(['title' => $newTitle])->exists()) {
             $counter++;
-            $newTitle = $baseName . '_' . $counter;
+            $newTitle = "{$filename}({$counter}){$extension}";
         }
+
         return $newTitle;
     }
 

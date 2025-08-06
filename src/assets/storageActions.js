@@ -147,6 +147,8 @@ window.openFolder = function (id_directory, event) {
 
 function uploadFileMenu(event) {
   event.preventDefault();
+  const newDropdownBtn = $("#newDropdownBtn");
+  newDropdownBtn.addClass("btn-loading");
 
   let fileInput = document.getElementById("hiddenUploadInput");
   if (fileInput) {
@@ -205,6 +207,7 @@ function uploadFileMenu(event) {
             }
           },
           error: function (xhr) {
+            newDropdownBtn.removeClass("btn-loading");
             console.error("Yükleme hatası:", xhr);
           },
         });
@@ -213,11 +216,14 @@ function uploadFileMenu(event) {
   });
 
   fileInput.click();
+  newDropdownBtn.removeClass("btn-loading");
 }
 
 
 function uploadFolderMenu(event) {
   event.preventDefault();
+  const newDropdownBtn = $("#newDropdownBtn");
+  newDropdownBtn.addClass("btn-loading");
 
   let fileInput = document.getElementById("hiddenUploadInput");
   if (fileInput) {
@@ -275,6 +281,7 @@ function uploadFolderMenu(event) {
           });
         },
         error: function (xhr) {
+          newDropdownBtn.removeClass("btn-loading");
           console.error("Yükleme hatası:", xhr);
         },
       });
@@ -282,13 +289,14 @@ function uploadFolderMenu(event) {
   });
 
   fileInput.click();
+  newDropdownBtn.removeClass("btn-loading");
 }
 
 function openNewFolderModal(event) {
   event.preventDefault();
 
-  const newFolderBtn = $("#newFolderBtn");
-  newFolderBtn.addClass("btn-loading");
+  const newDropdownBtn = $("#newDropdownBtn");
+  newDropdownBtn.addClass("btn-loading");
 
   let url = "/storage/default/new-folder";
 
@@ -306,14 +314,14 @@ function openNewFolderModal(event) {
     url: url,
     type: "GET",
     success: function (response) {
-      newFolderBtn.removeClass("btn-loading");
+      newDropdownBtn.removeClass("btn-loading");
       $('.modal[id^="newFolderModal"]').remove();
       $("#new-folder-pjax").html(response);
       showModal("newFolderModal");
     },
     error: function (e) {
       console.error("Error loading new folder modal:", e);
-      newFolderBtn.removeClass("btn-loading");
+      newDropdownBtn.removeClass("btn-loading");
     },
   });
 }
@@ -745,6 +753,9 @@ function refreshCurrentView() {
       })
       .done(function () {
         $.pjax.reload({ container: "#pjax-flash-message" });
+
+        const mode = localStorage.getItem('viewMode') || 'grid';
+        setViewMode(mode);
       });
   }
 }
