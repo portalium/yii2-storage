@@ -59,7 +59,7 @@ class Storage extends \yii\db\ActiveRecord
         'image/svg+xml' => '25',
     ];
 
-    public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar', 'txt', 'pt', 'csv', 'html', 'htm', 'xml', 'json', 'tar', 'gz', '7z'];
+    public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar', 'txt', 'pt', 'csv', 'html', 'htm', 'xml', 'json', 'tar', 'gz', '7z', 'svg'];
 
     public function behaviors()
     {
@@ -286,7 +286,7 @@ class Storage extends \yii\db\ActiveRecord
     {
         $info = pathinfo($originalTitle);
         $extension = isset($info['extension']) ? '.' . $info['extension'] : '';
-        
+
         $filename = $info['filename'];
         if (preg_match('/^(.*)\((\d+)\)$/', $filename, $matches)) {
             $filename = $matches[1];
@@ -301,6 +301,31 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         return $newTitle;
+    }
+
+    public function cloneStorage()
+    {
+        $newStorage = new Storage();
+        $newStorage->title = $this->title;
+        $newStorage->id_user = Yii::$app->user->id;
+        $newStorage->mime_type = $this->mime_type;
+        $newStorage->id_workspace = Yii::$app->workspace->id;
+        $newStorage->access = self::ACCESS_PUBLIC;
+
+        $path = realpath(Yii::$app->basePath . '/../data');
+        $extension = pathinfo($this->name, PATHINFO_EXTENSION);
+        $filename = md5(rand()) . "." . $extension;
+        try {
+            if (copy($path . '/' . $this->name, $path . '/' . $filename)) {
+                $newStorage->name = $filename;
+                if ($newStorage->save()) {
+                    return $newStorage;
+                }
+            }
+        } catch (\Throwable $th) {
+            return false;
+        }
+        return false;
     }
 
     public function getIconUrl()
@@ -359,45 +384,45 @@ class Storage extends \yii\db\ActiveRecord
     }
 
     public function getIconClass()
-{
-    $mimeType = $this->mime_type;
-    if (is_numeric($mimeType)) {
-        $mimeType = array_search($mimeType, self::MIME_TYPE);
-    }
+    {
+        $mimeType = $this->mime_type;
+        if (is_numeric($mimeType)) {
+            $mimeType = array_search($mimeType, self::MIME_TYPE);
+        }
 
-    switch ($mimeType) {
-        case 'application/pdf':
-            return 'fa fa-file-pdf-o file-icon pdf';
-        case 'application/msword':
-        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            return 'fa fa-file-word-o file-icon word';
-        case 'application/vnd.ms-excel':
-        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-            return 'fa fa-file-excel-o file-icon excel';
-        case 'application/vnd.ms-powerpoint':
-        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-            return 'fa fa-file-powerpoint-o file-icon powerpoint';
-        case 'image/jpeg':
-        case 'image/jpg':
-        case 'image/png':
-        case 'image/svg+xml':
-            return 'fa fa-file-image-o file-icon image';
-        case 'video/mp4':
-        case 'video/x-matroska':
-        case 'video/x-msvideo':
-        case 'video/mov':
-            return 'fa fa-file-video-o file-icon video';
-        case 'audio/mpeg':
-            return 'fa fa-file-audio-o file-icon audio';
-        case 'application/x-rar-compressed':
-        case 'application/zip':
-        case 'application/gzip':
-        case 'application/x-tar':
-            return 'fa fa-file-archive-o file-icon archive';
-        default:
-            return 'fa fa-file file-icon';
+        switch ($mimeType) {
+            case 'application/pdf':
+                return 'fa fa-file-pdf-o file-icon pdf';
+            case 'application/msword':
+            case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                return 'fa fa-file-word-o file-icon word';
+            case 'application/vnd.ms-excel':
+            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                return 'fa fa-file-excel-o file-icon excel';
+            case 'application/vnd.ms-powerpoint':
+            case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                return 'fa fa-file-powerpoint-o file-icon powerpoint';
+            case 'image/jpeg':
+            case 'image/jpg':
+            case 'image/png':
+            case 'image/svg+xml':
+                return 'fa fa-file-image-o file-icon image';
+            case 'video/mp4':
+            case 'video/x-matroska':
+            case 'video/x-msvideo':
+            case 'video/mov':
+                return 'fa fa-file-video-o file-icon video';
+            case 'audio/mpeg':
+                return 'fa fa-file-audio-o file-icon audio';
+            case 'application/x-rar-compressed':
+            case 'application/zip':
+            case 'application/gzip':
+            case 'application/x-tar':
+                return 'fa fa-file-archive-o file-icon archive';
+            default:
+                return 'fa fa-file file-icon';
+        }
     }
-}
 
     public function fileExists()
     {
@@ -431,5 +456,50 @@ class Storage extends \yii\db\ActiveRecord
         } else {
             return $query->andWhere([Module::$tablePrefix . 'storage.access' => self::ACCESS_PUBLIC]);
         }
+    }
+
+    public static function cleanOrphanFiles()
+    {
+        $dataPath = realpath(Yii::$app->basePath . '/../data');
+        if (!$dataPath || !is_dir($dataPath)) {
+            return false;
+        }
+
+        $files = scandir($dataPath);
+        $deletedFiles = [];
+        foreach ($files as $file) {
+            if ($file === '.' || $file === '..') {
+                continue;
+            }
+            // Check if file exists in storage
+            $exists = self::find()->where(['name' => $file])->exists();
+            if (!$exists) {
+                $filePath = $dataPath . '/' . $file;
+                if (is_file($filePath) && unlink($filePath)) {
+                    $deletedFiles[] = $file;
+                }
+            }
+        }
+        return $deletedFiles;
+    }
+
+    public static function cleanOrphanRecords()
+    {
+        $dataPath = realpath(Yii::$app->basePath . '/../data');
+        if (!$dataPath || !is_dir($dataPath)) {
+            return false;
+        }
+
+        $deletedRecords = [];
+        $storages = self::find()->all();
+        foreach ($storages as $storage) {
+            $filePath = $dataPath . '/' . $storage->name;
+            if (!file_exists($filePath)) {
+                if ($storage->delete()) {
+                    $deletedRecords[] = $storage->id_storage;
+                }
+            }
+        }
+        return $deletedRecords;
     }
 }

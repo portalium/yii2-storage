@@ -107,7 +107,8 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultIndex')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-
+        Storage::cleanOrphanFiles();
+        Storage::cleanOrphanRecords();
         $model = new Storage();
         $searchModel = new StorageSearch();
         $id_directory = Yii::$app->request->get('id_directory');
@@ -849,7 +850,7 @@ class DefaultController extends Controller
         }
 
         if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file]) && $file->access == Storage::ACCESS_PRIVATE) {
-            // throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
         $path = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
