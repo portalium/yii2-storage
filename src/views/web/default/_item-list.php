@@ -434,6 +434,7 @@ if (typeof selectFile === 'undefined') {
 
 window.handleFileCardClick = function(event, id_storage) {
     if (event.target === this || 
+        event.target.classList.contains('file-info') ||
         event.target.classList.contains('file-icon') || 
         event.target.classList.contains('file-title')) { 
         var checkbox = document.querySelector(".file-select-checkbox[value='" + id_storage + "']");

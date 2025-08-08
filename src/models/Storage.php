@@ -293,11 +293,11 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         $counter = 1;
-        $newTitle = "{$filename}({$counter}){$extension}";
+        $newTitle = "{$filename} ({$counter}){$extension}";
 
         while (self::find()->where(['title' => $newTitle])->exists()) {
             $counter++;
-            $newTitle = "{$filename}({$counter}){$extension}";
+            $newTitle = "{$filename} ({$counter}){$extension}";
         }
 
         return $newTitle;
