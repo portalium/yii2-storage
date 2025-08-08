@@ -424,12 +424,20 @@ if (!window.refreshFilePicker) {
 
 if (!window.getAttributesFromDOM) {
     window.getAttributesFromDOM = function(id) {
-        const el = document.querySelector('[data-id="' + id + '"]');
+        let el = document.querySelector('[data-id="' + id + '"]');
+        if (el) {
+            let fileItem = el.querySelector('.file-item');
+            if (fileItem) {
+                el = fileItem;
+            }
+        }
+
         if (!el) return {};
         try {
             const attr = el.getAttribute('data-attributes') || el.getAttribute('attributes');
             return attr ? JSON.parse(attr) : {};
         } catch (e) {
+            console.error('Error parsing attributes:', e);
             return {};
         }
     };
@@ -473,7 +481,6 @@ if (!window.saveSelect) {
         }
 
         $('#' + window.inputId).val(value);
-        console.log('Selected files:', selectedFiles, 'Value:', value);
         if (window.callbackName && typeof window[window.callbackName] === 'function') {
             window[window.callbackName](selectedFiles);
         }
