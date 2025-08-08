@@ -254,29 +254,6 @@ if (!window.bindFilePickerEvents) {
             menu.toggleClass('show');
         });
 
-        // Dropdown item clicks - sadece modal içinde
-        $(document).off('click.picker-action').on('click.picker-action', context + ' .dropdown-item, ' + context + ' .dropdown-menu a', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const action = $(this).data('action');
-            const href = $(this).attr('href');
-            const onclick = $(this).attr('onclick');
-            const id = $(this).closest('[data-id]').data('id');
-            
-            // Sadece modal içindeki dropdown'ları kapat
-            $(context + ' .dropdown-menu').removeClass('show');
-            $(context + ' .dropdown').removeClass('show');
-            
-            // Action'ı çalıştır
-            if (onclick) {
-                try { eval(onclick); } catch(e) { console.error(e); }
-            } else if (action && id) {
-                window.handlePickerAction(action, id, href);
-            } else if (href) {
-                window.location.href = href;
-            }
-        });
 
         // Modal içine tıklama - sadece modal içindeki dropdown'ları etkileyecek
         $(document).off('click.picker-outside').on('click.picker-outside', context, function(e) {

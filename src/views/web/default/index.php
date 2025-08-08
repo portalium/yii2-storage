@@ -196,7 +196,7 @@ Pjax::end();
 
 ?>
 </div>
-
+</div>
 <script>
 function setViewMode(mode) {
     localStorage.setItem('viewMode', mode);
