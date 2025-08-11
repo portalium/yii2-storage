@@ -108,20 +108,22 @@ if (!window.updateFileCard) {
         $('.file-card.active').removeClass('active');
         $('.file-card input[type="checkbox"]').prop('checked', false);
         if (!id_storage) return;
-    
+
+        let el;
         if (Array.isArray(id_storage)) {
             id_storage.forEach(id => {
-                let el = $('#file-picker-modal span[data-id="' + id + '"]');
+                el = $('#file-picker-modal .file-card[data-id=' + id + ']');
                 el.addClass('active');
                 el.find('input[type="checkbox"]').prop('checked', true);
             });
         } else {
-            let el = $('#file-picker-modal span[data-id="' + id_storage + '"]');
+            el = $('#file-picker-modal .file-card[data-id=' + id_storage + ']');
             el.addClass('active');
             el.find('input[type="checkbox"]').prop('checked', true);
         }
     };
 }
+
 
 if (!window.cleanupModal) {
     window.cleanupModal = function(modalId = null) {
@@ -357,6 +359,9 @@ if (!window.openFilePickerModal) {
         window.isPicker = isPicker;
         window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes];
 
+        let inputValue = $('#' + id).val();
+        let id_storage_2 = JSON.parse(inputValue).id_storage;
+
         window.cleanupModal();
 
         $.get('/storage/default/picker-modal', {
@@ -381,7 +386,12 @@ if (!window.openFilePickerModal) {
                 
                 // Modal tamamen göründükten sonra event'leri bağla
                 modalEl.addEventListener('shown.bs.modal', function() {
-                    window.updateFileCard(id_storage);
+                    if(id_storage_2 && !isNaN(id_storage_2)) {
+                        window.updateFileCard(id_storage_2);
+                    }else{
+                        window.updateFileCard(inputValue);
+                    }
+
                     window.bindFilePickerEvents();
                 });
                 
@@ -424,12 +434,20 @@ if (!window.refreshFilePicker) {
 
 if (!window.getAttributesFromDOM) {
     window.getAttributesFromDOM = function(id) {
-        const el = document.querySelector('[data-id="' + id + '"]');
+        let el = document.querySelector('[data-id="' + id + '"]');
+        if (el) {
+            let fileItem = el.querySelector('.file-item');
+            if (fileItem) {
+                el = fileItem;
+            }
+        }
+
         if (!el) return {};
         try {
             const attr = el.getAttribute('data-attributes') || el.getAttribute('attributes');
             return attr ? JSON.parse(attr) : {};
         } catch (e) {
+            console.error('Error parsing attributes:', e);
             return {};
         }
     };
@@ -473,7 +491,6 @@ if (!window.saveSelect) {
         }
 
         $('#' + window.inputId).val(value);
-        console.log('Selected files:', selectedFiles, 'Value:', value);
         if (window.callbackName && typeof window[window.callbackName] === 'function') {
             window[window.callbackName](selectedFiles);
         }
