@@ -474,7 +474,7 @@
   position: relative;
   height: 38px !important;
   min-width: 90px !important;
-  background: #fff;
+  background: #f5f5f5;
   padding: 6px 12px;
   font-size: 14px;
   border: #dee2e6 solid;
@@ -582,6 +582,14 @@
   transform: translateX(-50%);
 }
 
+@media (min-width: 2561px) {
+  .folder-item .folder-dropdown-menu {
+    left: auto;      
+    transform: none; 
+    right: auto;     
+  }
+}
+
 @media (min-width: 2560px) {
   .folder-item .folder-dropdown-menu {
     left: 75%;
@@ -614,7 +622,7 @@
 
 .folder-item {
             position: relative;
-            background-color: #f0f4f9;
+            background-color: #f5f5f5;
             border-radius: 8px;
             cursor: pointer;
             transition: box-shadow 0.2s ease;
@@ -704,7 +712,7 @@
           overflow: visible;
           padding: 3%;
           padding-bottom: 10px;
-          background-color: #f0f4f9;
+          background-color: #f5f5f5;
           border-radius: 8px;
           transition: all 0.2s ease;
           cursor: pointer;
@@ -879,18 +887,84 @@
 .files-section.list-view .file-header{
   width: 100%;
 }
-.files-section.list-view .file-info {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
 
 .file-manager .files-section.list-view .file-card:hover {
   transform: scale(1);
 }
 
+.list-view-header {
+    display: flex; /* default olarak gizle */
+    padding: 8px 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    background: #f9f9f9;
+    display: flex;
+    text-align: left;
+}
+
+.files-section.grid-view .list-view-header {
+    display: none; 
+}
+
+.list-view-header .file-title {
+    margin-right: 4.4%; 
+}
+
+.list-view-header .file-owner {
+    margin-right: 18.3%;
+}
+
+.list-view-header .file-date {
+    margin-right: 22.5%; 
+}
+
+.files-section.list-view .file-info {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+.files-section.list-view .file-title {
+    text-align: left;
+    min-width: 250px
+}
+
+.files-section.list-view .file-owner {
+   margin-left: 10%;
+    text-align: right;
+}
+
+.files-section.list-view .file-date {
+   
+    text-align: right;
+}
+
+.files-section.list-view .file-access {
+    
+    text-align: right;
+}
+
+.files-section.list-view .file-info {
+    flex-grow: 1;
+    display: flex;
+    text-align: right;
+    align-items: right;
+    gap: 12px;
+}
+
+.files-section.list-view .file-info .file-owner,
+.files-section.list-view .file-info .file-date,
+.files-section.list-view .file-info .file-access {
+    margin-right: auto;
+    font-size: 14px;
+    color: #666665;
+}
+
+.files-section.grid-view .file-info .file-owner,
+.files-section.grid-view .file-info .file-date,
+.files-section.grid-view .file-info .file-access {
+    display: none !important;
+}
 
 .files-section.list-view .file-preview {
     display: none !important;
@@ -914,6 +988,7 @@
 }
 
 .btn-unselected{
+  background-color:#f5f5f5 !important;
   padding: 6px 6px !important;
   font-size: 11px;
   border: #dee2e6 solid !important;
@@ -939,6 +1014,7 @@
 
 
 .file-preview .file-icon.image-file {
+    aspect-ratio: 16/9;
     max-width: 100%;
     max-height: 100%;
     object-fit: cover;

@@ -90,10 +90,13 @@ $this->params['breadcrumbs'][] = $this->title;
                 ['class' => 'dropdown-item', 'onclick' => 'uploadFolderMenu(event)', 'id' => 'uploadFolderBtn']
             )
         );
+        
+echo Html::endTag('ul');
+echo Html::endTag('div');
 
-        echo Html::endTag('ul');
-        echo Html::endTag('div');
-        echo Html::beginTag('div', ['class' => 'view-toggle mb-3 d-flex', 'style' => 'margin-left:auto;']);
+echo Html::beginTag('div', [
+  'class' => 'view-toggle d-flex align-items-center ms-auto align-self-center mb-0'
+]);
 
         echo Html::button(
             Html::tag('i', '', ['class' => 'fa fa-th me-2']) .
@@ -229,9 +232,55 @@ $this->params['breadcrumbs'][] = $this->title;
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const savedMode = localStorage.getItem('viewMode') || 'grid';
-        setViewMode(savedMode);
-    });
+document.addEventListener('DOMContentLoaded', function() {
+    const savedMode = localStorage.getItem('viewMode') || 'grid';
+    setViewMode(savedMode);
+});
+
+$(document).on('pjax:end', function () {
+    const mode = localStorage.getItem('viewMode') || 'grid';
+    setViewMode(mode);
+});
+
+function updateFolderMenuPosition() {
+    const menuItems = document.querySelectorAll('.folder-item .folder-dropdown-menu');
+    const screenWidth = window.innerWidth;
+
+    if (screenWidth > 2560) {
+        let leftPercent;
+
+        if (screenWidth <= 4000) {
+            const startWidth = 2560;
+            const endWidth = 4000;
+            const startLeft = 55;
+            const endLeft = 70;
+            leftPercent = startLeft + ((screenWidth - startWidth) / (endWidth - startWidth)) * (endLeft - startLeft);
+        } 
+        else {
+            const startWidth = 4000;
+            const endWidth = 8000;
+            const startLeft = 77;
+            const endLeft = 85;
+            leftPercent = startLeft + ((screenWidth - startWidth) / (endWidth - startWidth)) * (endLeft - startLeft);
+
+            leftPercent = Math.min(endLeft, leftPercent);
+        }
+
+        menuItems.forEach(menu => {
+            menu.style.left = leftPercent + '%';
+            menu.style.right = 'auto';
+        });
+    } 
+    else {
+        menuItems.forEach(menu => {
+            menu.style.left = '';
+            menu.style.right = '';
+        });
+    }
+}
+
+window.addEventListener('load', updateFolderMenuPosition);
+window.addEventListener('resize', updateFolderMenuPosition);
+
 </script>
 
