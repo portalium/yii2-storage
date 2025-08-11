@@ -7,6 +7,8 @@ use portalium\theme\widgets\Dropdown;
 use yii\helpers\Url;
 use yii\widgets\LinkPager;
 use portalium\storage\bundles\IconAsset;
+use portalium\user\models\User;
+
 
 /** @var \yii\data\ActiveDataProvider $directoryDataProvider */
 /** @var \yii\data\ActiveDataProvider $fileDataProvider */
@@ -203,6 +205,15 @@ $files = $fileDataProvider->models;
 
 if (!empty($files)) {
     echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
+
+    echo Html::tag('div',
+        Html::tag('span', 'Dosya Adı', ['class' => 'file-title']) .
+        Html::tag('span', 'Sahibi', ['class' => 'file-owner']) .
+        Html::tag('span', 'Tarih', ['class' => 'file-date']) .
+        Html::tag('span', 'Erişim', ['class' => 'file-access']),
+        ['class' => 'list-view-header']
+    );
+
     echo Html::beginTag('div', ['class' => 'row g-3']);
 }
 
@@ -246,7 +257,29 @@ foreach ($files as $model) {
 
     $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
     $title = $model->title ?: 'Başlık yok';
-    $content .= Html::tag('span', Html::encode($title), ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')]);
+    $content .= Html::tag('span', Html::encode($title), [
+        'class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')
+    ]);
+
+   
+
+    $content .= Html::tag(
+    'span',
+    Html::encode(User::find()->select('username')->where(['id_user' => $model->id_user])->scalar() ?? 'Bilinmiyor'),
+    [
+        'class' => 'file-owner text-muted',
+        
+    ]
+    );
+
+    $content .= Html::tag('span', Yii::$app->formatter->asDatetime($model->date_update, 'php:d.m.Y H:i'), [
+        'class' => 'file-date text-muted',
+    ]);
+
+    $content .= Html::tag('span', $model->access, [
+    'class' => 'file-access text-muted',
+    ]);
+
 
     $content .= Html::endTag('div'); // .file-info
 
