@@ -904,5 +904,7 @@ $(document).ready(function () {
 $(document).on("pjax:end", function () {
   bindSearchInput();
   console.log("Search binding refreshed after pjax");
-  window.updateFileCard(window.selectedIdStorage);
+  if (typeof window.updateFileCard === 'function') {
+      window.updateFileCard(window.selectedIdStorage);
+  }
 });
