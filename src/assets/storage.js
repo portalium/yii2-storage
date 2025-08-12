@@ -50,20 +50,21 @@ function toggleFolderMenu(e, id) {
     });
 
     const menu = document.getElementById('context-folder-menu-' + id);
+
     if (menu) {
         menu.classList.toggle('show');
     }
 
-    const closeFolderMenus = function(event) {
+    const closeMenus = function () {
         document.querySelectorAll('[id^="context-folder-menu-"]').forEach(menu => {
             menu.classList.remove('show');
         });
-        document.removeEventListener('click', closeFolderMenus);
+        document.removeEventListener('click', closeMenus);
     };
 
     if (menu && menu.classList.contains('show')) {
         setTimeout(() => {
-            document.addEventListener('click', closeFolderMenus);
+            document.addEventListener('click', closeMenus);
         }, 0);
     }
 }
