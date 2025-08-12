@@ -12,6 +12,7 @@ class m220227_125705_storage_rbac extends Migration
         $permissionNames = [
             'storageWebDefaultIndex',
             'storageWebDefaultIndexOwn',
+            'storageWebDefaultManage',
             'storageWebDefaultUploadFile',
             'storageWebDefaultDownloadFile',
             'storageWebDefaultRenameFile',
@@ -44,6 +45,7 @@ class m220227_125705_storage_rbac extends Migration
         $permissionNames = [
             'storageWebDefaultIndex',
             'storageWebDefaultIndexOwn',
+            'storageWebDefaultManage',
             'storageWebDefaultUploadFile',
             'storageWebDefaultDownloadFile',
             'storageWebDefaultRenameFile',

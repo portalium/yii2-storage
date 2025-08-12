@@ -196,7 +196,6 @@ echo Html::beginTag('div', [
 
         ?>
 </div>
-</div>
 <script>
     function setViewMode(mode) {
         localStorage.setItem('viewMode', mode);

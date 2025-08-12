@@ -964,6 +964,7 @@
 
 .btn-selected{
   background-color:#28a745 !important;
+  color: white !important;
   padding: 6px 6px !important;
   font-size: 11px;
   border: #dee2e6 solid !important;
@@ -983,6 +984,7 @@
 }
 .btn-selected:hover{
   background-color: #28a745 !important;
+  color: white !important;
   
 }
 

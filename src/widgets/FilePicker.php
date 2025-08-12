@@ -360,8 +360,20 @@ if (!window.openFilePickerModal) {
         window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes];
 
         let inputValue = $('#' + id).val();
-        let id_storage_2 = JSON.parse(inputValue).id_storage;
+        let parsedValue = {};
 
+        try {
+            parsedValue = JSON.parse(inputValue || '{}');
+        } catch (e) {
+            parsedValue = {};
+        }
+
+        let id_storage_2 = parsedValue.id_storage ?? null;
+
+        window.selectedIdStorage =
+            (id_storage_2 !== null && !isNaN(id_storage_2))
+                ? id_storage_2
+                : inputValue;
         window.cleanupModal();
 
         $.get('/storage/default/picker-modal', {
@@ -427,6 +439,10 @@ if (!window.refreshFilePicker) {
             }).done(function(response) {
                 container.html(response);
                 window.bindFilePickerEvents();
+                const id_storage = window.currentSelectedIdStorage || null;
+                if (window.updateFileCard) {
+                    window.updateFileCard(id_storage);
+                }
             });
         }
     };
