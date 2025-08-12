@@ -242,45 +242,8 @@ $(document).on('pjax:end', function () {
     setViewMode(mode);
 });
 
-function updateFolderMenuPosition() {
-    const menuItems = document.querySelectorAll('.folder-item .folder-dropdown-menu');
-    const screenWidth = window.innerWidth;
 
-    if (screenWidth > 2560) {
-        let leftPercent;
 
-        if (screenWidth <= 4000) {
-            const startWidth = 2560;
-            const endWidth = 4000;
-            const startLeft = 55;
-            const endLeft = 70;
-            leftPercent = startLeft + ((screenWidth - startWidth) / (endWidth - startWidth)) * (endLeft - startLeft);
-        } 
-        else {
-            const startWidth = 4000;
-            const endWidth = 8000;
-            const startLeft = 77;
-            const endLeft = 85;
-            leftPercent = startLeft + ((screenWidth - startWidth) / (endWidth - startWidth)) * (endLeft - startLeft);
-
-            leftPercent = Math.min(endLeft, leftPercent);
-        }
-
-        menuItems.forEach(menu => {
-            menu.style.left = leftPercent + '%';
-            menu.style.right = 'auto';
-        });
-    } 
-    else {
-        menuItems.forEach(menu => {
-            menu.style.left = '';
-            menu.style.right = '';
-        });
-    }
-}
-
-window.addEventListener('load', updateFolderMenuPosition);
-window.addEventListener('resize', updateFolderMenuPosition);
 
 </script>
 
