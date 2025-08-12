@@ -219,19 +219,29 @@ class DefaultController extends Controller
                     $model->addError('file', Module::t('No files were uploaded'));
                 } else {
                     $model->file = $uploadedFiles[0];
-                    if (!empty($post['Storage']['title'])) {
-                        $baseName = trim($post['Storage']['title']);
-                        $name = $baseName;
-                        $counter = 1;
-                        while (Storage::find()
-                            ->where(['title' => $name, 'id_directory' => $id_directory])
-                            ->exists()
-                        ) {
-                            $name = $baseName . ' (' . $counter . ')';
-                            $counter++;
-                        }
-                        $model->title = $name;
+                if (!empty($post['Storage']['title'])) {
+                    $info = pathinfo(trim($post['Storage']['title']));
+                    $extension = isset($info['extension']) ? '.' . $info['extension'] : '';
+
+                    $filename = $info['filename'];
+
+                    if (preg_match('/^(.*)\((\d+)\)$/', $filename, $matches)) {
+                        $filename = $matches[1];
                     }
+
+                    if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory])->exists()) {
+                        $model->title = $filename . $extension;
+                    } else {
+                        $counter = 1;
+                        $newTitle = "{$filename} ({$counter}){$extension}";
+                        while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory])->exists()) {
+                            $counter++;
+                            $newTitle = "{$filename} ({$counter}){$extension}";
+                        }
+                        $model->title = $newTitle;
+                    }
+                }
+
                     $success = $model->upload();
                 }
             }

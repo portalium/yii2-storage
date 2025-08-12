@@ -241,8 +241,5 @@ $(document).on('pjax:end', function () {
     setViewMode(mode);
 });
 
-
-
-
 </script>
 
