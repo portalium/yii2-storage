@@ -28,7 +28,7 @@ class DefaultController extends Controller
 
     public function actionIndex()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultIndexOwn') && !\Yii::$app->workspace->can('storage', 'storageWebDefaultIndex')) {
+        if (!\Yii::$app->user->can('storageWebDefaultIndex') && !\Yii::$app->workspace->can('storage', 'storageWebDefaultIndex')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -104,7 +104,7 @@ class DefaultController extends Controller
 
     public function actionManage()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultIndex')) {
+        if (!\Yii::$app->user->can('storageWebDefaultManage')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         Storage::cleanOrphanFiles();
