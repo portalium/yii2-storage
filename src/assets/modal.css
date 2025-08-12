@@ -602,15 +602,6 @@
   margin: 5px 0;
 }
 
-@media (min-width: 2561px) {
-  .folder-item .folder-dropdown-menu {
-    left: auto;      
-    transform: none; 
-    right: auto;     
-  }
-}
-
-
 
 .folder-item {
             position: relative;
@@ -885,33 +876,49 @@
 }
 
 .list-view-header {
-    display: flex; /* default olarak gizle */
+    display: none;
     padding: 8px 10px;
     font-weight: bold;
-    border-bottom: 1px solid #ddd;
-    background: #f9f9f9;
-    display: flex;
+    border-bottom: 5px;
+    background: #f5f5f5;
     text-align: left;
 }
 
-.files-section.grid-view .list-view-header {
-    display: none; 
+.list-view .list-view-header {
+    display: flex !important; 
+}
+
+.file-info .file-owner,
+.file-info .file-date,
+.file-info .file-access {
+    display: none;
+    margin-right: auto;
+    font-size: 14px;
+    color: #666665;
+}
+
+.list-view .file.file-info .file-owner,
+.list-view .file-info .file-date,
+.list-view .file-info .file-access {
+    display: flex !important;
 }
 
 .list-view-header .file-title {
-    margin-right: 4.4%; 
+    margin-right: 60px;
+    display: block;
 }
 
 .list-view-header .file-owner {
-    margin-right: 18.3%;
+    margin-right: 295px;
+    display: block;
 }
 
 .list-view-header .file-date {
-    margin-right: 22.5%; 
+    margin-right: 350px;
+    display: inline; 
 }
 
 .files-section.list-view .file-info {
-    flex-grow: 1;
     display: flex;
     align-items: center;
 }
@@ -922,13 +929,13 @@
 }
 
 .files-section.list-view .file-owner {
-   margin-left: 10%;
     text-align: right;
+    display: block;
 }
 
 .files-section.list-view .file-date {
-   
     text-align: right;
+    display: block;
 }
 
 .files-section.list-view .file-access {
@@ -942,20 +949,6 @@
     text-align: right;
     align-items: right;
     gap: 12px;
-}
-
-.files-section.list-view .file-info .file-owner,
-.files-section.list-view .file-info .file-date,
-.files-section.list-view .file-info .file-access {
-    margin-right: auto;
-    font-size: 14px;
-    color: #666665;
-}
-
-.files-section.grid-view .file-info .file-owner,
-.files-section.grid-view .file-info .file-date,
-.files-section.grid-view .file-info .file-access {
-    display: none !important;
 }
 
 .files-section.list-view .file-preview {
@@ -1012,3 +1005,4 @@
     display: block;
     border-radius: 8px;
 }
+
