@@ -58,10 +58,13 @@ class DefaultController extends RestActiveController
                 //                if (!Yii::$app->user->can('storageApiDefaultGetFile', ['id_module' => 'storage']))
                 //                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
                 break;
+            case 'upload':
+                break;
             default:
                 if (!Yii::$app->user->can('storageApiDefaultIndex', ['id_module' => 'storage']) && !Yii::$app->user->can('storageApiDefaultIndexOwn', ['id_module' => 'storage']))
                     throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to view this storage.'));
                 break;
+
         }
 
         return true;
