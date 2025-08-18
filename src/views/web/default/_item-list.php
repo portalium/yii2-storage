@@ -137,9 +137,9 @@ foreach ($directories as $model) {
         'ondblclick' => "if (!(event.target.closest('.more-options'))) { openFolder($folderId, event, '" . $fileExtensionsParam . "'); }",
     ]);
 
-    $content .= Html::img($bundle->baseUrl . '/folder-icon.png', [
-        'class' => 'folder-icon',
-        'alt' => 'folder-icon'
+    $content .= Html::tag('i', '', [
+    'class' => 'fa fa-folder folder-icon',
+    'aria-hidden' => 'true'
     ]);
 
     $content .= Html::tag('span', $folderName, ['class' => 'folder-name']);
@@ -218,9 +218,7 @@ if (!empty($files)) {
 }
 
 foreach ($files as $model) {
-    $fileCardClasses = $isPicker 
-        ? 'col-lg-3 col-md-4 col-sm-6 col-12 mb-3' 
-        : 'col-lg-2 col-md-3 col-sm-6 col-6 mb-3';
+    $fileCardClasses = 'file-card';
 
     $content = Html::beginTag('div', [
         'class' => $fileCardClasses . ' file-card',
