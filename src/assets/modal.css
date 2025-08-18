@@ -8,11 +8,20 @@
   margin-bottom: 15px;
 }
 
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
 .file-manager .file-card {
   position: relative;
   border: 0px solid #ddd;
   border-radius: 8px;
-  height: 100%;
+  height: 250px;
+  max-height: 250px;
+  width: 100%;
+  min-width: 250px;
   display: flex;
   flex-direction: column;
   text-align: center;
@@ -21,6 +30,7 @@
   aspect-ratio: 1 / 1;
   overflow: visible;
 }
+
 
 .file-manager .file-card:hover {
   transform: scale(1.03);
@@ -536,11 +546,6 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.folder-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 12px;
-}
 
 .folder-name {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -618,10 +623,16 @@
         }
 
         .folder-icon {
-            width: 24px;
-            height: 24px;
-            margin-right: 12px;
+          display: inline-block;   
+          font-size: 16px;         
+          width: 24px;
+          height: 24px;
+          line-height: 24px;       
+          margin-right: 12px;
+          text-align: center;
+          color: #444746;
         }
+
 
         .folder-name {
             font-size: 14px;
@@ -681,7 +692,10 @@
       
 
         .file-item {
-          height: 100%;
+          height: 250px;
+          max-height: 250px;
+          min-width: 250px;
+          width: 100%;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
