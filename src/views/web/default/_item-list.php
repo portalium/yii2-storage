@@ -214,7 +214,7 @@ if (!empty($files)) {
         ['class' => 'list-view-header']
     );
 
-    echo Html::beginTag('div', ['class' => 'row g-3']);
+    echo Html::beginTag('div', ['class' => 'file-grid']);
 }
 
 foreach ($files as $model) {
