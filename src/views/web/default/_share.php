@@ -95,7 +95,7 @@ echo Html::tag('div',
             Html::beginTag('div', ['class' => 'dropdown d-inline']) .
 
                 Html::button(
-                    Html::tag('span', Module::t('Restricted'), [
+                    Html::tag('span', Module::t('Restricted') . ' <i class="fa fa-sort-desc ms-1" style="transform: translateY(-3px);"></i>', [
                         'id' => 'access-text',
                         'class' => 'access-text fw-semibold d-block',
                         'data-public' => Module::t('Public'),
@@ -107,7 +107,8 @@ echo Html::tag('div',
                         'id' => 'accessDropdownBtn',
                         'data-bs-toggle' => 'dropdown',
                         'aria-expanded' => 'false',
-                        'style' => 'box-shadow:none;'
+                        'style' => 'box-shadow:none;',
+                        'encode' => false,
                     ]
                 ) .
 
