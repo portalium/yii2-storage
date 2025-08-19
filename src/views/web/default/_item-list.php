@@ -8,6 +8,7 @@ use yii\helpers\Url;
 use yii\widgets\LinkPager;
 use portalium\storage\bundles\IconAsset;
 use portalium\user\models\User;
+use portalium\theme\widgets\ListView;   
 
 
 /** @var \yii\data\ActiveDataProvider $directoryDataProvider */
@@ -196,14 +197,13 @@ foreach ($directories as $model) {
     echo $content; 
 }
 
+echo Html::endTag('div');
 echo Html::endTag('div'); 
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'files-section', 'id' => 'files-section']);
 
-$files = $fileDataProvider->models;
-
-if (!empty($files)) {
+if ($fileDataProvider->getTotalCount() > 0) {
     echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
 
     echo Html::tag('div',
@@ -213,159 +213,153 @@ if (!empty($files)) {
         Html::tag('span', 'Erişim', ['class' => 'file-access']),
         ['class' => 'list-view-header']
     );
-
-    echo Html::beginTag('div', ['class' => 'file-grid']);
 }
 
-foreach ($files as $model) {
-    $fileCardClasses = 'file-card';
+echo ListView::widget([
+    'dataProvider' => $fileDataProvider,
+    'options' => ['class' => 'file-grid'],
+    'layout' => "{items}",
+    'itemView' => function ($model, $key, $index, $widget) use ($isPicker) {
 
-    $content = Html::beginTag('div', [
-        'class' => $fileCardClasses . ' file-card',
-        'data-id' => $model->id_storage,
-        'data-attributes' => json_encode([
-            'id_storage' => $model->id_storage,
-            'name' => $model->name,
-            'title' => $model->title,
-            'mime_type' => $model->mime_type,
-        ])
-    ]);
+        $fileCardClasses = 'file-card';
 
-    $content .= Html::beginTag('div', [
-        'class' => 'file-item',
-        'data-attributes' => json_encode([
-            'id_storage' => $model->id_storage,
-            'name' => $model->name,
-            'title' => $model->title,
-            'mime_type' => $model->mime_type,
-        ]),
-        'onclick' => $isPicker ? 'handleFileCardClick.call(this, event, ' . $model->id_storage . ')' : null,
-    ]);
-
-    $content .= Html::beginTag('div', ['class' => 'file-header']);
-    $content .= Html::beginTag('div', ['class' => 'file-info']);
-
-    if ($isPicker) {
-        $content .= Html::checkbox('selection', false, [
-            'class' => 'file-select-checkbox',
-            'value' => $model->id_storage,
-            'onclick' => 'selectFile(this, ' . $model->id_storage . ')',
+        $content = Html::beginTag('div', [
+            'class' => $fileCardClasses,
+            'data-id' => $model->id_storage,
+            'data-attributes' => json_encode([
+                'id_storage' => $model->id_storage,
+                'name' => $model->name,
+                'title' => $model->title,
+                'mime_type' => $model->mime_type,
+            ])
         ]);
-    }
 
-    $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
-    $title = $model->title ?: 'Başlık yok';
-    $content .= Html::tag('span', Html::encode($title), [
-        'class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')
-    ]);
+        $content .= Html::beginTag('div', [
+            'class' => 'file-item',
+            'data-attributes' => json_encode([
+                'id_storage' => $model->id_storage,
+                'name' => $model->name,
+                'title' => $model->title,
+                'mime_type' => $model->mime_type,
+            ]),
+            'onclick' => $isPicker ? 'handleFileCardClick.call(this, event, ' . $model->id_storage . ')' : null,
+        ]);
 
-   
+        $content .= Html::beginTag('div', ['class' => 'file-header']);
+        $content .= Html::beginTag('div', ['class' => 'file-info']);
 
-    $content .= Html::tag(
-    'span',
-    Html::encode(User::find()->select('username')->where(['id_user' => $model->id_user])->scalar() ?? 'Bilinmiyor'),
-    [
-        'class' => 'file-owner text-muted',
-        
-    ]
-    );
+        if ($isPicker) {
+            $content .= Html::checkbox('selection', false, [
+                'class' => 'file-select-checkbox',
+                'value' => $model->id_storage,
+                'onclick' => 'selectFile(this, ' . $model->id_storage . ')',
+            ]);
+        }
 
-    $content .= Html::tag('span', Yii::$app->formatter->asDatetime($model->date_update, 'php:d.m.Y H:i'), [
-        'class' => 'file-date text-muted',
-    ]);
+        $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
+        $title = $model->title ?: 'Başlık yok';
+        $content .= Html::tag('span', Html::encode($title), [
+            'class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')
+        ]);
 
-    $content .= Html::tag('span', $model->access, [
-    'class' => 'file-access text-muted',
-    ]);
+        $content .= Html::tag(
+            'span',
+            Html::encode(User::find()->select('username')->where(['id_user' => $model->id_user])->scalar() ?? 'Bilinmiyor'),
+            ['class' => 'file-owner text-muted']
+        );
 
+        $content .= Html::tag('span', Yii::$app->formatter->asDatetime($model->date_update, 'php:d.m.Y H:i'), [
+            'class' => 'file-date text-muted',
+        ]);
 
-    $content .= Html::endTag('div'); // .file-info
+        $content .= Html::tag('span', $model->access, [
+            'class' => 'file-access text-muted',
+        ]);
 
-    $content .= Html::button(
-        Html::tag('i', '', [
-            'class' => 'fa fa-ellipsis-v',
-            'id' => 'menu-trigger-' . $model->id_storage,
-            'data-title' => $title,
-        ]),
-        [
-            'class' => 'file-more-options',
-            'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
-            'data-title' => Module::t('More Options'),
-        ]
-    );
+        $content .= Html::endTag('div'); // .file-info
 
-    $content .= Html::endTag('div'); // .file-header
-
-    // Dropdown menüsü
-    $content .= Dropdown::widget([
-        'items' => [
+        $content .= Html::button(
+            Html::tag('i', '', [
+                'class' => 'fa fa-ellipsis-v',
+                'id' => 'menu-trigger-' . $model->id_storage,
+                'data-title' => $title,
+            ]),
             [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-download']) . ' ' . Module::t('Download'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'downloadFile(' . $model->id_storage . '); return false;'],
-            ],
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'openRenameModal(' . $model->id_storage . ')'],
-            ],
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-refresh']) . ' ' . Module::t('Update'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'openUpdateModal(' . $model->id_storage . ')'],
-            ],
-            /* [
+                'class' => 'file-more-options',
+                'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
+                'data-title' => Module::t('More Options'),
+            ]
+        );
+
+        $content .= Html::endTag('div'); // .file-header
+
+        // Dropdown menüsü
+        $content .= Dropdown::widget([
+            'items' => [
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-download']) . ' ' . Module::t('Download'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => ['onclick' => 'downloadFile(' . $model->id_storage . '); return false;'],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => ['onclick' => 'openRenameModal(' . $model->id_storage . ')'],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-refresh']) . ' ' . Module::t('Update'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => ['onclick' => 'openUpdateModal(' . $model->id_storage . ')'],
+                ],            
+                /* [
                 'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
                 'url' => '#',
                 'encode' => false,
-            ], */
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'openShareModal(' . $model->id_storage . ')'],
+                ], */
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => ['onclick' => 'openShareModal(' . $model->id_storage . ')'],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-copy']) . ' ' . Module::t('Make a Copy'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => ['onclick' => 'copyFile(' . $model->id_storage . '); return false;'],
+                ],
+                [
+                    'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
+                    'url' => '#',
+                    'encode' => false,
+                    'linkOptions' => ['onclick' => 'deleteFile(' . $model->id_storage . '); return false;'],
+                ],
             ],
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-copy']) . ' ' . Module::t('Make a Copy'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'copyFile(' . $model->id_storage . '); return false;'],
+            'options' => [
+                'class' => 'custom-dropdown-menu',
+                'id' => 'context-menu-' . $model->id_storage,
             ],
-            [
-                'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
-                'url' => '#',
-                'encode' => false,
-                'linkOptions' => ['onclick' => 'deleteFile(' . $model->id_storage . '); return false;'],
-            ],
-        ],
-        'options' => [
-            'class' => 'custom-dropdown-menu',
-            'id' => 'context-menu-' . $model->id_storage,
-        ],
-    ]);
+        ]);
 
-    // Önizleme
-    $content .= Html::beginTag('div', ['class' => 'file-preview']);
-    $iconData = $model->getIconUrl();
-    $content .= Html::img($iconData['url'], [
-        'alt' => $model->title,
-        'class' => 'file-icon ' . $iconData['class'],
-        'style' => 'width: 100%; height: 100%;',
-    ]);
-    $content .= Html::endTag('div'); // .file-preview
+        // Önizleme
+        $content .= Html::beginTag('div', ['class' => 'file-preview']);
+        $iconData = $model->getIconUrl();
+        $content .= Html::img($iconData['url'], [
+            'alt' => $model->title,
+            'class' => 'file-icon ' . $iconData['class'],
+            'style' => 'width: 100%; height: 100%;',
+        ]);
+        $content .= Html::endTag('div'); // .file-preview
 
-    $content .= Html::endTag('div'); // .file-item
-    $content .= Html::endTag('div'); // .file-card
+        $content .= Html::endTag('div'); // .file-item
+        $content .= Html::endTag('div'); // .file-card
 
-    echo $content;
-}
-
-if (!empty($files)) {
-    echo Html::endTag('div'); // .row
-}
+        return $content;
+    },
+]);
 
 echo Html::endTag('div'); // .files-section
 echo Html::beginTag('div', ['class' => 'row']);
