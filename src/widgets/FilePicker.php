@@ -127,33 +127,36 @@ if (!window.updateFileCard) {
 
 if (!window.cleanupModal) {
     window.cleanupModal = function(modalId = null) {
+        let modalEl;
+
         if (modalId) {
-            const modalEl = document.getElementById(modalId);
-            if (modalEl) {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-                setTimeout(() => {
-                    if (modalEl && modalEl.parentNode) {
-                        modalEl.parentNode.removeChild(modalEl);
-                    }
-                }, 300);
-            }
+            modalEl = document.getElementById(modalId);
         } else {
-            const modalEl = document.getElementById('file-picker-modal');
-            if (modalEl) {
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
-            }
-            
-            // Modal kapandıktan sonra ana sayfa event'lerini yeniden bağla
+            const modals = document.querySelectorAll('.modal.show');
+            modalEl = modals[modals.length - 1]; 
+        }
+
+        if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+
+            setTimeout(() => {
+                if (modalEl && modalEl.parentNode) {
+                    modalEl.parentNode.removeChild(modalEl);
+                }
+            }, 300);
+        }
+
+        if (!document.querySelector('.modal.show')) {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open').css('padding-right', '');
             setTimeout(() => {
                 window.restoreMainPageEvents();
             }, 500);
         }
-        $('.modal-backdrop').remove();
-        $('body').removeClass('modal-open').css('padding-right', '');
     };
 }
+
 
 // Ana sayfa event'lerini geri yükleme fonksiyonu
 if (!window.restoreMainPageEvents) {
@@ -225,19 +228,33 @@ if (!window.bindFilePickerEvents) {
             window.saveSelect();
         });
 
-        // Modal kapatma butonları - özel handling
-        $(document).off('click.picker-close').on('click.picker-close', context + ' .btn-close, ' + context + ' .close, ' + context + ' [data-bs-dismiss="modal"]', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.cleanupModal();
-        });
+       $(document).off('click.picker-close').on(
+  'click.picker-close',
+  context + ' .btn-close, ' + context + ' .close, ' + context + ' [data-bs-dismiss="modal"]',
+  function (e) {
+    e.preventDefault();
+    e.stopPropagation();
 
-        // Modal'ın X butonuna özel event
-        $(document).off('click.picker-dismiss').on('click.picker-dismiss', context + ' .modal-header .btn-close', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.cleanupModal();
-        });
+    const modalEl = this.closest('.modal');
+    if (modalEl && modalEl.id) {
+      window.cleanupModal(modalEl.id);
+    }
+  }
+);
+
+$(document).off('click.picker-dismiss').on(
+  'click.picker-dismiss',
+  context + ' .modal-header .btn-close',
+  function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const modalEl = this.closest('.modal');
+    if (modalEl && modalEl.id) {
+      window.cleanupModal(modalEl.id);
+    }
+  }
+);
 
         // Dropdown toggle - sadece modal içinde
         $(document).off('click.picker-dropdown').on('click.picker-dropdown', context + ' .dropdown-toggle, ' + context + ' .file-ellipsis, ' + context + ' .folder-ellipsis', function(e) {

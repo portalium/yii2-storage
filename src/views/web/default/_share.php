@@ -95,11 +95,15 @@ echo Html::tag('div',
             Html::beginTag('div', ['class' => 'dropdown d-inline']) .
 
                 Html::button(
-                    Html::tag('span', Module::t('Restricted') . ' <i class="fa fa-sort-desc ms-1" style="transform: translateY(-3px);"></i>', [
+                    Html::tag('span', Module::t('Restricted'), [
                         'id' => 'access-text',
-                        'class' => 'access-text fw-semibold d-block',
+                        'class' => 'access-text fw-semibold d-inline-flex align-items-center',
                         'data-public' => Module::t('Public'),
                         'data-private' => Module::t('Restricted'),
+                    ]).
+                    Html::tag('i', '', [
+                        'class' => 'fa fa-sort-desc ms-1',
+                        'style' => 'transform: translateY(-3px);'
                     ]),
                     [
                         'class' => 'btn btn-light border-0 p-0 text-start',

@@ -33,6 +33,7 @@
             flex: 1;          /* Kalan tüm alanı kapla */
             overflow-y: auto; /* Dikey scroll */
             padding: 10px 15px;
+            overflow: visible;
         }
         .file-select-checkbox{
             flex-shrink: 0; /* checkbox küçülmesin */
