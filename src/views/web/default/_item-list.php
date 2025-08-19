@@ -118,8 +118,14 @@ echo Html::beginTag('div', ['class' => 'folders-section mb-4', 'id' => 'folders-
 $directories = $directoryDataProvider->models;
 
 if (!empty($directories)) {
-echo Html::tag('h3', Module::t('Your Folders'), ['class' => 'h6 text-muted mb-3']); 
-echo Html::beginTag('div', ['class' => 'row g-3']); 
+echo Html::tag('h3', 
+    Module::t('Your Folders') . ' ' . Html::tag('i', '', [
+        'class' => 'fa fa-caret-down ms-2 toggle-icon-folders',
+        'aria-hidden' => 'true'
+    ]), 
+    ['class' => 'h6 text-muted mb-3 toggle-folders', 'style' => 'cursor: pointer;']
+);
+echo Html::beginTag('div', ['class' => 'row g-3', 'id' => 'folder-list']); 
 }
 
 foreach ($directories as $model) {
@@ -197,14 +203,19 @@ foreach ($directories as $model) {
     echo $content; 
 }
 
-echo Html::endTag('div');
 echo Html::endTag('div'); 
 echo Html::endTag('div');
 
 echo Html::beginTag('div', ['class' => 'files-section', 'id' => 'files-section']);
 
 if ($fileDataProvider->getTotalCount() > 0) {
-    echo Html::tag('h3', Module::t('Your Files'), ['class' => 'h6 text-muted mb-3']); 
+    echo Html::tag('h3', 
+        Module::t('Your Files') . ' ' . Html::tag('i', '', [
+            'class' => 'fa fa-caret-down ms-2 toggle-icon-files',
+            'aria-hidden' => 'true'
+        ]), 
+        ['class' => 'h6 text-muted mb-3 toggle-files', 'style' => 'cursor: pointer;']
+    );
 
     echo Html::tag('div',
         Html::tag('span', 'Dosya Adı', ['class' => 'file-title']) .
@@ -217,7 +228,7 @@ if ($fileDataProvider->getTotalCount() > 0) {
 
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
-    'options' => ['class' => 'file-grid mb-3'],
+    'options' => ['class' => 'file-grid mb-3', 'id' => 'file-list'],
     'layout' => "{items}",
     'showFooter' => false,
     'itemView' => function ($model, $key, $index, $widget) use ($isPicker) {
@@ -395,6 +406,7 @@ echo LinkPager::widget([
 
 echo Html::endTag('div');
 echo Html::endTag('div');
+echo Html::endTag('div');
 
 echo Html::endTag('div'); // container-fluid sonu
 
@@ -472,4 +484,19 @@ window.handleFileCardClick = function(event, id_storage) {
         }
     }
 };
+
+$('.toggle-folders').on('click', function () {
+    $('#folder-list').toggle();
+
+    const icon = $(this).find('.toggle-icon-folders');
+    icon.toggleClass('fa-caret-down fa-caret-right');
+});
+
+$('.toggle-files').on('click', function () {
+    $('#file-list').toggle();
+
+    const icon = $(this).find('.toggle-icon-files');
+    icon.toggleClass('fa-caret-down fa-caret-right');
+});
+
 JS);

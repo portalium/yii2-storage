@@ -1013,3 +1013,17 @@
     margin-right: auto;
     margin-bottom: auto;
 }
+
+.toggle-folders,
+.toggle-files {
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+    display: inline-block; 
+}
+
+.toggle-folders:hover,
+.toggle-files:hover {
+    background-color: #f5f5f5; 
+    cursor: pointer;
+}
