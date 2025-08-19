@@ -217,8 +217,9 @@ if ($fileDataProvider->getTotalCount() > 0) {
 
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
-    'options' => ['class' => 'file-grid'],
+    'options' => ['class' => 'file-grid mb-3'],
     'layout' => "{items}",
+    'showFooter' => false,
     'itemView' => function ($model, $key, $index, $widget) use ($isPicker) {
 
         $fileCardClasses = 'file-card';
