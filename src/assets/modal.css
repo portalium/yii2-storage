@@ -703,8 +703,6 @@
           justify-content: space-between;
           box-sizing: border-box;
           overflow: visible;
-          padding: 3%;
-          padding-bottom: 10px;
           background-color: #f5f5f5;
           border-radius: 8px;
           transition: all 0.2s ease;
@@ -721,7 +719,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            padding-left: 3%;
+            padding-top: 3%;
         }
 
         .file-header .file-title {
@@ -749,6 +748,8 @@
     align-items: center;
     justify-content: center;
     margin-top: 8px;
+    padding: 3%;
+    padding-top: unset;
 }
 
 .file-preview img {
@@ -766,6 +767,7 @@
             border: none;
             cursor: pointer;
             transition: all 0.2s ease;
+            margin-right: 1%;
             padding: 6px;
             border-radius: 50%;
             width: 28px;
@@ -809,7 +811,7 @@
 
         .file-icon {
             font-size: 16px;
-            margin-left: 8px;
+            margin-left: 2px;
             margin-right: 8px;
             color: #9e9e9e; 
         }
@@ -1007,5 +1009,7 @@
     object-fit: cover;
     display: block;
     border-radius: 8px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: auto;
 }
-
