@@ -202,9 +202,10 @@ foreach ($directories as $model) {
     $content .= Html::endTag('div'); 
     echo $content; 
 }
-
-echo Html::endTag('div'); 
-echo Html::endTag('div');
+if (!empty($directories)){
+    echo Html::endTag('div'); // row g-3
+}
+echo Html::endTag('div'); // folders-section
 
 echo Html::beginTag('div', ['class' => 'files-section', 'id' => 'files-section']);
 
@@ -433,9 +434,8 @@ echo LinkPager::widget([
     'activePageCssClass' => 'active',
 ]);
 
-echo Html::endTag('div');
-echo Html::endTag('div');
-
+echo Html::endTag('div'); // col-12 d-flex justify-content-start
+echo Html::endTag('div'); // row
 echo Html::endTag('div'); // container-fluid sonu
 
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
