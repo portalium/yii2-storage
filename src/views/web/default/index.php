@@ -197,13 +197,15 @@ echo Html::beginTag('div', [
         ?>
 </div>
 <script>
-    function setViewMode(mode) {
-        localStorage.setItem('viewMode', mode);
+    function applyViewModeClasses(mode) {
+    const el  = document.getElementById('files-section');
+    const el2 = document.getElementById('folders-section');
 
-        const el = document.getElementById('files-section');
-        const el2 = document.getElementById('folders-section');
+    if (el2) {
         el2.classList.remove('grid-view', 'list-view');
         el2.classList.add(mode + '-view');
+    }
+    if (el) {
         el.classList.remove('grid-view', 'list-view');
         el.classList.add(mode + '-view');
 
@@ -212,33 +214,58 @@ echo Html::beginTag('div', [
             row.classList.remove('g-3');
             if (mode === 'grid') row.classList.add('g-3');
         }
+    }
 
-        const gridBtn = document.getElementById('btn-grid');
-        const listBtn = document.getElementById('btn-list');
-
+    const gridBtn = document.getElementById('btn-grid');
+    const listBtn = document.getElementById('btn-list');
+    if (gridBtn && listBtn) {
         if (mode === 'grid') {
-            gridBtn.classList.remove('btn-unselected');
-            gridBtn.classList.add('btn-selected');
-
-            listBtn.classList.remove('btn-selected');
-            listBtn.classList.add('btn-unselected');
+            gridBtn.classList.remove('btn-unselected'); gridBtn.classList.add('btn-selected');
+            listBtn.classList.remove('btn-selected');   listBtn.classList.add('btn-unselected');
         } else {
-            listBtn.classList.remove('btn-unselected');
-            listBtn.classList.add('btn-selected');
-
-            gridBtn.classList.remove('btn-selected');
-            gridBtn.classList.add('btn-unselected');
+            listBtn.classList.remove('btn-unselected'); listBtn.classList.add('btn-selected');
+            gridBtn.classList.remove('btn-selected');   gridBtn.classList.add('btn-unselected');
         }
     }
 
+    const fileList = document.getElementById('file-list');
+    if (fileList) {
+        if (mode === 'list') {
+            fileList.classList.remove('file-grid', 'mb-3');
+        } else {
+            fileList.classList.add('file-grid', 'mb-3');
+        }
+    }
+}
+
+function setViewMode(mode) {
+    localStorage.setItem('viewMode', mode);
+    document.cookie = "viewMode=" + mode + "; path=/; max-age=31536000";
+
+    applyViewModeClasses(mode);
+
+    if (typeof $.pjax !== 'undefined') {
+        const currentUrl = window.location.href.split('?')[0];
+        $.pjax.reload({
+            container: '#pjax-container',
+            url: currentUrl + '?viewMode=' + encodeURIComponent(mode),
+            push: false,
+            replace: false,
+            timeout: 10000,
+            cache: false
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const savedMode = localStorage.getItem('viewMode') || 'grid';
-    setViewMode(savedMode);
+    console.log(savedMode);
+    applyViewModeClasses(savedMode);
 });
 
 $(document).on('pjax:end', function () {
     const mode = localStorage.getItem('viewMode') || 'grid';
-    setViewMode(mode);
+    applyViewModeClasses(mode);
 });
 
 </script>

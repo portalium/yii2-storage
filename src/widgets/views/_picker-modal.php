@@ -26,7 +26,6 @@
             background: white; 
             z-index: 1;   
             padding: 10px 15px;
-            border-bottom: 1px solid #ddd;
             flex-shrink: 0;   
         }
         .file-list {

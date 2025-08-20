@@ -410,6 +410,9 @@ if (!window.openFilePickerModal) {
                     backdrop: 'static',
                     keyboard: false
                 });
+
+                const savedMode = localStorage.getItem('viewMode') || 'grid';
+                applyViewModeClasses(savedMode);
                 
                 modal.show();
                 
@@ -420,7 +423,6 @@ if (!window.openFilePickerModal) {
                     }else{
                         window.updateFileCard(inputValue);
                     }
-
                     window.bindFilePickerEvents();
                 });
                 
