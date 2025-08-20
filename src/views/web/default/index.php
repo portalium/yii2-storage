@@ -122,6 +122,8 @@ echo Html::beginTag('div', [
 
         echo Html::endTag('div');
 
+        echo Html::endTag('div'); // d-flex align-items-center gap-2 flex-wrap
+
         echo Html::endTag('div'); // file-controls
 
         echo Html::beginTag('div', [
@@ -168,7 +170,6 @@ echo Html::beginTag('div', [
         ]);
 
         Pjax::end();
-        echo Html::endTag('div'); // file-list
 
         Pjax::begin([
             'id' => 'rename-file-pjax',
@@ -194,8 +195,9 @@ echo Html::beginTag('div', [
         ]);
         Pjax::end();
 
+        echo Html::endTag('div'); // file-list
+        echo Html::endTag('div'); // file-manager
         ?>
-</div>
 <script>
     function setViewMode(mode) {
         localStorage.setItem('viewMode', mode);
