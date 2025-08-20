@@ -218,18 +218,47 @@ if ($fileDataProvider->getTotalCount() > 0) {
         ['class' => 'h6 text-muted mb-3 toggle-files', 'style' => 'cursor: pointer;']
     );
 
-    echo Html::tag('div',
-        Html::tag('span', 'Dosya Adı', ['class' => 'file-title']) .
-        Html::tag('span', 'Sahibi', ['class' => 'file-owner']) .
-        Html::tag('span', 'Tarih', ['class' => 'file-date']) .
-        Html::tag('span', 'Erişim', ['class' => 'file-access']),
-        ['class' => 'list-view-header']
-    );
+    $header  = Html::beginTag('div', ['class' => 'file-card file-card-header']);
+    $header .= Html::beginTag('div', ['class' => 'file-item']);
+    $header .= Html::beginTag('div', ['class' => 'file-header']);
+    $header .= Html::beginTag('div', ['class' => 'file-info']);
+    $header .= Html::tag('i','',['class'=>'fa fa-bars file-icon','style'=>'color:transparent;']);
+
+    $header .= Html::tag('span', Module::t('File Name'), ['class' => 'file-title']);
+    $header .= Html::tag('span', Module::t('Owner'), ['class' => 'file-owner']);
+    $header .= Html::tag('span', Module::t('Date Update'), ['class' => 'file-date']);
+    $header .= Html::tag('span', Module::t('Access'), ['class' => 'file-access']);
+
+    $header .= Html::endTag('div'); // .file-info
+    $header .= Html::button(
+            Html::tag('i', '', [
+                'class' => 'fa fa-ellipsis-v',
+                'style'=>'color:transparent;'
+            ]),
+            [
+                'class' => 'file-more-options',
+            ]
+        );
+    $header .= Html::endTag('div'); // .file-header
+    $header .= Html::endTag('div'); // .file-item
+    $header .= Html::endTag('div'); // .file-card
+
+    echo $header;
+}
+
+$viewMode = Yii::$app->request->get('viewMode');
+if (!$viewMode) {
+    $viewMode = Yii::$app->request->cookies->getValue('viewMode', 'grid');
+}
+
+$listViewOptions = ['id' => 'file-list'];
+if ($viewMode === 'grid') {
+    $listViewOptions['class'] = 'file-grid mb-3';
 }
 
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
-    'options' => ['class' => 'file-grid mb-3', 'id' => 'file-list'],
+    'options' => $listViewOptions,
     'layout' => "{items}",
     'showFooter' => false,
     'itemView' => function ($model, $key, $index, $widget) use ($isPicker) {
@@ -493,6 +522,7 @@ $('.toggle-folders').on('click', function () {
 
 $('.toggle-files').on('click', function () {
     $('#file-list').toggle();
+    $('.files-section.list-view >.file-card.file-card-header').toggle();
 
     const icon = $(this).find('.toggle-icon-files');
     icon.toggleClass('fa-caret-down fa-caret-right');

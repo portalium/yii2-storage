@@ -858,10 +858,11 @@
 
 .files-section.list-view .file-card {
     width: 100%;
-    display: flex;
+    
     align-items: center;
     overflow: visible;
     max-height: 50px;
+    max-width: none;
 }
 
 .files-section.list-view .file-item {
@@ -872,6 +873,9 @@
     border: 1px solid #eee;
     border-radius: 0;
     overflow: visible;
+    max-height: 50px;
+    max-width: none;
+    flex-direction: unset;
 }
 
 .files-section.list-view .file-item:hover {
@@ -881,6 +885,7 @@
 
 .files-section.list-view .file-header{
   width: 100%;
+  padding: 0%;
 }
 
 .file-manager .files-section.list-view .file-card:hover {
@@ -904,7 +909,6 @@
 .file-info .file-date,
 .file-info .file-access {
     display: none;
-    margin-right: auto;
     font-size: 14px;
     color: #666665;
 }
@@ -915,21 +919,6 @@
     display: flex !important;
 }
 
-.list-view-header .file-title {
-    margin-right: 60px;
-    display: block;
-}
-
-.list-view-header .file-owner {
-    margin-right: 295px;
-    display: block;
-}
-
-.list-view-header .file-date {
-    margin-right: 350px;
-    display: inline; 
-}
-
 .files-section.list-view .file-info {
     display: flex;
     align-items: center;
@@ -937,30 +926,54 @@
 
 .files-section.list-view .file-title {
     text-align: left;
-    min-width: 250px
+    min-width: 450px;
 }
 
 .files-section.list-view .file-owner {
-    text-align: right;
+    text-align: left;
     display: block;
+    width: 20%;
 }
 
 .files-section.list-view .file-date {
-    text-align: right;
+    text-align: left;
     display: block;
+    width: 20%;
 }
 
 .files-section.list-view .file-access {
-    
-    text-align: right;
+    text-align: left;
+    display: block;
+    width: 20%;
 }
 
 .files-section.list-view .file-info {
     flex-grow: 1;
     display: flex;
-    text-align: right;
-    align-items: right;
+    text-align: left;
+    align-items: left;
     gap: 12px;
+}
+
+.files-section.grid-view .file-card-header{
+display: none;
+}
+
+.files-section.list-view .file-card-header .file-more-options:hover{
+background-color: unset;
+}
+
+.files-section.list-view .file-card-header .file-more-options::after{
+content: unset;
+}
+
+.files-section.list-view .file-card-header .file-owner,
+.files-section.list-view .file-card-header .file-date,
+.files-section.list-view .file-card-header .file-access{
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  color: #000000;
+  font-weight: 500;
 }
 
 .files-section.list-view .file-preview {
