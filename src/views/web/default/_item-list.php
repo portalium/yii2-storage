@@ -406,7 +406,6 @@ echo LinkPager::widget([
 
 echo Html::endTag('div');
 echo Html::endTag('div');
-echo Html::endTag('div');
 
 echo Html::endTag('div'); // container-fluid sonu
 
