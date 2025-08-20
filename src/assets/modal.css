@@ -1027,3 +1027,23 @@
     background-color: #f5f5f5; 
     cursor: pointer;
 }
+
+.file-grid.picker {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.file-grid.picker .file-card {
+  height: 150px;        
+  max-height: 150px;
+  width: 100%;
+  max-width: 267px;     
+  min-width: 150px;
+}
+
+.file-grid.picker .file-item{
+  height: 150px;
+  max-height: 150px;
+  min-width: 150px;
+  max-width: 267px;
+  width: 100%;
+}

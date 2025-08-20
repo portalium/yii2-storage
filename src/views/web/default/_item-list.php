@@ -227,9 +227,10 @@ if ($fileDataProvider->getTotalCount() > 0) {
     );
 }
 
+$gridClasses = $isPicker ? 'file-grid picker' : 'file-grid';
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
-    'options' => ['class' => 'file-grid mb-3', 'id' => 'file-list'],
+    'options' => ['class' => $gridClasses, 'id' => 'file-list'],
     'layout' => "{items}",
     'showFooter' => false,
     'itemView' => function ($model, $key, $index, $widget) use ($isPicker) {
