@@ -253,7 +253,7 @@ if (!$viewMode) {
 
 $listViewOptions = ['id' => 'file-list'];
 if ($viewMode === 'grid') {
-    $listViewOptions['class'] = 'file-grid mb-3';
+    $listViewOptions['class'] = $isPicker ? 'file-grid picker mb-3' : 'file-grid mb-3';
 }
 
 echo ListView::widget([
