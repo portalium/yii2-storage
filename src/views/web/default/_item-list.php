@@ -314,7 +314,7 @@ echo ListView::widget([
             'class' => 'file-date text-muted',
         ]);
 
-        $content .= Html::tag('span', $model->access, [
+        $content .= Html::tag('span', $model->accessText, [
             'class' => 'file-access text-muted',
         ]);
 

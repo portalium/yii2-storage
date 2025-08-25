@@ -502,4 +502,19 @@ class Storage extends \yii\db\ActiveRecord
         }
         return $deletedRecords;
     }
+
+    public static function getAccessList()
+    {
+        return [
+            self::ACCESS_PRIVATE => Module::t('Private'),
+            self::ACCESS_PUBLIC => Module::t('Public'),
+        ];
+    }
+
+    public function getAccessText()
+    {
+        $list = self::getAccessList();
+        return isset($list[$this->access]) ? $list[$this->access] : Module::t('Unknown');
+    }
+
 }
