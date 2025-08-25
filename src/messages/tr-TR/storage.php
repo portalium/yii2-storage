@@ -72,5 +72,6 @@ return [
     'Folder name could not be changed in the database!' => 'Veritabanında klasör adı değiştirilemedi!',
     'Folder renamed successfully!' => 'Klasör başarıyla yeniden adlandırıldı!',
     'Folder created successfully!' => 'Klasör başarıyla oluşturuldu!',
-    'Failed to create folder!' => 'Klasör oluşturulamadı!'
+    'Failed to create folder!' => 'Klasör oluşturulamadı!',
+    'Unknown' => 'Bilinmeyen',
 ];
