@@ -1,6 +1,6 @@
 
 .file-manager .container-fluid {
-  padding: 5px;
+  padding: 0px;
 }
 
 .file-manager .file-card-wrapper {
@@ -1032,7 +1032,9 @@ content: unset;
     padding: 6px 10px;
     border-radius: 8px;
     transition: background-color 0.2s ease;
-    display: inline-block; 
+    display: inline-block;
+    width: fit-content;
+    user-select: none;
 }
 
 .toggle-folders:hover,

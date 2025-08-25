@@ -6,64 +6,82 @@
 
     /* @var $dataProvider yii\data\ActiveDataProvider */
 
-    // Modal içi özel stil (isteğe bağlı)
-    Yii::$app->view->registerCss("
-        #file-picker-modal .panel-footer {
-            border-top: none !important;
-        }
+Yii::$app->view->registerCss("
+    #file-picker-modal .panel-footer {
+        border-top: none !important;
+    }
 
-        .file-manager {
-            display: flex;
-            flex-direction: column;
-            height: 700px; /* Modal yüksekliğine göre ayarla */
-            overflow: scroll;
-        }
+    .file-manager {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        max-width: 100%;
+    }
+    .file-controls {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1;
+        padding: 10px 15px;
+        flex-shrink: 0;
+        border-bottom: 1px solid #e9ecef;
+        overflow: visible;
+        max-width: 100%;
+    }
+    .folders-section {
+        flex-shrink: 0;
+        padding: 0px 15px;
+        max-width: 100%;
+        overflow: visible;
+    }
+    .files-section {
+        flex: 1;
+        padding: 0px 15px;
+        max-width: 100%;
+        min-height: 0;
+        overflow: visible;
+        display: flex;
+        flex-direction: column;
+    }
+    #folder-list {
+        overflow-y: auto ;
+        overflow-x: hidden ;
+        height: 150px ;
+    }
+    #file-list {
+        overflow-y: auto ;
+        overflow-x: hidden ;
+        height: 400px;
+        padding: 3px;
+    }
+        
+    .file-select-checkbox{
+        flex-shrink: 0; /* checkbox küçülmesin */
+    }
+");
 
-        .file-controls {
-            overflow-y: visible;
-            position: sticky; 
-            top: 0;           
-            background: white; 
-            z-index: 1;   
-            padding: 10px 15px;
-            flex-shrink: 0;   
-        }
-        .file-list {
-            flex: 1;          /* Kalan tüm alanı kapla */
-            overflow-y: auto; /* Dikey scroll */
-            padding: 10px 15px;
-            overflow: visible;
-        }
-        .file-select-checkbox{
-            flex-shrink: 0; /* checkbox küçülmesin */
-        }
-    ");
-
-
-    Modal::begin([
-        'title' => Module::t('Select File'),
-        'id' => 'file-picker-modal',
-        'size' => Modal::SIZE_LARGE,
-        'footer' =>
+Modal::begin([
+    'title' => Module::t('Select File'),
+    'id' => 'file-picker-modal',
+    'size' => Modal::SIZE_LARGE,
+    'footer' =>
         Html::button(Module::t('Close'), [
             'class' => 'btn btn-danger filepicker-close',
             'data-bs-dismiss' => 'modal',
         ]) .
-            Html::button(Module::t('Select'), [
-                'class' => 'btn btn-success btn-select',
-                'onclick' => 'saveSelect()',
-            ]),
-    ]);
+        Html::button(Module::t('Select'), [
+            'class' => 'btn btn-success btn-select',
+            'onclick' => 'saveSelect()',
+        ]),
+]);
 
-    echo $this->render('@portalium/storage/views/web/default/index', [
-        'fileDataProvider' => $dataProvider,
-        'directoryDataProvider' => $directoryDataProvider,
-        //'directories' => $directories,
-        //'files'  => $files,
-        //'pagination'  => $pagination,  // Veriyi gönderiyoruz
+echo $this->render('@portalium/storage/views/web/default/index', [
+    'fileDataProvider' => $dataProvider,
+    'directoryDataProvider' => $directoryDataProvider,
+    //'directories' => $directories,
+    //'files'  => $files,
+    //'pagination'  => $pagination,
+    'isPicker' => true,
+]);
 
-        'isPicker' => true,
-    ]);
-    // deneme
-
-    Modal::end();
+Modal::end();
