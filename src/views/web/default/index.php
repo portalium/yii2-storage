@@ -42,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
             ]),
             [
                 'class' => 'input-group',
-                'style' => 'min-width: 300px; max-width: 400px; flex-grow: 1;',
+                'style' => 'flex-grow: 1;',
             ]
         );
 
