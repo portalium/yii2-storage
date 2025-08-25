@@ -52,6 +52,7 @@ Yii::$app->view->registerCss("
         overflow-y: auto ;
         overflow-x: hidden ;
         height: 400px;
+        padding: 3px;
     }
         
     .file-select-checkbox{
