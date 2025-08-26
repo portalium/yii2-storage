@@ -258,9 +258,13 @@ if ($viewMode === 'grid') {
 
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
-    'options' => $listViewOptions,
-    'layout' => "{items}",
-    'showFooter' => false,
+    'layout' =>
+         Html::beginTag('div', $listViewOptions) . "{items}" . Html::endTag('div') .
+        '<div class="panel-footer d-flex justify-content-between">'
+        . '<div class="d-flex align-items-start">{summary}</div>'
+        . '<div id="file-page-sizer" class="d-flex" style="gap: 10px;">{pagesizer}{pager}</div>'
+        . '</div>',
+    'customLayout' => true,
     'itemView' => function ($model, $key, $index, $widget) use ($isPicker) {
 
         $fileCardClasses = 'file-card';
@@ -404,38 +408,6 @@ echo ListView::widget([
 ]);
 
 echo Html::endTag('div'); // .files-section
-echo Html::beginTag('div', ['class' => 'row']);
-echo Html::beginTag('div', ['class' => 'col-12 d-flex justify-content-start']);
-
-$pagination = $fileDataProvider->pagination;
-
-$paginationParams = [];
-if ($isPicker) {
-    $paginationParams['isPicker'] = 1;
-}
-if ($id_directory) {
-    $paginationParams['id_directory'] = $id_directory;
-}
-
-if (!empty($fileExtensionsParam)) {
-    $paginationParams['fileExtensions'] = $fileExtensionsParam;
-}
-
-echo LinkPager::widget([
-    'pagination' => $pagination,
-    'options' => ['class' => 'pagination pagination-custom'],
-    'linkOptions' => array_merge(['data-pjax' => true], $paginationParams),
-    'prevPageLabel' => '<i class="fa fa-chevron-left"></i>',
-    'nextPageLabel' => '<i class="fa fa-chevron-right"></i>',
-    'maxButtonCount' => 5,
-    'firstPageLabel' => '<i class="fa fa-step-backward"></i>',
-    'lastPageLabel' => '<i class="fa fa-step-forward"></i>',
-    'disableCurrentPageButton' => false,
-    'activePageCssClass' => 'active',
-]);
-
-echo Html::endTag('div'); // col-12 d-flex justify-content-start
-echo Html::endTag('div'); // row
 echo Html::endTag('div'); // container-fluid sonu
 
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
