@@ -834,6 +834,32 @@ async function refreshFileList() {
     }
   });
 }
+function bindPageSizer() {
+    const $select = $('#file-page-sizer select');
+
+    $select.each(function() {
+        this.onchange = null;
+    });
+
+    $select.off('change').on('change', function(e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const perPage = $(this).val();
+        const container = '#list-item-pjax';
+        let reloadUrl = getBaseUrl();
+        const separator = reloadUrl.includes('?') ? '&' : '?';
+        reloadUrl += separator + 'per-page=' + perPage;
+
+        $.pjax.reload({
+            container: container,
+            url: reloadUrl,
+            push: false,
+            replace: false,
+            timeout: 10000,
+        });
+    });
+}
+
 
 function bindSearchInput() {
   $(document)
@@ -898,11 +924,13 @@ window.deleteFolder = deleteFolder;
 
 $(document).ready(function () {
   bindSearchInput();
+  bindPageSizer();
   console.log("Search binding initialized");
 });
 
 $(document).on("pjax:end", function () {
   bindSearchInput();
+  bindPageSizer();
   console.log("Search binding refreshed after pjax");
   if (typeof window.updateFileCard === 'function') {
       window.updateFileCard(window.selectedIdStorage);

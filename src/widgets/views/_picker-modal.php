@@ -51,7 +51,7 @@ Yii::$app->view->registerCss("
     #file-list {
         overflow-y: auto ;
         overflow-x: hidden ;
-        height: 400px;
+        max-height: 400px;
         padding: 3px;
     }
         
