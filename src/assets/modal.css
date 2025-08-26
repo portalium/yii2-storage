@@ -439,6 +439,8 @@
 }
 
 .input-group {
+  min-width: 300px ;
+  max-width: 400px ;
   height: 38px !important;
 }
 
@@ -484,7 +486,7 @@
 .newDropdownClass {
   position: relative;
   height: 38px !important;
-  min-width: 90px !important;
+  min-width: 78px !important;
   background: white;
   padding: 6px 12px;
   font-size: 14px;
@@ -926,7 +928,7 @@
 
 .files-section.list-view .file-title {
     text-align: left;
-    min-width: 450px;
+    min-width: 40%;
 }
 
 .files-section.list-view .file-owner {
@@ -1061,4 +1063,49 @@ content: unset;
   min-width: 150px;
   max-width: 267px;
   width: 100%;
+}
+
+
+@media (max-width: 950px) { 
+  .input-group{
+    min-width: max-content !important;
+    max-width: unset !important;
+  }
+
+}
+
+ /* Mobile S (320px) + Mobile M (375px) + Mobile L (425px)  */
+@media (max-width: 767px) { 
+  #files-section.list-view .file-title{
+    white-space: nowrap; 
+    min-width: 100% !important;
+  }
+
+  #files-section.list-view .file-owner, #files-section.list-view .file-date, #files-section.list-view .file-access{
+    display: none !important;
+  }
+  .input-group{
+    min-width: max-content !important;
+    max-width: unset !important;
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1023px) { 
+  #files-section.list-view .file-title{
+    white-space: nowrap; 
+    min-width: 50% !important;
+  }
+
+  #files-section.list-view .file-owner, #files-section.list-view .file-access{
+    display: none !important;
+  }
+  #files-section.list-view .file-date{
+    min-width: 50%;
+  }
+
+  .modal-body .input-group{
+    min-width: max-content !important;
+    max-width: unset !important;
+  }
 }
