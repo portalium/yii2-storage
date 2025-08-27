@@ -260,7 +260,7 @@ echo ListView::widget([
     'dataProvider' => $fileDataProvider,
     'layout' =>
          Html::beginTag('div', $listViewOptions) . "{items}" . Html::endTag('div') .
-        '<div class="panel-footer d-flex justify-content-between">'
+        '<div class="panel-footer d-flex justify-content-between mt-3">'
         . '<div class="d-flex align-items-start">{summary}</div>'
         . '<div id="file-page-sizer" class="d-flex" style="gap: 10px;">{pagesizer}{pager}</div>'
         . '</div>',
@@ -278,16 +278,19 @@ echo ListView::widget([
                 'name' => $model->name,
                 'title' => $model->title,
                 'mime_type' => $model->mime_type,
+                'icon_class_php' => $model->getIconClass(),
             ])
         ]);
 
         $content .= Html::beginTag('div', [
             'class' => 'file-item',
+            'data-url' => Url::to(['/storage/default/get-file', 'id' => $model->id_storage]),
             'data-attributes' => json_encode([
                 'id_storage' => $model->id_storage,
                 'name' => $model->name,
                 'title' => $model->title,
                 'mime_type' => $model->mime_type,
+                'icon_class_php' => $model->getIconClass(),
             ]),
             'onclick' => $isPicker ? 'handleFileCardClick.call(this, event, ' . $model->id_storage . ')' : null,
         ]);
