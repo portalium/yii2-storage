@@ -58,6 +58,11 @@ Yii::$app->view->registerCss("
     .file-select-checkbox{
         flex-shrink: 0; /* checkbox küçülmesin */
     }
+
+    .file-manager .file-card {
+        cursor: pointer;
+    }
+
 ");
 
 Modal::begin([

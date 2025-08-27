@@ -197,6 +197,8 @@ echo Html::beginTag('div', [
 
         echo Html::endTag('div'); // file-list
         echo Html::endTag('div'); // file-manager
+
+        echo $this->render('_filePreviewModal');
         ?>
 <script>
     function applyViewModeClasses(mode) {
@@ -261,7 +263,6 @@ function setViewMode(mode) {
 
 document.addEventListener('DOMContentLoaded', function() {
     const savedMode = localStorage.getItem('viewMode') || 'grid';
-    console.log(savedMode);
     applyViewModeClasses(savedMode);
 });
 
