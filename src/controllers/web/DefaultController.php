@@ -849,30 +849,46 @@ class DefaultController extends Controller
     }
 
     public function actionGetFile($id, $access_token = null)
-    {
-        try {
-            $file = $this->findModel($id);
-        } catch (\Exception $e) {
-            //            throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
-            Yii::$app->response->statusCode = 404;
-            Yii::$app->response->content = Module::t('The requested file does not exist.');
-            return Yii::$app->response;
-        }
-
-        if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file]) && $file->access == Storage::ACCESS_PRIVATE) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
-
-        $path = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
-
-        if (file_exists($path)) {
-            return Yii::$app->response->sendFile($path, $file->title . '.' . pathinfo($path, PATHINFO_EXTENSION));
-        } else {
-            Yii::$app->response->statusCode = 404;
-            Yii::$app->response->content = Module::t('The requested file does not exist.');
-            return Yii::$app->response;
-        }
+{
+    try {
+        $file = $this->findModel($id);
+    } catch (\Exception $e) {
+        Yii::$app->response->statusCode = 404;
+        Yii::$app->response->content = Module::t('The requested file does not exist.');
+        return Yii::$app->response;
     }
+
+    if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file]) && $file->access == Storage::ACCESS_PRIVATE) {
+        throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+    }
+
+    $path = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+
+    if (file_exists($path)) {
+        $fileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $path);
+        finfo_close($finfo);
+
+        $response = Yii::$app->response;
+
+        if ($mimeType === 'application/pdf') {
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+            $response->headers->set('Content-Security-Policy', "frame-ancestors 'self'");
+            $response->headers->set('Content-Disposition', 'inline; filename="' . $file->title . '.pdf"');
+            $response->headers->set('Cache-Control', 'public, max-age=3600');
+
+            return $response->sendFile($path, $file->title . '.pdf');
+        }
+
+        return $response->sendFile($path, $file->title . '.' . $fileExtension);
+    } else {
+        Yii::$app->response->statusCode = 404;
+        Yii::$app->response->content = Module::t('The requested file does not exist.');
+        return Yii::$app->response;
+    }
+}
 
     protected function findModel($id)
     {

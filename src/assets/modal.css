@@ -1103,5 +1103,18 @@ content: unset;
 
 #filePreviewModal .modal-header .file-title {
   max-width: 90%;
-    
+  display: contents;  
+}
+
+.pdf-container {
+    width: 90%;
+    height: 90%;
+    margin-top: 2%;
+}
+
+.file-preview-container,
+.pdf-viewer-container,
+#filePreviewContent {
+    width: 100%;
+    height: 100%;
 }
