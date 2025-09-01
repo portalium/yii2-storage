@@ -148,7 +148,6 @@ window.openFolder = function (id_directory, event) {
 function uploadFileMenu(event) {
   event.preventDefault();
   const newDropdownBtn = $("#newDropdownBtn");
-  newDropdownBtn.addClass("btn-loading");
 
   let fileInput = document.getElementById("hiddenUploadInput");
   if (fileInput) {
@@ -164,6 +163,7 @@ function uploadFileMenu(event) {
 
   fileInput.addEventListener("change", function () {
     if (fileInput.files.length > 0) {
+      newDropdownBtn.addClass("btn-loading");
       const files = Array.from(fileInput.files);
 
       let completed = 0;
@@ -193,6 +193,7 @@ function uploadFileMenu(event) {
                 const searchValue = $("#searchFileInput").val().trim();
                 if (searchValue) {
                   performSearch(searchValue);
+                  newDropdownBtn.removeClass("btn-loading");
                   return;
                 }
               }
@@ -203,6 +204,8 @@ function uploadFileMenu(event) {
                 url: reloadUrl,
                 replace: false,
                 push: false,
+              }).done(function () {
+                newDropdownBtn.removeClass("btn-loading");
               });
             }
           },
@@ -216,14 +219,12 @@ function uploadFileMenu(event) {
   });
 
   fileInput.click();
-  newDropdownBtn.removeClass("btn-loading");
 }
 
 
 function uploadFolderMenu(event) {
   event.preventDefault();
   const newDropdownBtn = $("#newDropdownBtn");
-  newDropdownBtn.addClass("btn-loading");
 
   let fileInput = document.getElementById("hiddenUploadInput");
   if (fileInput) {
@@ -240,10 +241,11 @@ function uploadFolderMenu(event) {
 
   fileInput.addEventListener("change", function () {
     if (fileInput.files.length > 0) {
+      newDropdownBtn.addClass("btn-loading");
       const formData = new FormData();
 
       Array.from(fileInput.files).forEach(file => {
-        formData.append("Storage[file][]", file); 
+        formData.append("Storage[file][]", file);
       });
 
 
@@ -268,6 +270,7 @@ function uploadFolderMenu(event) {
             const searchValue = $("#searchFileInput").val().trim();
             if (searchValue) {
               performSearch(searchValue);
+              newDropdownBtn.removeClass("btn-loading");
               return;
             }
           }
@@ -278,6 +281,8 @@ function uploadFolderMenu(event) {
             url: reloadUrl,
             replace: false,
             push: false,
+          }).done(function () {
+            newDropdownBtn.removeClass("btn-loading");
           });
         },
         error: function (xhr) {
@@ -289,7 +294,6 @@ function uploadFolderMenu(event) {
   });
 
   fileInput.click();
-  newDropdownBtn.removeClass("btn-loading");
 }
 
 function openNewFolderModal(event) {
