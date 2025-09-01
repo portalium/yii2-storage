@@ -322,6 +322,14 @@ function openNewFolderModal(event) {
       $('.modal[id^="newFolderModal"]').remove();
       $("#new-folder-pjax").html(response);
       showModal("newFolderModal");
+      
+      const modal = $("#newFolderModal");
+      modal.find("#storagedirectory-name").on("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault(); 
+          modal.find("#createFolderButton").click(); 
+        }
+      });
     },
     error: function (e) {
       console.error("Error loading new folder modal:", e);
@@ -402,7 +410,15 @@ function openRenameFolderModal(id) {
       $("#rename-folder-pjax").html(response);
       setTimeout(function () {
         if ($("#renameFolderModal").length) {
+          const modal = $("#renameFolderModal");
           showModal("renameFolderModal");
+
+          modal.find("#storagedirectory-name").on("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault(); 
+              modal.find("#renameFolderButton").click();
+            }
+          });
         } else {
           refreshCurrentView();
         }
@@ -525,7 +541,15 @@ function openRenameModal(id) {
       $("#rename-file-pjax").html(response);
       setTimeout(function () {
         if ($("#renameModal").length) {
+          const modal = $("#renameModal");
           showModal("renameModal");
+
+          modal.find("#storage-title").on("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              modal.find("#renameButton").click();
+            }
+          });
         } else {
           refreshCurrentView();
         }
