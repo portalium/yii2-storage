@@ -74,4 +74,5 @@ return [
     'Folder created successfully!' => 'Klasör başarıyla oluşturuldu!',
     'Failed to create folder!' => 'Klasör oluşturulamadı!',
     'Unknown' => 'Bilinmeyen',
+    'Thumbnail' => 'Küçük Resim',
 ];
