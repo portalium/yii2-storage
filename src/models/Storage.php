@@ -97,7 +97,7 @@ class Storage extends \yii\db\ActiveRecord
             }, 'whenClient' => "function (attribute, value) {
             return $('#upload-type').val() === 'file';
         }"],
-            [['name', 'title'], 'string', 'max' => 255],
+            [['name', 'title','thumbnail'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             [['id_directory'], 'integer'],
             [['file', 'access', 'hash_file', 'id_workspace'], 'safe'],
@@ -111,6 +111,7 @@ class Storage extends \yii\db\ActiveRecord
         return [
             'id_storage' => Module::t('Id Storage'),
             'name' => Module::t('Name'),
+            'thumbnail' => Module::t('Thumbnail'),
             'title' => Module::t('Title'),
             'id_user' => Module::t('Id User'),
             'mime_type' => Module::t('Mime Type'),
@@ -123,29 +124,64 @@ class Storage extends \yii\db\ActiveRecord
 
     public function upload()
     {
-        if (!$this->validate())
+        if (!$this->validate()) {
             return false;
-        if (!$this->file)
+        }
+
+        if (!$this->file) {
             return $this->save();
+        }
 
         $path = realpath(Yii::$app->basePath . '/../data');
+        if (!$path || !is_dir($path)) {
+            Yii::warning('Storage path does not exist: ' . $path, __METHOD__);
+            return false;
+        }
+
         $filename = md5(uniqid(rand(), true)) . '.' . $this->file->extension;
         $hash = md5_file($this->file->tempName);
-        if (!in_array($this->file->extension, self::$allowExtensions)) {
+
+        if (!in_array(strtolower($this->file->extension), self::$allowExtensions)) {
             Yii::warning('File extension not allowed: ' . $this->file->extension, __METHOD__);
             return false;
         }
 
-        if (!$this->file->saveAs($path . '/' . $filename)) {
+        $fullPath = $path . '/' . $filename;
+        if (!$this->file->saveAs($fullPath)) {
             Yii::warning('File could not be saved: ' . $this->file->tempName, __METHOD__);
             return false;
         }
+
         $this->name = $filename;
         $this->hash_file = $hash;
-        $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
+        $this->mime_type = self::MIME_TYPE[$this->getMIMEType($fullPath)] ?? null;
         $this->id_workspace = Yii::$app->workspace->id;
         $this->id_user = Yii::$app->user->id;
-        return $this->save();
+
+        $imageExtensions = ['jpg','jpeg','png'];
+        if (in_array(strtolower($this->file->extension), $imageExtensions)) {
+            $thumbName = 'thumb_' . $filename;
+            $thumbPath = $path . '/' . $thumbName;
+
+            if ($this->generateThumbnail($fullPath, $thumbPath, 200)) {
+                $this->thumbnail = $thumbName; 
+            } else {
+                Yii::warning('Thumbnail could not be created for file: ' . $filename, __METHOD__);
+                $this->thumbnail = null;
+            }
+        }
+
+        if (!$this->save()) {
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+            if (file_exists($thumbPath)) {
+                @unlink($thumbPath);
+            }
+            return false;
+        }
+
+        return true;
     }
 
 
@@ -247,19 +283,29 @@ class Storage extends \yii\db\ActiveRecord
 
     public function deleteFile()
     {
-        $filePath = Yii::$app->basePath . '/../data/' . $this->name;
+        $basePath = Yii::$app->basePath . '/../data/';
+
+        $filePath = $basePath . $this->name;
         if (file_exists($filePath)) {
-            if (unlink($filePath)) {
-                return $this->delete();
+            unlink($filePath);
+        }
+
+        if ($this->thumbnail) {
+            $thumbPath = $basePath . $this->thumbnail;
+            if (file_exists($thumbPath)) {
+                unlink($thumbPath);
             }
         }
-        return false;
+
+        return $this->delete();
     }
+
 
     public function copyFile()
     {
         $path = realpath(Yii::$app->basePath . '/../data');
         $sourcePath = $path . '/' . $this->name;
+
         $newModel = new Storage();
         $newModel->attributes = $this->attributes;
         $newModel->id_storage = null;
@@ -270,11 +316,27 @@ class Storage extends \yii\db\ActiveRecord
 
         if (copy($sourcePath, $newFilePath)) {
             $newModel->name = $newFileName;
+
+            if ($this->thumbnail) {
+                $thumbExtension = pathinfo($this->thumbnail, PATHINFO_EXTENSION);
+                $newThumbName = 'thumb_' . pathinfo($newFileName, PATHINFO_FILENAME) . '.' . $thumbExtension;
+
+                $thumbSourcePath = $path . '/' . $this->thumbnail;
+                $thumbDestPath = $path . '/' . $newThumbName;
+
+                if (file_exists($thumbSourcePath) && copy($thumbSourcePath, $thumbDestPath)) {
+                    $newModel->thumbnail = $newThumbName;
+                }
+            }
+
             if ($newModel->save()) {
                 return $newModel;
-            } else {
+            } else {    
                 if (file_exists($newFilePath)) {
                     unlink($newFilePath);
+                }
+                if (!empty($newModel->thumbnail) && file_exists($path . '/' . $newModel->thumbnail)) {
+                    unlink($path . '/' . $newModel->thumbnail);
                 }
                 return false;
             }
@@ -335,6 +397,7 @@ class Storage extends \yii\db\ActiveRecord
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
         $path = Yii::$app->basePath . '/../data/' . $this->name;
+        $thumbPath = Yii::$app->basePath . '/../data/' . $this->thumbnail;
         $iconPath = Yii::$app->view->getAssetManager()->getBundle(\portalium\storage\bundles\IconAsset::class)->baseUrl;
         if (file_exists($path)) {
             switch ($mimeType) {
@@ -365,8 +428,11 @@ class Storage extends \yii\db\ActiveRecord
                 case 'image/jpg':
                 case 'image/png':
                 case 'image/svg+xml':
+                    $url = file_exists($thumbPath) 
+                        ? Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail 
+                        : Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
                     return [
-                        'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,
+                        'url' => $url,
                         'class' => 'image-file'
                     ];
                 default:
@@ -516,5 +582,57 @@ class Storage extends \yii\db\ActiveRecord
         $list = self::getAccessList();
         return isset($list[$this->access]) ? $list[$this->access] : Module::t('Unknown');
     }
+
+    public function generateThumbnail($sourcePath, $thumbPath, $height = 200)
+    {
+        $info = getimagesize($sourcePath);
+        $mime = $info['mime'];
+
+        switch ($mime) {
+            case 'image/jpeg':
+            case 'image/jpg':
+                $image = imagecreatefromjpeg($sourcePath);
+                break;
+            case 'image/png':
+                $image = imagecreatefrompng($sourcePath);
+                break;
+            case 'image/webp':
+                $image = imagecreatefromwebp($sourcePath);
+                break;
+            default:
+                return false;
+        }
+
+        $origWidth = imagesx($image);
+        $origHeight = imagesy($image);
+
+        $ratio = $origWidth / $origHeight;
+        $width = intval($height * $ratio);
+
+        $thumb = imagecreatetruecolor($width, $height);
+
+        if ($mime == 'image/png') {
+            imagealphablending($thumb, false);
+            imagesavealpha($thumb, true);
+        }
+
+        imagecopyresampled($thumb, $image, 0, 0, 0, 0, $width, $height, $origWidth, $origHeight);
+
+        switch ($mime) {
+            case 'image/jpeg':
+            case 'image/jpg':
+                imagejpeg($thumb, $thumbPath, 90);
+                break;
+            case 'image/png':
+                imagepng($thumb, $thumbPath);
+                break;
+        }
+
+        imagedestroy($image);
+        imagedestroy($thumb);
+
+        return true;
+    }
+
 
 }
