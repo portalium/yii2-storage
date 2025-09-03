@@ -1,11 +1,5 @@
-
 .file-manager .container-fluid {
   padding: 0px;
-}
-
-.file-manager .file-card-wrapper {
-  position: relative;
-  margin-bottom: 15px;
 }
 
 .file-grid {
@@ -29,11 +23,13 @@
   transition: transform 0.3s ease;
   aspect-ratio: 1 / 1;
   overflow: visible;
+  z-index: 0;
 }
 
 
 .file-manager .file-card:hover {
   transform: scale(1.03);
+  z-index: 1;
 }
 
 .file-manager .file-card .file-item.active,
@@ -159,57 +155,6 @@
   height: 1px;
   background-color: #e5e5e5;
   margin: 5px 0;
-}
-
-.file-manager .folder-container {
-  position: relative;
-  max-width: 120px;
-  height: 100px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  transition: transform 0.3s ease;
-  margin: 0 auto 20px;
-}
-
-.file-manager .folder-container:hover {
-  transform: translateY(-3px);
-}
-
-.file-manager .folder {
-  position: absolute;
-  width: 90px;
-  height: 75px;
-  background-color: #ffca28;
-  border-radius: 5px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 211, 89, 0.8);
-  background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 25%);
-  top: 0;
-  left: 15px;
-}
-
-.file-manager .folder-notch {
-  position: absolute;
-  width: 30px;
-  height: 10px;
-  border-top-right-radius: 3px;
-  top: -5px;
-  left: 15px;
-  border-top: 1px solid rgba(255, 211, 89, 0.8);
-  background: linear-gradient(to bottom, #ffbf00 0%, #ffca28 100%);
-}
-
-.file-manager .folder-title {
-  position: absolute;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100px;
-  font-size: 14px;
-  padding-left: 25px;
 }
 
 .file-manager .folder-ellipsis {
@@ -461,58 +406,6 @@
   font-size: 12px !important;
 }
 
-
-
-.file-manager .file-card,
-.file-manager .folder-container {
-  position: relative;
-  z-index: 0;
-}
-
-.file-manager .file-card:hover,
-.file-manager .folder-container:hover {
-  z-index: 1;
-}
-
-.folder-item {
-  position: relative;
-  background: rgb(240, 240, 240);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: box-shadow 0.2s ease;
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  height: 48px;
-}
-
-.folder-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-
-.folder-name {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 14px;
-  color: #000000;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-right: 10px;
-  flex: 1;
-}
-
-.more-options {
-  position: absolute;
-  top: 11.5px;
-  right: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-
-
 .folder-item:hover .more-options {
   opacity: 1;
 }
@@ -532,101 +425,85 @@
   display: block;
 }
 
-.folder-item .folder-dropdown-menu .menu-item {
-  padding: 8px 15px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.folder-item .folder-dropdown-menu .menu-item:hover {
-  background-color: #f5f5f5;
-}
-
-.folder-item .folder-dropdown-menu .divider {
-  height: 1px;
-  background-color: #e5e5e5;
-  margin: 5px 0;
-}
-
-
 .folder-item {
-            position: relative;
-            background-color: #f5f5f5;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: box-shadow 0.2s ease;
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            height: 48px;
-        }
+  position: relative;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  height: 48px;
+}
 
-        .folder-item:hover {
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            background-color: #eaeaea;
-        }
+.folder-item:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: #eaeaea;
+}
 
-        .folder-icon {
-          display: inline-block;   
-          font-size: 16px;         
-          width: 24px;
-          height: 24px;
-          line-height: 24px;       
-          margin-right: 12px;
-          text-align: center;
-          color: #444746;
-        }
+.folder-icon {
+  display: inline-block;   
+  font-size: 16px;         
+  width: 24px;
+  height: 24px;
+  line-height: 24px;       
+  margin-right: 12px;
+  text-align: center;
+  color: #444746;
+}
 
 
-        .folder-name {
-            font-size: 14px;
-            color: #000000;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex: 1;
-        }
+.folder-name {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin-right: 10px;
+  font-size: 14px;
+  color: #000000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
 
-        .more-options {
-            background: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            padding: 6px;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.7;
-        }
+.more-options {
+  position: absolute;
+  top: 11.5px;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 6px;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+}
 
-        
+.more-options:hover {
+  background: rgba(60, 64, 67, .08);
+  opacity: 1;
+} 
 
-        .more-options:hover {
-            
-            background: rgba(60, 64, 67, .08);
-            opacity: 1;
-            
-        } 
-
-        .folder-item .more-options::after {
-    content: attr(data-title);
-    position: absolute;
-    bottom: 120%; 
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: #fff;
-    padding: 5px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    z-index: 2;
+.folder-item .more-options::after {
+  content: attr(data-title);
+  position: absolute;
+  bottom: 120%; 
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 2;
 }
 
 .folder-item .more-options:hover::after {
@@ -635,195 +512,182 @@
 
       
 
-        .file-item {
-          height: 250px;
-          max-height: 250px;
-          min-width: 250px;
-          max-width: 440px;
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          box-sizing: border-box;
-          overflow: visible;
-          background-color: #f5f5f5;
-          border-radius: 8px;
-          transition: all 0.2s ease;
-        }
+.file-item {
+  height: 250px;
+  max-height: 250px;
+  min-width: 250px;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  overflow: visible;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
 
-        .file-item:hover {
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            background-color: #eaeaea;
-        }
+.file-item:hover {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    background-color: #eaeaea;
+}
 
-        .file-header {
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-left: 3%;
-            padding-top: 3%;
-        }
+.file-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 3%;
+  padding-top: 3%;
+}
 
-        .file-header .file-title {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            font-weight: 500;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-right: 8px;
-        }
+.file-header .file-title {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+}
 
-        .file-header .file-info {
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            flex: 1;
-        }
+.file-header .file-info {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  flex: 1;
+}
 
 .file-preview {
-    flex: 1; 
-    overflow: hidden;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 8px;
-    padding: 3%;
-    padding-top: unset;
-    cursor: pointer;
+  flex: 1; 
+  overflow: hidden;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 3%;
+  padding-top: unset;
+  cursor: pointer;
 }
 
 .file-preview img {
-    max-width: 100%;
-    max-height: 100%;
-    height: auto;
-    object-fit: contain;
-    border-radius: 10px;
-    display: block;
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 10px;
+  display: block;
 }
 
 
-        .file-more-options {
-            background: none;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            margin-right: 1%;
-            padding: 6px;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.7;
-        }
+.file-more-options {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 1%;
+  padding: 6px;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+}
 
-        .file-more-options:hover {
-            background: rgba(60, 64, 67, .08);
-            opacity: 1;
-        }
+.file-more-options:hover {
+  background: rgba(60, 64, 67, .08);
+  opacity: 1;
+}
 
-        .file-more-options::after {
-          content: attr(data-title);
-          position: absolute;
-          bottom: 120%;
-          left: 95%;
-          transform: translateX(-50%);
-          background-color: #333;
-          color: #fff;
-          padding: 5px 8px;
-          border-radius: 4px;
-          font-size: 11px;
-          white-space: nowrap;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.2s ease;
-          z-index: 2;
-        }
+.file-more-options::after {
+  content: attr(data-title);
+  position: absolute;
+  bottom: 120%;
+  left: 95%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
 
-        .file-more-options:hover::after {
-        opacity: 1;
-        }
+.file-more-options:hover::after {
+opacity: 1;
+}
 
-        .file-create-date {
-            font-size: 10px;
-        }
+.file-icon {
+  font-size: 16px;
+  margin-left: 2px;
+  margin-right: 8px;
+  color: #9e9e9e; 
+}
 
-        .file-icon {
-            font-size: 16px;
-            margin-left: 2px;
-            margin-right: 8px;
-            color: #9e9e9e; 
-        }
+.file-icon.word {
+  color: #2b579a;
+}
 
-        .file-icon.word {
-            color: #2b579a;
-        }
+.file-icon.excel {
+  color: #217346;
+}
 
-        .file-icon.excel {
-            color: #217346;
-        }
+.file-icon.pdf {
+  color: #dc3545;
+}
 
-        .file-icon.pdf {
-            color: #dc3545;
-        }
+.file-icon.powerpoint {
+  color: #d24726;
+}
 
-        .file-icon.powerpoint {
-            color: #d24726;
-        }
+.file-icon.video {
+  color: #ea4335;
+}
 
-        .file-icon.video {
-            color: #ea4335;
-        }
+.file-icon.image {
+  color: #34a853;
+}
 
-        .file-icon.image {
-            color: #34a853;
-        }
+.file-icon.archive {
+  color: #5514cc;
+}
 
-        .file-icon.document {
-            color: #4285f4;
-        }
-
-        .file-icon.code {
-            color: #ff6d01;
-        }
-
-        .file-icon.archive {
-            color: #5514cc;
-        }
-
-        .file-icon.audio {
-            color: #c809c1;
-        }
+.file-icon.audio {
+  color: #c809c1;
+}
 
 .files-section.list-view .file-card {
-    width: 100%;
-    
-    align-items: center;
-    overflow: visible;
-    max-height: 50px;
-    max-width: none;
+  width: 100%;
+  align-items: center;
+  overflow: visible;
+  max-height: 50px;
+  max-width: none;
 }
 
 .files-section.list-view .file-item {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #eee;
-    border-radius: 0;
-    overflow: visible;
-    max-height: 50px;
-    max-width: none;
-    flex-direction: unset;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 0;
+  overflow: visible;
+  max-height: 50px;
+  max-width: none;
+  flex-direction: unset;
 }
 
 .files-section.list-view .file-item:hover {
-    box-shadow: none;
-    background-color: #eaeaea;
+  box-shadow: none;
+  background-color: #eaeaea;
 }
 
 .files-section.list-view .file-header{
@@ -835,73 +699,60 @@
   transform: scale(1);
 }
 
-.list-view-header {
-    display: none;
-    padding: 8px 10px;
-    font-weight: bold;
-    border-bottom: 5px;
-    background: #f5f5f5;
-    text-align: left;
-}
-
-.list-view .list-view-header {
-    display: flex !important; 
-}
-
 .file-info .file-owner,
 .file-info .file-date,
 .file-info .file-access {
-    display: none;
-    font-size: 14px;
-    color: #666665;
+  display: none;
+  font-size: 14px;
+  color: #666665;
 }
 
 .files-section.list-view .file-info {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .files-section.list-view .file-title {
-    text-align: left;
-    min-width: 40%;
+  text-align: left;
+  min-width: 40%;
 }
 
 .files-section.list-view .file-owner {
-    text-align: left;
-    display: block;
-    width: 20%;
+  text-align: left;
+  display: block;
+  width: 20%;
 }
 
 .files-section.list-view .file-date {
-    text-align: left;
-    display: block;
-    width: 20%;
+  text-align: left;
+  display: block;
+  width: 20%;
 }
 
 .files-section.list-view .file-access {
-    text-align: left;
-    display: block;
-    width: 20%;
+  text-align: left;
+  display: block;
+  width: 20%;
 }
 
 .files-section.list-view .file-info {
-    flex-grow: 1;
-    display: flex;
-    text-align: left;
-    align-items: left;
-    gap: 12px;
+  flex-grow: 1;
+  display: flex;
+  text-align: left;
+  align-items: left;
+  gap: 12px;
 }
 
 .files-section.grid-view .file-card-header{
-display: none;
+  display: none;
 }
 
 .files-section.list-view .file-card-header .file-more-options:hover{
-background-color: unset;
+  background-color: unset;
 }
 
 .files-section.list-view .file-card-header .file-more-options::after{
-content: unset;
+  content: unset;
 }
 
 .files-section.list-view .file-card-header .file-owner,
@@ -914,8 +765,7 @@ content: unset;
 }
 
 .files-section.list-view .file-preview {
-    display: none !important;
-
+  display: none !important;
 }
 
 .btn-selected{
@@ -943,47 +793,40 @@ content: unset;
 
 .btn-unselected:hover{
   background-color: white !important;
-  
 }
-
-.file-card {
-    height: 100%; 
-    display: flex;
-    flex-direction: column;
-}
-
 
 .file-preview .file-icon.image-file {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: cover;
-    display: block;
-    border-radius: 8px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: auto;
 }
 
 .toggle-folders,
 .toggle-files {
-    padding: 6px 10px;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
-    display: inline-block;
-    width: fit-content;
-    user-select: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  display: inline-block;
+  width: fit-content;
+  user-select: none;
 }
 
 .toggle-folders:hover,
 .toggle-files:hover {
-    background-color: #f5f5f5; 
-    cursor: pointer;
+  background-color: #f5f5f5; 
+  cursor: pointer;
 }
 
 .file-grid.picker {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
 }
+
 .file-grid.picker .file-card {
   height: 150px;        
   max-height: 150px;
@@ -1046,59 +889,57 @@ content: unset;
 }
 
 #filePreviewModal .modal-dialog {
-    margin: 0;
-    max-width: 100%;
-    width: 100%;
-    height: 100%;
+  margin: 0;
+  max-width: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 #filePreviewModal .modal-content {
-    background: #000000a1; 
-    border: none;
-    box-shadow: none;
-    height: 100%;
-    position: relative;
+  background: #000000a1; 
+  border: none;
+  box-shadow: none;
+  height: 100%;
+  position: relative;
 }
 
 .modal-backdrop.show {
-    opacity: 0.8; 
+  opacity: 0.8; 
 }
 
 #filePreviewModal .modal-header {
-    position: absolute;
-    padding: 10px 15px;
-    width: 100%;
-    background: transparent;
-    border: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 1;
-    justify-content: start !important;
+  position: absolute;
+  padding: 10px 15px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1;
+  justify-content: start !important;
 }
 
 #filePreviewModal .modal-title {
-    font-size: 18px;
-    color: #fff;
-    margin: 0;
+  font-size: 18px;
+  color: #fff;
+  margin: 0;
 }
 
 #filePreviewModal .modal-header .file-icon {
-    font-size: 22px;
-    
+  font-size: 22px;
 }
 
 #filePreviewModal .modal-header .btn-close {
-    filter: invert(1);
-    margin-left: auto;
-    
+  filter: invert(1);
+  margin-left: auto;
 }
 
 #filePreviewContent {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
 #filePreviewModal .modal-header .file-title {
@@ -1107,14 +948,14 @@ content: unset;
 }
 
 .pdf-container {
-    width: 90%;
-    height: 90%;
-    margin-top: 2%;
+  width: 90%;
+  height: 90%;
+  margin-top: 2%;
 }
 
 .file-preview-container,
 .pdf-viewer-container,
 #filePreviewContent {
-    width: 100%;
-    height: 100%;
+  width: 100%;
+  height: 100%;
 }
