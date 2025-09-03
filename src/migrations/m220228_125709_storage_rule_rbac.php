@@ -29,6 +29,7 @@ class m220228_125709_storage_rule_rbac extends Migration
             'storageWebDefaultDeleteFolder',
             'storageWebDefaultdeleteFolderRecursive',
             'storageWebDefaultManageDirectory',
+            'storageWebDefaultGetFile',
         ];
 
         foreach ($permissions as $permissionKey) {

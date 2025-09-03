@@ -363,7 +363,7 @@ class DefaultController extends Controller
                         $thumbName = 'thumb_' . $newFileName;
                         $thumbPath = $path . '/' . $thumbName;
 
-                        if ($model->generateThumbnail($path . '/' . $newFileName, $thumbPath, 200)) {
+                        if ($model->generateThumbnail($path . '/' . $newFileName, $thumbPath)) {
                             $model->thumbnail = $thumbName;
                         } else {
                             $model->thumbnail = null;
@@ -907,6 +907,12 @@ class DefaultController extends Controller
             Yii::$app->response->content = Module::t('The requested file does not exist.');
             return Yii::$app->response;
         }
+    }
+
+    public function actionGenerateMissingThumbnails()
+    {
+        $updated = Storage::generateMissingThumbnails();
+        return;
     }
 
     protected function findModel($id)
