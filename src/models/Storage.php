@@ -61,6 +61,15 @@ class Storage extends \yii\db\ActiveRecord
 
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar', 'txt', 'pt', 'csv', 'html', 'htm', 'xml', 'json', 'tar', 'gz', '7z', 'svg'];
 
+    const THUMBNAIL_MAX_SIZE_KB = 40;
+    const THUMBNAIL_DEFAULT_HEIGHT = 200; 
+    const THUMBNAIL_ALLOWED_MIMES = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+    ];
+
     public function behaviors()
     {
         return [
@@ -158,12 +167,12 @@ class Storage extends \yii\db\ActiveRecord
         $this->id_workspace = Yii::$app->workspace->id;
         $this->id_user = Yii::$app->user->id;
 
-        $imageExtensions = ['jpg','jpeg','png'];
-        if (in_array(strtolower($this->file->extension), $imageExtensions)) {
+        $mime = $this->getMIMEType($fullPath);
+        if (in_array($mime, self::THUMBNAIL_ALLOWED_MIMES)) {
             $thumbName = 'thumb_' . $filename;
             $thumbPath = $path . '/' . $thumbName;
 
-            if ($this->generateThumbnail($fullPath, $thumbPath, 200)) {
+            if ($this->generateThumbnail($fullPath, $thumbPath)) {
                 $this->thumbnail = $thumbName; 
             } else {
                 Yii::warning('Thumbnail could not be created for file: ' . $filename, __METHOD__);
@@ -428,9 +437,11 @@ class Storage extends \yii\db\ActiveRecord
                 case 'image/jpg':
                 case 'image/png':
                 case 'image/svg+xml':
-                    $url = file_exists($thumbPath) 
-                        ? Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail 
-                        : Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+                    if (!empty($this->thumbnail) && file_exists($thumbPath)) {
+                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail;
+                    } else {
+                        $url = $iconPath . '/not-found.png';
+                    }
                     return [
                         'url' => $url,
                         'class' => 'image-file'
@@ -583,8 +594,14 @@ class Storage extends \yii\db\ActiveRecord
         return isset($list[$this->access]) ? $list[$this->access] : Module::t('Unknown');
     }
 
-    public function generateThumbnail($sourcePath, $thumbPath, $height = 200)
+    public function generateThumbnail($sourcePath, $thumbPath, $height = self::THUMBNAIL_DEFAULT_HEIGHT, $targetSizeKB = self::THUMBNAIL_MAX_SIZE_KB)
     {
+        $originalSizeKB = filesize($sourcePath) / 1024;
+
+        if ($originalSizeKB <= $targetSizeKB) {
+            return copy($sourcePath, $thumbPath);
+        }
+
         $info = getimagesize($sourcePath);
         $mime = $info['mime'];
 
@@ -605,7 +622,6 @@ class Storage extends \yii\db\ActiveRecord
 
         $origWidth = imagesx($image);
         $origHeight = imagesy($image);
-
         $ratio = $origWidth / $origHeight;
         $width = intval($height * $ratio);
 
@@ -618,21 +634,83 @@ class Storage extends \yii\db\ActiveRecord
 
         imagecopyresampled($thumb, $image, 0, 0, 0, 0, $width, $height, $origWidth, $origHeight);
 
-        switch ($mime) {
-            case 'image/jpeg':
-            case 'image/jpg':
-                imagejpeg($thumb, $thumbPath, 90);
-                break;
-            case 'image/png':
-                imagepng($thumb, $thumbPath);
-                break;
-        }
+        $quality = 85;
+        $minQuality = 30;
+
+        do {
+            ob_start();
+            switch ($mime) {
+                case 'image/jpeg':
+                case 'image/jpg':
+                    imagejpeg($thumb, null, $quality);
+                    break;
+                case 'image/png':
+                    imagepng($thumb, null, 9 - floor($quality / 10));
+                    break;
+                case 'image/webp':
+                    imagewebp($thumb, null, $quality);
+                    break;
+            }
+            $imgData = ob_get_clean();
+
+            $fileSizeKB = strlen($imgData) / 1024;
+
+            if ($fileSizeKB <= $targetSizeKB || $quality <= $minQuality) {
+                file_put_contents($thumbPath, $imgData);
+                imagedestroy($image);
+                imagedestroy($thumb);
+                return true;
+            }
+
+            $quality -= 5;
+
+        } while ($quality >= $minQuality);
 
         imagedestroy($image);
         imagedestroy($thumb);
-
-        return true;
+        return false;
     }
+
+    public static function generateMissingThumbnails()
+    {
+        $storages = self::find()->where(['thumbnail' => null])->all();
+        $updated = 0;
+        $dataPath = realpath(Yii::$app->basePath . '/../data');
+
+        foreach ($storages as $storage) {
+            $filePath = $dataPath . '/' . $storage->name;
+
+            if (!file_exists($filePath)) {
+                Yii::warning("File not found for storage ID {$storage->id_storage}: {$storage->name}", __METHOD__);
+                continue;
+            }
+
+            $mime = $storage->getMIMEType($filePath);
+            if (!in_array($mime, self::THUMBNAIL_ALLOWED_MIMES)) {
+                continue; 
+            }
+
+            $thumbName = 'thumb_' . $storage->name;
+            $thumbPath = $dataPath . '/' . $thumbName;
+
+            $success = $storage->generateThumbnail($filePath, $thumbPath, self::THUMBNAIL_DEFAULT_HEIGHT ?? 200, self::THUMBNAIL_MAX_SIZE_KB ?? 40);
+
+            if ($success) {
+                $storage->thumbnail = $thumbName;
+                if ($storage->save(false, ['thumbnail'])) {
+                    $updated++;
+                } else {
+                    Yii::warning("Failed to save thumbnail for storage ID {$storage->id_storage}", __METHOD__);
+                }
+            } else {
+                Yii::warning("Failed to generate thumbnail for storage ID {$storage->id_storage}", __METHOD__);
+            }
+        }
+
+        return $updated;
+    }
+
+
 
 
 }
