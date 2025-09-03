@@ -594,82 +594,66 @@ class Storage extends \yii\db\ActiveRecord
         return isset($list[$this->access]) ? $list[$this->access] : Module::t('Unknown');
     }
 
+
     public function generateThumbnail($sourcePath, $thumbPath, $height = self::THUMBNAIL_DEFAULT_HEIGHT, $targetSizeKB = self::THUMBNAIL_MAX_SIZE_KB)
     {
+        if (!extension_loaded('imagick')) {
+            throw new \Exception("Imagick extension is not installed.");
+        }
+
         $originalSizeKB = filesize($sourcePath) / 1024;
 
         if ($originalSizeKB <= $targetSizeKB) {
             return copy($sourcePath, $thumbPath);
         }
 
-        $info = getimagesize($sourcePath);
-        $mime = $info['mime'];
+        try {
+            $image = new \Imagick($sourcePath);
+            $origWidth = $image->getImageWidth();
+            $origHeight = $image->getImageHeight();
+            $ratio = $origWidth / $origHeight;
+            $width = intval($height * $ratio);
 
-        switch ($mime) {
-            case 'image/jpeg':
-            case 'image/jpg':
-                $image = imagecreatefromjpeg($sourcePath);
-                break;
-            case 'image/png':
-                $image = imagecreatefrompng($sourcePath);
-                break;
-            case 'image/webp':
-                $image = imagecreatefromwebp($sourcePath);
-                break;
-            default:
-                return false;
+            $image->resizeImage($width, $height, \Imagick::FILTER_LANCZOS, 1);
+
+            $quality = 85;
+            $minQuality = 30;
+
+            do {
+                $image->setImageCompressionQuality($quality);
+
+                $format = strtolower($image->getImageFormat());
+                if ($format === 'png') {
+                    $image->setImageFormat('png');
+                } elseif ($format === 'webp') {
+                    $image->setImageFormat('webp');
+                } else {
+                    $image->setImageFormat('jpeg');
+                }
+
+                $imgData = $image->getImagesBlob();
+                $fileSizeKB = strlen($imgData) / 1024;
+
+                if ($fileSizeKB <= $targetSizeKB || $quality <= $minQuality) {
+                    file_put_contents($thumbPath, $imgData);
+                    $image->clear();
+                    $image->destroy();
+                    return true;
+                }
+
+                $quality -= 5;
+
+            } while ($quality >= $minQuality);
+
+            $image->clear();
+            $image->destroy();
+            return false;
+
+        } catch (\ImagickException $e) {
+            return false;
         }
-
-        $origWidth = imagesx($image);
-        $origHeight = imagesy($image);
-        $ratio = $origWidth / $origHeight;
-        $width = intval($height * $ratio);
-
-        $thumb = imagecreatetruecolor($width, $height);
-
-        if ($mime == 'image/png') {
-            imagealphablending($thumb, false);
-            imagesavealpha($thumb, true);
-        }
-
-        imagecopyresampled($thumb, $image, 0, 0, 0, 0, $width, $height, $origWidth, $origHeight);
-
-        $quality = 85;
-        $minQuality = 30;
-
-        do {
-            ob_start();
-            switch ($mime) {
-                case 'image/jpeg':
-                case 'image/jpg':
-                    imagejpeg($thumb, null, $quality);
-                    break;
-                case 'image/png':
-                    imagepng($thumb, null, 9 - floor($quality / 10));
-                    break;
-                case 'image/webp':
-                    imagewebp($thumb, null, $quality);
-                    break;
-            }
-            $imgData = ob_get_clean();
-
-            $fileSizeKB = strlen($imgData) / 1024;
-
-            if ($fileSizeKB <= $targetSizeKB || $quality <= $minQuality) {
-                file_put_contents($thumbPath, $imgData);
-                imagedestroy($image);
-                imagedestroy($thumb);
-                return true;
-            }
-
-            $quality -= 5;
-
-        } while ($quality >= $minQuality);
-
-        imagedestroy($image);
-        imagedestroy($thumb);
-        return false;
     }
+
 
     public static function generateMissingThumbnails()
     {
