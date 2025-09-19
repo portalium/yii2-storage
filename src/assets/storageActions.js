@@ -148,7 +148,6 @@ window.openFolder = function (id_directory, event) {
 function uploadFileMenu(event) {
   event.preventDefault();
   const newDropdownBtn = $("#newDropdownBtn");
-  newDropdownBtn.addClass("btn-loading");
 
   let fileInput = document.getElementById("hiddenUploadInput");
   if (fileInput) {
@@ -164,6 +163,7 @@ function uploadFileMenu(event) {
 
   fileInput.addEventListener("change", function () {
     if (fileInput.files.length > 0) {
+      newDropdownBtn.addClass("btn-loading");
       const files = Array.from(fileInput.files);
 
       let completed = 0;
@@ -193,6 +193,7 @@ function uploadFileMenu(event) {
                 const searchValue = $("#searchFileInput").val().trim();
                 if (searchValue) {
                   performSearch(searchValue);
+                  newDropdownBtn.removeClass("btn-loading");
                   return;
                 }
               }
@@ -203,6 +204,8 @@ function uploadFileMenu(event) {
                 url: reloadUrl,
                 replace: false,
                 push: false,
+              }).done(function () {
+                newDropdownBtn.removeClass("btn-loading");
               });
             }
           },
@@ -216,14 +219,12 @@ function uploadFileMenu(event) {
   });
 
   fileInput.click();
-  newDropdownBtn.removeClass("btn-loading");
 }
 
 
 function uploadFolderMenu(event) {
   event.preventDefault();
   const newDropdownBtn = $("#newDropdownBtn");
-  newDropdownBtn.addClass("btn-loading");
 
   let fileInput = document.getElementById("hiddenUploadInput");
   if (fileInput) {
@@ -240,10 +241,11 @@ function uploadFolderMenu(event) {
 
   fileInput.addEventListener("change", function () {
     if (fileInput.files.length > 0) {
+      newDropdownBtn.addClass("btn-loading");
       const formData = new FormData();
 
       Array.from(fileInput.files).forEach(file => {
-        formData.append("Storage[file][]", file); 
+        formData.append("Storage[file][]", file);
       });
 
 
@@ -268,6 +270,7 @@ function uploadFolderMenu(event) {
             const searchValue = $("#searchFileInput").val().trim();
             if (searchValue) {
               performSearch(searchValue);
+              newDropdownBtn.removeClass("btn-loading");
               return;
             }
           }
@@ -278,6 +281,8 @@ function uploadFolderMenu(event) {
             url: reloadUrl,
             replace: false,
             push: false,
+          }).done(function () {
+            newDropdownBtn.removeClass("btn-loading");
           });
         },
         error: function (xhr) {
@@ -289,7 +294,6 @@ function uploadFolderMenu(event) {
   });
 
   fileInput.click();
-  newDropdownBtn.removeClass("btn-loading");
 }
 
 function openNewFolderModal(event) {
@@ -318,6 +322,14 @@ function openNewFolderModal(event) {
       $('.modal[id^="newFolderModal"]').remove();
       $("#new-folder-pjax").html(response);
       showModal("newFolderModal");
+      
+      const modal = $("#newFolderModal");
+      modal.find("#storagedirectory-name").on("keydown", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault(); 
+          modal.find("#createFolderButton").click(); 
+        }
+      });
     },
     error: function (e) {
       console.error("Error loading new folder modal:", e);
@@ -398,7 +410,15 @@ function openRenameFolderModal(id) {
       $("#rename-folder-pjax").html(response);
       setTimeout(function () {
         if ($("#renameFolderModal").length) {
+          const modal = $("#renameFolderModal");
           showModal("renameFolderModal");
+
+          modal.find("#storagedirectory-name").on("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault(); 
+              modal.find("#renameFolderButton").click();
+            }
+          });
         } else {
           refreshCurrentView();
         }
@@ -521,7 +541,15 @@ function openRenameModal(id) {
       $("#rename-file-pjax").html(response);
       setTimeout(function () {
         if ($("#renameModal").length) {
+          const modal = $("#renameModal");
           showModal("renameModal");
+
+          modal.find("#storage-title").on("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              modal.find("#renameButton").click();
+            }
+          });
         } else {
           refreshCurrentView();
         }

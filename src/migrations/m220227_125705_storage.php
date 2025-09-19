@@ -55,6 +55,7 @@ class m220227_125705_storage extends Migration
             'id_user'=> $this->integer(11)->notNull(),
             'mime_type'=> $this->integer(11)->notNull(),
             'hash_file'=> $this->string(255)->null(),
+            'thumbnail'=> $this->string(255)->null(),
             'id_directory' => $this->integer(11)->null(),
             'date_create'=> $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
             'date_update'=> $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),

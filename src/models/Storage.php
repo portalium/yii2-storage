@@ -61,6 +61,15 @@ class Storage extends \yii\db\ActiveRecord
 
     public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar', 'txt', 'pt', 'csv', 'html', 'htm', 'xml', 'json', 'tar', 'gz', '7z', 'svg'];
 
+    const THUMBNAIL_MAX_SIZE_KB = 40;
+    const THUMBNAIL_DEFAULT_HEIGHT = 200; 
+    const THUMBNAIL_ALLOWED_MIMES = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+    ];
+
     public function behaviors()
     {
         return [
@@ -97,7 +106,7 @@ class Storage extends \yii\db\ActiveRecord
             }, 'whenClient' => "function (attribute, value) {
             return $('#upload-type').val() === 'file';
         }"],
-            [['name', 'title'], 'string', 'max' => 255],
+            [['name', 'title','thumbnail'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             [['id_directory'], 'integer'],
             [['file', 'access', 'hash_file', 'id_workspace'], 'safe'],
@@ -111,6 +120,7 @@ class Storage extends \yii\db\ActiveRecord
         return [
             'id_storage' => Module::t('Id Storage'),
             'name' => Module::t('Name'),
+            'thumbnail' => Module::t('Thumbnail'),
             'title' => Module::t('Title'),
             'id_user' => Module::t('Id User'),
             'mime_type' => Module::t('Mime Type'),
@@ -123,29 +133,64 @@ class Storage extends \yii\db\ActiveRecord
 
     public function upload()
     {
-        if (!$this->validate())
+        if (!$this->validate()) {
             return false;
-        if (!$this->file)
+        }
+
+        if (!$this->file) {
             return $this->save();
+        }
 
         $path = realpath(Yii::$app->basePath . '/../data');
+        if (!$path || !is_dir($path)) {
+            Yii::warning('Storage path does not exist: ' . $path, __METHOD__);
+            return false;
+        }
+
         $filename = md5(uniqid(rand(), true)) . '.' . $this->file->extension;
         $hash = md5_file($this->file->tempName);
-        if (!in_array($this->file->extension, self::$allowExtensions)) {
+
+        if (!in_array(strtolower($this->file->extension), self::$allowExtensions)) {
             Yii::warning('File extension not allowed: ' . $this->file->extension, __METHOD__);
             return false;
         }
 
-        if (!$this->file->saveAs($path . '/' . $filename)) {
+        $fullPath = $path . '/' . $filename;
+        if (!$this->file->saveAs($fullPath)) {
             Yii::warning('File could not be saved: ' . $this->file->tempName, __METHOD__);
             return false;
         }
+
         $this->name = $filename;
         $this->hash_file = $hash;
-        $this->mime_type = self::MIME_TYPE[$this->getMIMEType($path . '/' . $filename)];
+        $this->mime_type = self::MIME_TYPE[$this->getMIMEType($fullPath)] ?? null;
         $this->id_workspace = Yii::$app->workspace->id;
         $this->id_user = Yii::$app->user->id;
-        return $this->save();
+
+        $mime = $this->getMIMEType($fullPath);
+        if (in_array($mime, self::THUMBNAIL_ALLOWED_MIMES)) {
+            $thumbName = 'thumb_' . $filename;
+            $thumbPath = $path . '/' . $thumbName;
+
+            if ($this->generateThumbnail($fullPath, $thumbPath)) {
+                $this->thumbnail = $thumbName; 
+            } else {
+                Yii::warning('Thumbnail could not be created for file: ' . $filename, __METHOD__);
+                $this->thumbnail = null;
+            }
+        }
+
+        if (!$this->save()) {
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+            if (file_exists($thumbPath)) {
+                @unlink($thumbPath);
+            }
+            return false;
+        }
+
+        return true;
     }
 
 
@@ -247,19 +292,29 @@ class Storage extends \yii\db\ActiveRecord
 
     public function deleteFile()
     {
-        $filePath = Yii::$app->basePath . '/../data/' . $this->name;
+        $basePath = Yii::$app->basePath . '/../data/';
+
+        $filePath = $basePath . $this->name;
         if (file_exists($filePath)) {
-            if (unlink($filePath)) {
-                return $this->delete();
+            unlink($filePath);
+        }
+
+        if ($this->thumbnail) {
+            $thumbPath = $basePath . $this->thumbnail;
+            if (file_exists($thumbPath)) {
+                unlink($thumbPath);
             }
         }
-        return false;
+
+        return $this->delete();
     }
+
 
     public function copyFile()
     {
         $path = realpath(Yii::$app->basePath . '/../data');
         $sourcePath = $path . '/' . $this->name;
+
         $newModel = new Storage();
         $newModel->attributes = $this->attributes;
         $newModel->id_storage = null;
@@ -270,11 +325,27 @@ class Storage extends \yii\db\ActiveRecord
 
         if (copy($sourcePath, $newFilePath)) {
             $newModel->name = $newFileName;
+
+            if ($this->thumbnail) {
+                $thumbExtension = pathinfo($this->thumbnail, PATHINFO_EXTENSION);
+                $newThumbName = 'thumb_' . pathinfo($newFileName, PATHINFO_FILENAME) . '.' . $thumbExtension;
+
+                $thumbSourcePath = $path . '/' . $this->thumbnail;
+                $thumbDestPath = $path . '/' . $newThumbName;
+
+                if (file_exists($thumbSourcePath) && copy($thumbSourcePath, $thumbDestPath)) {
+                    $newModel->thumbnail = $newThumbName;
+                }
+            }
+
             if ($newModel->save()) {
                 return $newModel;
-            } else {
+            } else {    
                 if (file_exists($newFilePath)) {
                     unlink($newFilePath);
+                }
+                if (!empty($newModel->thumbnail) && file_exists($path . '/' . $newModel->thumbnail)) {
+                    unlink($path . '/' . $newModel->thumbnail);
                 }
                 return false;
             }
@@ -335,6 +406,7 @@ class Storage extends \yii\db\ActiveRecord
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
         $path = Yii::$app->basePath . '/../data/' . $this->name;
+        $thumbPath = Yii::$app->basePath . '/../data/' . $this->thumbnail;
         $iconPath = Yii::$app->view->getAssetManager()->getBundle(\portalium\storage\bundles\IconAsset::class)->baseUrl;
         if (file_exists($path)) {
             switch ($mimeType) {
@@ -365,8 +437,13 @@ class Storage extends \yii\db\ActiveRecord
                 case 'image/jpg':
                 case 'image/png':
                 case 'image/svg+xml':
+                    if (!empty($this->thumbnail) && file_exists($thumbPath)) {
+                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail;
+                    } else {
+                        $url = $iconPath . '/not-found.png';
+                    }
                     return [
-                        'url' => Yii::$app->urlManager->baseUrl . '/data/' . $this->name,
+                        'url' => $url,
                         'class' => 'image-file'
                     ];
                 default:
@@ -516,5 +593,108 @@ class Storage extends \yii\db\ActiveRecord
         $list = self::getAccessList();
         return isset($list[$this->access]) ? $list[$this->access] : Module::t('Unknown');
     }
+
+
+    public function generateThumbnail($sourcePath, $thumbPath, $height = self::THUMBNAIL_DEFAULT_HEIGHT, $targetSizeKB = self::THUMBNAIL_MAX_SIZE_KB)
+    {
+        if (!extension_loaded('imagick')) {
+            throw new \Exception("Imagick extension is not installed.");
+        }
+
+        $originalSizeKB = filesize($sourcePath) / 1024;
+
+        if ($originalSizeKB <= $targetSizeKB) {
+            return copy($sourcePath, $thumbPath);
+        }
+
+        try {
+            $image = new \Imagick($sourcePath);
+            $origWidth = $image->getImageWidth();
+            $origHeight = $image->getImageHeight();
+            $ratio = $origWidth / $origHeight;
+            $width = intval($height * $ratio);
+
+            $image->resizeImage($width, $height, \Imagick::FILTER_LANCZOS, 1);
+
+            $quality = 85;
+            $minQuality = 30;
+
+            do {
+                $image->setImageCompressionQuality($quality);
+
+                $format = strtolower($image->getImageFormat());
+                if ($format === 'png') {
+                    $image->setImageFormat('png');
+                } elseif ($format === 'webp') {
+                    $image->setImageFormat('webp');
+                } else {
+                    $image->setImageFormat('jpeg');
+                }
+
+                $imgData = $image->getImagesBlob();
+                $fileSizeKB = strlen($imgData) / 1024;
+
+                if ($fileSizeKB <= $targetSizeKB || $quality <= $minQuality) {
+                    file_put_contents($thumbPath, $imgData);
+                    $image->clear();
+                    $image->destroy();
+                    return true;
+                }
+
+                $quality -= 5;
+
+            } while ($quality >= $minQuality);
+
+            $image->clear();
+            $image->destroy();
+            return false;
+
+        } catch (\ImagickException $e) {
+            return false;
+        }
+    }
+
+
+    public static function generateMissingThumbnails()
+    {
+        $storages = self::find()->where(['thumbnail' => null])->all();
+        $updated = 0;
+        $dataPath = realpath(Yii::$app->basePath . '/../data');
+
+        foreach ($storages as $storage) {
+            $filePath = $dataPath . '/' . $storage->name;
+
+            if (!file_exists($filePath)) {
+                Yii::warning("File not found for storage ID {$storage->id_storage}: {$storage->name}", __METHOD__);
+                continue;
+            }
+
+            $mime = $storage->getMIMEType($filePath);
+            if (!in_array($mime, self::THUMBNAIL_ALLOWED_MIMES)) {
+                continue; 
+            }
+
+            $thumbName = 'thumb_' . $storage->name;
+            $thumbPath = $dataPath . '/' . $thumbName;
+
+            $success = $storage->generateThumbnail($filePath, $thumbPath, self::THUMBNAIL_DEFAULT_HEIGHT ?? 200, self::THUMBNAIL_MAX_SIZE_KB ?? 40);
+
+            if ($success) {
+                $storage->thumbnail = $thumbName;
+                if ($storage->save(false, ['thumbnail'])) {
+                    $updated++;
+                } else {
+                    Yii::warning("Failed to save thumbnail for storage ID {$storage->id_storage}", __METHOD__);
+                }
+            } else {
+                Yii::warning("Failed to generate thumbnail for storage ID {$storage->id_storage}", __METHOD__);
+            }
+        }
+
+        return $updated;
+    }
+
+
+
 
 }
