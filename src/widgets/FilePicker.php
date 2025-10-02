@@ -91,20 +91,36 @@ class FilePicker extends InputWidget
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
         echo Html::script("window.isPicker = " . ($this->isPicker ? 'true' : 'false') . ";");
 
-        echo Html::button(Module::t('Select File'), [
+        echo Html::button('<span class="btn-text">' . Module::t('Select File') . '</span>',[
             'class' => 'btn btn-primary',
-            'onclick' => 'window.openFilePickerModal("' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ')'
-        ]);
+            'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ')'
+]);
 
         $this->registerJsScript();
     }
 
     protected function registerJsScript()
     {
-        $js = <<<JS
+        $js = <<<'JS'
 // Modal registry - for modal level assignation
 if (!window.modalRegistry) {
     window.modalRegistry = new Map();
+}
+
+if (!window.handleFilePickerClick) {
+    window.handleFilePickerClick = function(btn, ...args) {
+        var $btn = $(btn);
+
+        if ($btn.hasClass("btn-loading")) return;
+
+        $btn.addClass("btn-loading").css("pointer-events", "none");
+
+        window.openFilePickerModal(...args);
+
+        $(document).one('shown.bs.modal', '#file-picker-modal', function () {
+            $btn.removeClass("btn-loading").css("pointer-events", "auto");
+        });
+    };
 }
 
 // Modal yardımcı fonksiyonları
