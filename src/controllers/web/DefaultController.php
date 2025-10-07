@@ -388,6 +388,32 @@ class DefaultController extends Controller
         return $this->renderPartial('_update', ['model' => $model]);
     }
 
+    public function actionUpdateAccess()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $id = Yii::$app->request->post('id');
+        $access = Yii::$app->request->post('access');
+
+        $model = \portalium\storage\models\Storage::findOne($id);
+        if (!$model) {
+            return ['success' => false, 'message' => 'Dosya bulunamadı'];
+        }
+
+        if (!\Yii::$app->user->can('storageWebDefaultShareFile') &&
+            !\Yii::$app->user->can('storageWebDefaultShareFileOwn', ["model" => $model]) &&
+            !\Yii::$app->workspace->can('storage', 'storageWebDefaultShareFile', ['model' => $model])) {
+            return ['success' => false, 'message' => 'Yetkiniz yok'];
+        }
+
+        $model->access = ($access === 'public') ? $model::ACCESS_PUBLIC : $model::ACCESS_PRIVATE;
+
+        if ($model->save(false)) {
+            return ['success' => true, 'message' => 'Erişim seviyesi güncellendi'];
+        } else {
+            return ['success' => false, 'message' => 'Kaydedilirken hata oluştu'];
+        }
+    }
 
     public function actionShareFile($id)
     {

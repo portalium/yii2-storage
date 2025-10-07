@@ -84,18 +84,28 @@ if (isset($model)) {
 
     echo Html::label(Module::t('General Access'), null, ['class' => 'fw-bold mb-3 text-secondary mt-4']);
 
+$access = $model->access === 'public' ? 'public' : 'private';
+
+$access = ($model->access == 1) ? 'public' : 'private';
+
+$accessText = $access === 'public' ? Module::t('Public') : Module::t('Restricted');
+$accessDesc = $access === 'public'
+    ? Module::t('Anyone with the link can view the content')
+    : Module::t('Only people with access can open it using this link');
+$accessIcon = $access === 'public' ? 'fa-globe' : 'fa-lock';
+
 echo Html::tag('div',
     Html::tag('div',
         Html::tag('i', '', [
             'id' => 'access-icon', 
-            'class' => 'access-icon fa fa-lock bg-light rounded-circle p-2',
+            'class' => 'access-icon fa ' . $accessIcon . ' bg-light rounded-circle p-2',
             'style' => 'font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;'
         ]) .
         Html::tag('div',
             Html::beginTag('div', ['class' => 'dropdown d-inline']) .
 
                 Html::button(
-                    Html::tag('span', Module::t('Restricted'), [
+                    Html::tag('span', $accessText, [
                         'id' => 'access-text',
                         'class' => 'access-text fw-semibold d-inline-flex align-items-center',
                         'data-public' => Module::t('Public'),
@@ -148,7 +158,7 @@ echo Html::tag('div',
 
             Html::endTag('div') .
 
-            Html::tag('small', Module::t('Only people with access can open it using this link'), [
+            Html::tag('small', $accessDesc, [
                 'id' => 'access-desc',
                 'class' => 'access-desc text-muted d-block mt-1',
                 'data-public' => Module::t('Anyone with the link can view the content'),
@@ -171,7 +181,7 @@ else
 ?>
 
 <script>
-function setAccessLevel(level) {
+function updateAccessUI(level) {
     const accessText = document.getElementById('access-text');
     const accessDesc = document.getElementById('access-desc');
     const accessIcon = document.getElementById('access-icon');
@@ -188,6 +198,32 @@ function setAccessLevel(level) {
         accessIcon.classList.remove('fa-globe');
         accessIcon.classList.add('fa-lock');
     }
+}
+
+function setAccessLevel(level) {
+    updateAccessUI(level);
+
+    $.ajax({
+        url: '<?= \Yii::$app->urlManager->createUrl(['/storage/default/update-access']) ?>',
+        type: 'POST',
+        data: {
+            id: <?= $model->id_storage ?>,
+            access: level
+        },
+        headers: {
+            'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+            if (response.success) {
+                console.log(response.message);
+            } else {
+                alert(response.message || "Erişim tipi kaydedilemedi.");
+            }
+        },
+        error: function (xhr) {
+            console.error("Sunucu hatası:", xhr.responseText);
+        }
+    });
 }
 </script>
 
