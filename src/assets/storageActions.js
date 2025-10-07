@@ -198,7 +198,7 @@ function uploadFileMenu(event) {
                 }
               }
 
-              const reloadUrl = getBaseUrl();
+              const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
               $.pjax.reload({
                 container: "#list-item-pjax",
                 url: reloadUrl,
@@ -275,7 +275,7 @@ function uploadFolderMenu(event) {
             }
           }
 
-          const reloadUrl = getBaseUrl();
+          const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
           $.pjax.reload({
             container: "#list-item-pjax",
             url: reloadUrl,
@@ -374,7 +374,7 @@ $(document).off("click", "#createFolderButton").on("click", "#createFolderButton
         }
       }
 
-      const reloadUrl = getBaseUrl();
+      const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
       $.pjax
         .reload({
           container: "#list-item-pjax",
@@ -762,30 +762,37 @@ function deleteFile(id) {
 }
 
 // Verileri burda gönderiyorum
-function refreshCurrentView() {
-  if (isSearching) {
-    const searchValue = $("#searchFileInput").val().trim();
-    if (searchValue) {
-      performSearch(searchValue);
-    } else {
-      returnToMainPage();
-    }
-  } else {
-    const reloadUrl = getBaseUrl();
-    $.pjax
-      .reload({
-        container: "#list-item-pjax",
-        url: reloadUrl,
-        replace: false,
-        push: false,
-      })
-      .done(function () {
-        $.pjax.reload({ container: "#pjax-flash-message" });
+let lastListItemPjaxUrl = null;
 
-        const mode = localStorage.getItem('viewMode') || 'grid';
-        setViewMode(mode);
-      });
-  }
+$(document).on('pjax:send', function (e, xhr, options) {
+    if (options.container === "#list-item-pjax") {
+        lastListItemPjaxUrl = options.url;
+    }
+});
+
+function refreshCurrentView() {
+    if (isSearching) {
+        const searchValue = $("#searchFileInput").val().trim();
+        if (searchValue) {
+            performSearch(searchValue);
+        } else {
+            returnToMainPage();
+        }
+    } else {
+        const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
+
+        $.pjax.reload({
+            container: "#list-item-pjax",
+            url: reloadUrl,
+            replace: false,
+            push: false,
+        }).done(function () {
+            $.pjax.reload({ container: "#pjax-flash-message" });
+
+            const mode = localStorage.getItem('viewMode') || 'grid';
+            setViewMode(mode);
+        });
+    }
 }
 
 function performSearch(query) {

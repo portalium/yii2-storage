@@ -84,26 +84,42 @@ class DefaultController extends RestActiveController
             if ($model->file && $model->validate()) {
                 $path = realpath(Yii::$app->basePath . '/../data');
                 $filename = md5(rand()) . "." . $model->file->extension;
-
+                $hash = md5_file($model->file->tempName);
 
                 if ($model->file->saveAs($path . '/' . $filename)) {
                     $storage = new Storage();
                     $storage->name = $filename;
                     $storage->title = $model->title;
                     $storage->id_workspace = Yii::$app->workspace->id;
+                    $storage->hash_file = $hash;
+
                     try {
                         $storage->mime_type = Storage::MIME_TYPE[$storage->getMIMEType($path . '/' . $filename)];
                     } catch (\Throwable $th) {
                         $storage->mime_type = Storage::MIME_TYPE['video/mpeg'];
                     }
 
-                    $storage->save();
-                    return $storage;
+                    if (in_array(strtolower($model->file->extension), ['jpg','jpeg','png'])) {
+                        $thumbName = 'thumb_' . $filename;
+                        $thumbPath = $path . '/' . $thumbName;
+
+                        if ($storage->generateThumbnail($path . '/' . $filename, $thumbPath)) {
+                            $storage->thumbnail = $thumbName;
+                        } else {
+                            $storage->thumbnail = null;
+                        }
+                    } else {
+                        $storage->thumbnail = null;
+                    }
+
+                    if ($storage->save(false)) {
+                        return $storage;
+                    }
                 }
             }
         } catch (\Throwable $th) {
+            Yii::error($th->getMessage(), __METHOD__);
         }
-
 
         return [
             'status' => 'FAIL',
