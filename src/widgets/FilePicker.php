@@ -94,8 +94,14 @@ class FilePicker extends InputWidget
         echo Html::button('<span class="btn-text">' . Module::t('Select File') . '</span>',[
             'class' => 'btn btn-primary',
             'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ')'
-]);
+        ]);
 
+        echo Html::button('<span class="btn-text">Preview File</span>', [
+            'class' => 'btn btn-primary ms-2',
+            'onclick' => 'previewSelectedFile(this)',
+        ]);
+
+echo $this->render('@portalium/storage/views/web/default/_filePreviewModal');
         $this->registerJsScript();
     }
 
@@ -105,6 +111,56 @@ class FilePicker extends InputWidget
 // Modal registry - for modal level assignation
 if (!window.modalRegistry) {
     window.modalRegistry = new Map();
+}
+
+function previewSelectedFile(button) {
+    const $btn = $(button);
+
+    const $container = $btn.closest('div.col-sm-10');
+    const $input = $container.find('input[type="hidden"]');
+
+    if ($input.length === 0) {
+        console.warn('Hidden input bulunamadı.');
+        return;
+    }
+
+    let value;
+    try {
+        value = JSON.parse($input.val());
+    } catch (e) {
+        console.error('JSON parse hatası:', e);
+        return;
+    }
+
+    const id_storage = value.id_storage;
+    if (!id_storage) {
+        console.warn('id_storage değeri bulunamadı.');
+        return;
+    }
+
+    $.ajax({
+        url: '/storage/default/get-file-attributes',
+        type: 'GET',
+        data: { id: id_storage },
+        dataType: 'json',
+        success: function(data) {
+            if (!data.url) {
+                console.warn('data-url alınamadı.');
+                return;
+            }
+
+            const attributesRaw = JSON.stringify(data.attributes || {});
+
+            if (typeof window.openFilePreview === 'function') {
+                window.openFilePreview(data.url, attributesRaw);
+            } else {
+                console.warn('openFilePreview fonksiyonu bulunamadı.');
+            }
+        },
+        error: function(err) {
+            console.error('Dosya attributes alınamadı:', err);
+        }
+    });
 }
 
 if (!window.handleFilePickerClick) {

@@ -893,6 +893,27 @@ class DefaultController extends Controller
         $folder->delete();
     }
 
+    public function actionGetFileAttributes($id)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $file = \portalium\storage\models\Storage::findOne($id);
+        if (!$file) {
+            return ['error' => 'File not found'];
+        }
+
+        return [
+            'attributes' => [
+                'id_storage' => $file->id_storage,
+                'name' => $file->name,
+                'title' => $file->title,
+                'mime_type' => $file->mime_type,
+                'icon_class_php' => $file->getIconClass(),
+            ],
+            'url' => \yii\helpers\Url::to(['/storage/default/get-file', 'id' => $file->id_storage]),
+        ];
+    }
+
     public function actionGetFile($id, $access_token = null)
     {
         try {
