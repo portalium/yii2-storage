@@ -244,8 +244,11 @@ $this->registerJs($js);
 <?php
 $zJs = <<<'ZJS'
 $(document).on('show.bs.modal', '#file-preview-modal', function () {
-  // find highest z-index among existing modals/backdrops
-  var maxZ = 1040; // bootstrap default modal backdrop z-index is 1040
+  // Only raise z-index if there's already a modal/backdrop with z-index >= bootstrap defaults
+  var defaultBackdropZ = 1040;
+  var defaultModalZ = 1050;
+
+  var maxZ = 0;
   $('.modal:visible').each(function() {
     var z = parseInt($(this).css('z-index')) || 0;
     if (z > maxZ) maxZ = z;
@@ -254,6 +257,11 @@ $(document).on('show.bs.modal', '#file-preview-modal', function () {
     var z = parseInt($(this).css('z-index')) || 0;
     if (z > maxZ) maxZ = z;
   });
+
+  // If nothing has been elevated above defaults, keep bootstrap defaults and do nothing
+  if (maxZ < defaultModalZ) {
+    return;
+  }
 
   var modalZ = maxZ + 10;
   var backdropZ = maxZ + 5;
