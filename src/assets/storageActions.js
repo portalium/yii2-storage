@@ -338,7 +338,7 @@ function openNewFolderModal(event) {
   });
 }
 
-// Yeni klasör oluşturma butonuna tıklanıldığında
+// When the create new folder button is clicked
 $(document).off("click", "#createFolderButton").on("click", "#createFolderButton", function (e) {
   e.preventDefault();
 
@@ -761,7 +761,7 @@ function deleteFile(id) {
   });
 }
 
-// Verileri burda gönderiyorum
+// Data is sent here
 let lastListItemPjaxUrl = null;
 
 $(document).on('pjax:send', function (e, xhr, options) {
@@ -804,7 +804,7 @@ function performSearch(query) {
   isSearching = true;
   const isPicker = $("#searchFileInput").data("is-picker") ? 1 : 0;
 
-  // fileExtensions parametresini ekledim
+  // fileExtensions parameter added
   const fileExtensions = Array.isArray(window.fileExtensions)
     ? window.fileExtensions.join(",")
     : "";

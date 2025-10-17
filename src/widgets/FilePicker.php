@@ -179,7 +179,7 @@ if (!window.handleFilePickerClick) {
     };
 }
 
-// Modal yardımcı fonksiyonları
+// Modal supporter functions
 if (!window.updateFileCard) {
     window.updateFileCard = function(id_storage) {
         $('.file-card.active').removeClass('active');
@@ -201,7 +201,7 @@ if (!window.updateFileCard) {
     };
 }
 
-// Modal kapama fonksiyonu
+// Modal closing function
 if (!window.closeModalById) {
     window.closeModalById = function(modalId) {
         console.log('Closing modal:', modalId);
@@ -242,7 +242,7 @@ if (!window.cleanupModal) {
     };
 }
 
-// Modal'a özel close event'leri bağlayan fonksiyon
+// Function that connects modal-specific close events
 if (!window.bindModalCloseEvents) {
     window.bindModalCloseEvents = function(modalId, level = 0) {
         const modalEl = document.getElementById(modalId);
@@ -286,7 +286,7 @@ if (!window.bindModalCloseEvents) {
     };
 }
 
-// Ana sayfa event'lerini geri yükleme fonksiyonu
+// Function to restore home page events
 if (!window.restoreMainPageEvents) {
     window.restoreMainPageEvents = function() {
         if ((!window.isPicker || window.isPicker === false) && window.loadedRestoreMainPageEvents == false) {
@@ -339,7 +339,7 @@ if (!window.restoreMainPageEvents) {
     };
 }
 
-// File picker için özel event binding
+// Special event binding for file picker
 if (!window.bindFilePickerEvents) {
     window.bindFilePickerEvents = function() {
         $('#file-picker-modal .btn-select').off('click.picker-select').on('click.picker-select', function(e) {
@@ -403,7 +403,7 @@ if (!window.handlePickerAction) {
     }
 };
 
-// Action modal açma
+// Action open modal
 if (!window.openActionModal) {
     window.openActionModal = function(action, href) {
         const modalId = 'action-modal-' + Date.now();
@@ -454,7 +454,7 @@ if (!window.openActionModal) {
     };
 }
 
-// Ana file picker modal açma
+// Main file picker modal opening
 if (!window.openFilePickerModal) {
     window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage']) {
         window.multiple = multiple;
@@ -528,7 +528,7 @@ $(document).ready(function() {
     window.restoreMainPageEvents();
 });
 
-// Yardımcı fonksiyonlar
+// Supporting functions
 if (!window.refreshFilePicker) {
     window.refreshFilePicker = function() {
         const container = $('#file-picker-modal .files-container');

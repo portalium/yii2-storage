@@ -112,7 +112,6 @@ Yii::$app->view->registerCss("
 
 ");
 
-/* Modal oluşturma */
 Modal::begin([
     'id' => 'filePreviewModal',
     'title' => '',
@@ -127,7 +126,7 @@ Modal::begin([
 ?>
 
 <div id="filePreviewContent">
-    <!-- İçerik JS ile yüklenecek -->
+    <!-- Content will be loaded with JS -->
 </div>
 
 <?php Modal::end(); ?>
