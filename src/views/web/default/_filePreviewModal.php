@@ -6,14 +6,14 @@ use yii\helpers\Html;
 
 Yii::$app->view->registerCss("
 
-#filePreviewModal .modal-dialog {
+#file-preview-modal .modal-dialog {
   margin: 0;
   max-width: 100%;
   width: 100%;
   height: 100%;
 }
 
-#filePreviewModal .modal-content {
+#file-preview-modal .modal-content {
   background: #000000a1; 
   border: none;
   box-shadow: none;
@@ -25,7 +25,7 @@ Yii::$app->view->registerCss("
   opacity: 0.8; 
 }
 
-#filePreviewModal .modal-header {
+#file-preview-modal .modal-header {
   position: absolute;
   padding: 10px 15px;
   width: 100%;
@@ -38,17 +38,17 @@ Yii::$app->view->registerCss("
   justify-content: start !important;
 }
 
-#filePreviewModal .modal-title {
+#file-preview-modal .modal-title {
   font-size: 18px;
   color: #fff;
   margin: 0;
 }
 
-#filePreviewModal .modal-header .file-icon {
+#file-preview-modal .modal-header .file-icon {
   font-size: 22px;
 }
 
-#filePreviewModal .modal-header .btn-close {
+#file-preview-modal .modal-header .btn-close {
   filter: invert(1);
   margin-left: auto;
 }
@@ -60,7 +60,7 @@ Yii::$app->view->registerCss("
   height: 100%;
 }
 
-#filePreviewModal .modal-header .file-title {
+#file-preview-modal .modal-header .file-title {
   max-width: 90%;
   display: contents;  
 }
@@ -113,7 +113,7 @@ Yii::$app->view->registerCss("
 ");
 
 Modal::begin([
-    'id' => 'filePreviewModal',
+    'id' => 'file-preview-modal',
     'title' => '',
     'options' => ['class' => 'fade'],
     'bodyOptions' => ['class' => 'modal-body text-center'],
@@ -150,7 +150,7 @@ window.openFilePreview = function(url, attributesRaw) {
     modalHeader += '<i class="' + iconClass + ' file-icon me-2"></i>';
     modalHeader += '<span class="file-title">' + title + '</span>';
     modalHeader += '</div>';
-    $('#filePreviewModal .modal-title').html(modalHeader);
+    $('#file-preview-modal .modal-title').html(modalHeader);
 
     var loadingContent = '<div class="loading-spinner show text-center">';
     loadingContent += '<div class="spinner-border" role="status">';
@@ -160,7 +160,7 @@ window.openFilePreview = function(url, attributesRaw) {
     loadingContent += '</div>';
     $('#filePreviewContent').html(loadingContent);
 
-    $('#filePreviewModal').modal('show');
+    $('#file-preview-modal').modal('show');
 
     var content = '';
 
@@ -239,4 +239,36 @@ function handleMultipleFilePreview(files) {
 
 JS;
 $this->registerJs($js);
+?>
+
+<?php
+$zJs = <<<'ZJS'
+$(document).on('show.bs.modal', '#file-preview-modal', function () {
+  // find highest z-index among existing modals/backdrops
+  var maxZ = 1040; // bootstrap default modal backdrop z-index is 1040
+  $('.modal:visible').each(function() {
+    var z = parseInt($(this).css('z-index')) || 0;
+    if (z > maxZ) maxZ = z;
+  });
+  $('.modal-backdrop').each(function() {
+    var z = parseInt($(this).css('z-index')) || 0;
+    if (z > maxZ) maxZ = z;
+  });
+
+  var modalZ = maxZ + 10;
+  var backdropZ = maxZ + 5;
+
+  $('#file-preview-modal').css('z-index', modalZ);
+  $('.modal-backdrop').last().css('z-index', backdropZ);
+});
+
+// When preview modal hidden, restore possible flags
+$(document).on('hidden.bs.modal', '#file-preview-modal', function () {
+  // remove inline z-index so other modals behave normally
+  $(this).css('z-index', '');
+  $('.modal-backdrop').last().css('z-index', '');
+});
+ZJS;
+
+$this->registerJs($zJs, \yii\web\View::POS_READY);
 ?>

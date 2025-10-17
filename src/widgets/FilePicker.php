@@ -101,7 +101,21 @@ class FilePicker extends InputWidget
             'onclick' => 'previewSelectedFile(this)',
         ]);
 
-echo $this->render('@portalium/storage/views/web/default/_filePreviewModal');
+            $modalHtml = $this->render('@portalium/storage/views/web/default/_filePreviewModal');
+
+            if (empty($this->view->params['storageFilePreviewModalRegistered'])) {
+                $this->view->params['storageFilePreviewModalRegistered'] = true;
+
+                $js = '(function(){'
+                    . 'if (!document.getElementById("file-preview-modal") && !window._storageFilePreviewModalRegistered) {'
+                        . 'window._storageFilePreviewModalRegistered = true;'
+                        . 'document.body.insertAdjacentHTML("beforeend", ' . json_encode($modalHtml) . ');'
+                    . '}'
+                . '})();';
+
+                $this->view->registerJs($js, \yii\web\View::POS_END);
+            }
+
         $this->registerJsScript();
     }
 
