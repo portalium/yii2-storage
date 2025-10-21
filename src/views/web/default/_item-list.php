@@ -343,7 +343,7 @@ echo ListView::widget([
 
         $content .= Html::endTag('div'); // .file-header
 
-        // Dropdown menüsü
+        // Dropdown menu
         $content .= Dropdown::widget([
             'items' => [
                 [
@@ -394,7 +394,7 @@ echo ListView::widget([
             ],
         ]);
 
-        // Önizleme
+        // file preview
         $content .= Html::beginTag('div', ['class' => 'file-preview']);
         $iconData = $model->getIconUrl();
         $content .= Html::img($iconData['url'], [
@@ -412,7 +412,7 @@ echo ListView::widget([
 ]);
 
 echo Html::endTag('div'); // .files-section
-echo Html::endTag('div'); // container-fluid sonu
+echo Html::endTag('div'); // end of container-fluid
 
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
 $this->registerJsVar('currentFileExtensions', $fileExtensionsParam);

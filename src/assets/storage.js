@@ -4,7 +4,7 @@ function toggleContextMenu(e, id) {
     document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
         if (menu.id !== 'context-menu-' + id) {
             menu.classList.remove('show');
-            const card = menu.closest('.file-card'); // kartı bul
+            const card = menu.closest('.file-card'); // find card
             if (card) card.onmouseleave = null;
         }
     });

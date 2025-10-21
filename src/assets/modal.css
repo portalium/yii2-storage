@@ -240,7 +240,7 @@
   z-index: 11;
 }
 
-/* Success button için daha parlak yeşil */
+/* Brighter green for success button */
 .btn-success.btn-loading::before {
   border-color: rgba(34, 139, 34, 0.2);
   border-top-color: #22c55e;
@@ -253,7 +253,7 @@
   box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
 }
 
-/* Primary button için siyah/gri tonları */
+/* Black/Gray tones for primary button */
 .btn-primary.btn-loading::before {
   border-color: rgba(52, 58, 64, 0.2);
   border-top-color: #343a40;

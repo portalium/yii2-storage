@@ -112,7 +112,6 @@ class DefaultController extends Controller
         $id_directory = Yii::$app->request->get('id_directory');
         $isPicker = Yii::$app->request->get('isPicker', false);
 
-        // ★ YENİ: fileExtensions parametresini al ★
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
 
         // Normalize fileExtensions
@@ -123,7 +122,7 @@ class DefaultController extends Controller
             $fileExtensions = [];
         }
 
-        // Boş string'leri temizle
+        // Remove empty strings
         $fileExtensions = array_filter($fileExtensions, function ($ext) {
             return !empty(trim($ext));
         });
@@ -131,12 +130,10 @@ class DefaultController extends Controller
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
 
-        // ★ YENİ: fileExtensions filtresini uygula ★
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim(trim($extension), '.');
-                // ★ DOĞRU: % işaretini başa koy ★
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
 
@@ -275,8 +272,8 @@ class DefaultController extends Controller
             $ext = pathinfo($file->name, PATHINFO_EXTENSION);
             $basename = pathinfo($file->title, PATHINFO_FILENAME);
 
-            $cleanName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $basename); // ş→s, ı→i falan
-            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $cleanName);   // boşluk ve sembolleri alt çizgi yap
+            $cleanName = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $basename);
+            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $cleanName); // change space and symbols to underline
 
             $filename = $cleanName . '.' . $ext;
 
@@ -513,7 +510,7 @@ class DefaultController extends Controller
         $isJson = Yii::$app->request->get('isJson', true);
         $attributes = Yii::$app->request->get('attributes', ['id_storage']);
 
-        // Normalize fileExtensions - STRING IÇİN HANDLE ET
+        // Normalize fileExtensions - Handle for String
         if (is_string($fileExtensions) && !empty($fileExtensions)) {
             $fileExtensions = explode(',', $fileExtensions);
         }
@@ -587,14 +584,13 @@ class DefaultController extends Controller
             ->orderBy(['id_directory' => SORT_DESC])
             ->all();
 
-        // Files için aynı filtreyi uygula
+        // Apply the same filter for Files
         $filesQuery = Storage::find()->andWhere(['id_directory' => $id_directory]);
 
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
             foreach ($fileExtensions as $extension) {
                 $cleanExtension = '.' . ltrim(trim($extension), '.');
-                // ★ DOĞRU: % işaretini başa koy ★
                 $orConditions[] = ['like', 'name', '%' . $cleanExtension, false];
             }
             if (count($orConditions) > 1) {
@@ -606,7 +602,7 @@ class DefaultController extends Controller
 
         $pagination = $dataProvider->getPagination();
 
-        ob_start(); // çıktıyı yakala
+        ob_start();
         echo $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
             'dataProvider' => $dataProvider,
             'directoryDataProvider' => $directoryDataProvider,
@@ -632,7 +628,7 @@ class DefaultController extends Controller
                 '',
                 $output
             );
-            // jQuery ve Bootstrap JS dosyalarını kaldır
+            // Remove Bootstrap and JS files
             $output = preg_replace(
                 '#<script[^>]+src=["\']?/assets/[^"\']+/(jquery\.js|yii\.js|bootstrap\.bundle\.js|tab\.js|jquery\.min\.js)[^"\']*["\'][^>]*>#i',
                 '',
@@ -808,7 +804,6 @@ class DefaultController extends Controller
         ]);
     }
 
-    // +++
     public function actionRenameFolder($id)
     {
         $model = StorageDirectory::findOne(['id_directory' => $id]);
