@@ -106,7 +106,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
         }
 
         $userId = Yii::$app->user->id;
-        $workspaceId = $this->id_workspace ?? 0;
+        $workspaceId = $this->id_workspace ?? 1;
         $allowed = Storage::$allowExtensions;
         $validFiles = [];
 
