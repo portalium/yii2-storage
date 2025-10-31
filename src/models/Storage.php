@@ -611,6 +611,9 @@ class Storage extends \yii\db\ActiveRecord
             $image = new \Imagick($sourcePath);
             $origWidth = $image->getImageWidth();
             $origHeight = $image->getImageHeight();
+            if ($origHeight <= $height) {
+                return copy($sourcePath, $thumbPath);
+            }
             $ratio = $origWidth / $origHeight;
             $width = intval($height * $ratio);
 
