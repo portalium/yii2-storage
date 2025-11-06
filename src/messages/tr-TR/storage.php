@@ -75,4 +75,5 @@ return [
     'Failed to create folder!' => 'Klasör oluşturulamadı!',
     'Unknown' => 'Bilinmeyen',
     'Thumbnail' => 'Küçük Resim',
+    'Access type changed: {status}' => 'Erişim tipi güncellendi: {status}',
 ];
