@@ -171,14 +171,38 @@ echo Html::tag('div',
     ['class' => 'file-access mb-3']
 );
 
-
-
+?>
+    <div id="accessToast"
+         class="toast align-items-center text-bg-success border-0 shadow-lg mx-auto"
+         role="alert" aria-live="assertive" aria-atomic="true"
+         data-bs-delay="2500"
+         style="width: fit-content; max-width: 320px; margin-top: 12px;">
+      <div class="d-flex">
+        <div class="toast-body" id="accessToastBody">
+          <!-- Dynamic message will appear here -->
+        </div>
+        <button type="button"
+                class="btn-close btn-close-white me-2 m-auto"
+                data-bs-dismiss="toast"
+                aria-label="Close"></button>
+      </div>
+    </div>
+<?php
 
     Modal::end();
 }
 else
     Yii::$app->session->setFlash('error', Module::t('File not found!'));
 ?>
+
+<style>
+    #accessToast {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-70%);
+    max-width: 320px;
+}
+</style>
 
 <script>
 function updateAccessUI(level) {
@@ -200,6 +224,26 @@ function updateAccessUI(level) {
     }
 }
 
+let activeToast = null;
+
+function showAccessToast(message, success = true) {
+    const toastEl = document.getElementById('accessToast');
+    const toastBody = document.getElementById('accessToastBody');
+    toastBody.textContent = message;
+
+    toastEl.classList.remove('text-bg-success', 'text-bg-danger');
+    toastEl.classList.add(success ? 'text-bg-success' : 'text-bg-danger');
+
+    if (activeToast) {
+        activeToast.hide();
+        activeToast.dispose();
+        activeToast = null;
+    }
+
+    activeToast = new bootstrap.Toast(toastEl, { delay: 2500 });
+    activeToast.show();
+}
+
 function setAccessLevel(level) {
     updateAccessUI(level);
 
@@ -215,12 +259,18 @@ function setAccessLevel(level) {
         },
         success: function (response) {
             if (response.success) {
-                console.log(response.message);
+                const statusText = level === 'public'
+                    ? "<?= Module::t('Public') ?>"
+                    : "<?= Module::t('Restricted') ?>";
+
+                const msg = "<?= Module::t('Access type changed: {status}') ?>".replace('{status}', statusText);
+                showAccessToast(msg);
             } else {
-                alert(response.message || "Erişim tipi kaydedilemedi.");
+                showAccessToast("<?= Module::t('Erişim tipi kaydedilemedi.') ?>", false);
             }
         },
         error: function (xhr) {
+            showAccessToast("<?= Module::t('Sunucu hatası: erişim tipi değiştirilemedi.') ?>", false);
             console.error("Sunucu hatası:", xhr.responseText);
         }
     });
