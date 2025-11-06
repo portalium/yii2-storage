@@ -76,6 +76,7 @@ class FilePicker extends InputWidget
         if ($this->hasModel()) {
             echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         }
+        echo Html::hiddenInput('preview-file-' . $this->options['id'], '', ['id' => 'preview-file-' . $this->options['id']]);
 
         $value = $this->model->{$this->attribute} ?? '';
         $decoded = json_decode($value, true);
@@ -91,7 +92,7 @@ class FilePicker extends InputWidget
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
         echo Html::script("window.isPicker = " . ($this->isPicker ? 'true' : 'false') . ";");
 
-        echo Html::button('<span class="btn-text">' . Module::t('Select File') . '</span>',[
+        echo Html::button('<span class="btn-text">' . Module::t('Select File') . '</span>', [
             'class' => 'btn btn-primary',
             'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ')'
         ]);
@@ -99,22 +100,23 @@ class FilePicker extends InputWidget
         echo Html::button('<span class="btn-text">Preview File</span>', [
             'class' => 'btn btn-primary ms-2',
             'onclick' => 'previewSelectedFile(this)',
+            'style' => 'padding-right: 5px;'
         ]);
 
-            $modalHtml = $this->render('@portalium/storage/views/web/default/_filePreviewModal');
+        $modalHtml = $this->render('@portalium/storage/views/web/default/_filePreviewModal');
 
-            if (empty($this->view->params['storageFilePreviewModalRegistered'])) {
-                $this->view->params['storageFilePreviewModalRegistered'] = true;
+        if (empty($this->view->params['storageFilePreviewModalRegistered'])) {
+            $this->view->params['storageFilePreviewModalRegistered'] = true;
 
-                $js = '(function(){'
-                    . 'if (!document.getElementById("file-preview-modal") && !window._storageFilePreviewModalRegistered) {'
-                        . 'window._storageFilePreviewModalRegistered = true;'
-                        . 'document.body.insertAdjacentHTML("beforeend", ' . json_encode($modalHtml) . ');'
-                    . '}'
+            $js = '(function(){'
+                . 'if (!document.getElementById("file-preview-modal") && !window._storageFilePreviewModalRegistered) {'
+                . 'window._storageFilePreviewModalRegistered = true;'
+                . 'document.body.insertAdjacentHTML("beforeend", ' . json_encode($modalHtml) . ');'
+                . '}'
                 . '})();';
 
-                $this->view->registerJs($js, \yii\web\View::POS_END);
-            }
+            $this->view->registerJs($js, \yii\web\View::POS_END);
+        }
 
         $this->registerJsScript();
     }
@@ -130,8 +132,8 @@ if (!window.modalRegistry) {
 function previewSelectedFile(button) {
     const $btn = $(button);
 
-    const $container = $btn.closest('div.col-sm-10');
-    const $input = $container.find('input[type="hidden"]');
+    const $container = $btn.closest('div');
+    const $input = $container.find('input[type="hidden"][name*="preview-file"]');
 
     if ($input.length === 0) {
         console.warn('Hidden input bulunamadı.');
@@ -146,7 +148,8 @@ function previewSelectedFile(button) {
         return;
     }
 
-    const id_storage = value.id_storage;
+    var id_storage = value.id_storage || value;
+    
     if (!id_storage) {
         console.warn('id_storage değeri bulunamadı.');
         return;
@@ -622,6 +625,7 @@ if (!window.saveSelect) {
         }
 
         $('#' + window.inputId).val(value);
+        $('#preview-file-' + window.inputId).val(value);
         if (window.callbackName && typeof window[window.callbackName] === 'function') {
             window[window.callbackName](selectedFiles);
         }
