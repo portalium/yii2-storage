@@ -919,7 +919,7 @@ class DefaultController extends Controller
             return Yii::$app->response;
         }
 
-        if (!Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file]) && $file->access == Storage::ACCESS_PRIVATE) {
+        if ($file->access == Storage::ACCESS_PRIVATE && !Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file]) && !Yii::$app->workspace->can('storage', 'storageWebDefaultGetFile', ['model' => $file])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
