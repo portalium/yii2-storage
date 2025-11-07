@@ -54,14 +54,16 @@ function isManagePage() {
 }
 
 function getBaseUrl() {
-  let basePath = isManagePage() ? "/storage/default/manage" : "/storage/default/index";
+  let basePath = isManagePage()
+    ? "/storage/default/manage"
+    : "/storage/default/index";
   let url = basePath;
 
-  if (currentDirectoryId) {
-    url += "?id_directory=" + currentDirectoryId;
+  if (window.currentDirectoryId) {
+    url += "?id_directory=" + window.currentDirectoryId;
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     const separator = url.includes("?") ? "&" : "?";
     url += separator + "isPicker=1";
   }
@@ -78,9 +80,8 @@ function getBaseUrl() {
   return url;
 }
 
-
 function returnToMainPage() {
-  isSearching = false;
+  window.isSearching = false;
   const baseUrl = getBaseUrl();
 
   $.pjax
@@ -107,17 +108,19 @@ window.openFolder = function (id_directory, event) {
   ) {
     return;
   }
-  currentDirectoryId =
+  window.currentDirectoryId =
     id_directory === null || id_directory === undefined
       ? null
       : parseInt(id_directory);
 
-  let url = isManagePage() ? "/storage/default/manage" : "/storage/default/index";
+  let url = isManagePage()
+    ? "/storage/default/manage"
+    : "/storage/default/index";
   if (id_directory) {
     url += "?id_directory=" + id_directory;
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     const separator = url.includes("?") ? "&" : "?";
     url += separator + "isPicker=1";
   }
@@ -130,7 +133,7 @@ window.openFolder = function (id_directory, event) {
     url += separator + "fileExtensions=" + encodeURIComponent(fileExtensions);
   }
 
-  isSearching = false;
+  window.isSearching = false;
   $("#searchFileInput").val("");
 
   $.pjax.reload({
@@ -140,7 +143,7 @@ window.openFolder = function (id_directory, event) {
     replace: false,
     timeout: 10000,
     complete: function () {
-      if (!url.includes("id_directory=")) currentDirectoryId = null;
+      if (!url.includes("id_directory=")) window.currentDirectoryId = null;
     },
   });
 };
@@ -167,13 +170,16 @@ function uploadFileMenu(event) {
       const files = Array.from(fileInput.files);
 
       let completed = 0;
-      files.forEach(file => {
+      files.forEach((file) => {
         const formData = new FormData();
         formData.append("Storage[file]", file);
         formData.append("Storage[title]", file.name);
-        formData.append("id_directory", currentDirectoryId ? currentDirectoryId : "");
+        formData.append(
+          "id_directory",
+          window.currentDirectoryId ? window.currentDirectoryId : ""
+        );
 
-        if (currentIsPicker) {
+        if (window.currentIsPicker) {
           formData.append("isPicker", "1");
         }
 
@@ -184,12 +190,12 @@ function uploadFileMenu(event) {
           contentType: false,
           processData: false,
           headers: {
-            "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content")
+            "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
           },
           success: function () {
             completed++;
             if (completed === files.length) {
-              if (isSearching) {
+              if (window.isSearching) {
                 const searchValue = $("#searchFileInput").val().trim();
                 if (searchValue) {
                   performSearch(searchValue);
@@ -198,15 +204,17 @@ function uploadFileMenu(event) {
                 }
               }
 
-              const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
-              $.pjax.reload({
-                container: "#list-item-pjax",
-                url: reloadUrl,
-                replace: false,
-                push: false,
-              }).done(function () {
-                newDropdownBtn.removeClass("btn-loading");
-              });
+              const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
+              $.pjax
+                .reload({
+                  container: "#list-item-pjax",
+                  url: reloadUrl,
+                  replace: false,
+                  push: false,
+                })
+                .done(function () {
+                  newDropdownBtn.removeClass("btn-loading");
+                });
             }
           },
           error: function (xhr) {
@@ -220,7 +228,6 @@ function uploadFileMenu(event) {
 
   fileInput.click();
 }
-
 
 function uploadFolderMenu(event) {
   event.preventDefault();
@@ -244,15 +251,17 @@ function uploadFolderMenu(event) {
       newDropdownBtn.addClass("btn-loading");
       const formData = new FormData();
 
-      Array.from(fileInput.files).forEach(file => {
+      Array.from(fileInput.files).forEach((file) => {
         formData.append("Storage[file][]", file);
       });
 
-
       formData.append("Storage[type]", "folder");
-      formData.append("id_directory", currentDirectoryId ? currentDirectoryId : "");
+      formData.append(
+        "id_directory",
+        window.currentDirectoryId ? window.currentDirectoryId : ""
+      );
 
-      if (currentIsPicker) {
+      if (window.currentIsPicker) {
         formData.append("isPicker", "1");
       }
 
@@ -263,10 +272,10 @@ function uploadFolderMenu(event) {
         contentType: false,
         processData: false,
         headers: {
-          "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content")
+          "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
         },
         success: function () {
-          if (isSearching) {
+          if (window.isSearching) {
             const searchValue = $("#searchFileInput").val().trim();
             if (searchValue) {
               performSearch(searchValue);
@@ -275,15 +284,17 @@ function uploadFolderMenu(event) {
             }
           }
 
-          const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
-          $.pjax.reload({
-            container: "#list-item-pjax",
-            url: reloadUrl,
-            replace: false,
-            push: false,
-          }).done(function () {
-            newDropdownBtn.removeClass("btn-loading");
-          });
+          const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
+          $.pjax
+            .reload({
+              container: "#list-item-pjax",
+              url: reloadUrl,
+              replace: false,
+              push: false,
+            })
+            .done(function () {
+              newDropdownBtn.removeClass("btn-loading");
+            });
         },
         error: function (xhr) {
           newDropdownBtn.removeClass("btn-loading");
@@ -304,13 +315,13 @@ function openNewFolderModal(event) {
 
   let url = "/storage/default/new-folder";
 
-  if (currentDirectoryId) {
-    url += "?id_directory=" + currentDirectoryId;
+  if (window.currentDirectoryId) {
+    url += "?id_directory=" + window.currentDirectoryId;
   } else {
     url += "?id_directory=null";
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     url += "&isPicker=1";
   }
 
@@ -322,12 +333,12 @@ function openNewFolderModal(event) {
       $('.modal[id^="newFolderModal"]').remove();
       $("#new-folder-pjax").html(response);
       showModal("newFolderModal");
-      
+
       const modal = $("#newFolderModal");
       modal.find("#storagedirectory-name").on("keydown", function (e) {
         if (e.key === "Enter") {
-          e.preventDefault(); 
-          modal.find("#createFolderButton").click(); 
+          e.preventDefault();
+          modal.find("#createFolderButton").click();
         }
       });
     },
@@ -339,66 +350,68 @@ function openNewFolderModal(event) {
 }
 
 // When the create new folder button is clicked
-$(document).off("click", "#createFolderButton").on("click", "#createFolderButton", function (e) {
-  e.preventDefault();
+$(document)
+  .off("click", "#createFolderButton")
+  .on("click", "#createFolderButton", function (e) {
+    e.preventDefault();
 
-  const form = document.getElementById("newFolderForm");
-  if (!form) return;
+    const form = document.getElementById("newFolderForm");
+    if (!form) return;
 
-  const formData = new FormData(form);
+    const formData = new FormData(form);
 
-  if (currentDirectoryId) {
-    formData.append("id_directory", currentDirectoryId);
-  } else {
-    formData.append("id_directory", null);
-  }
+    if (window.currentDirectoryId) {
+      formData.append("id_directory", window.currentDirectoryId);
+    } else {
+      formData.append("id_directory", null);
+    }
 
-  if (currentIsPicker) {
-    formData.append("isPicker", "1");
-  }
+    if (window.currentIsPicker) {
+      formData.append("isPicker", "1");
+    }
 
-  $.ajax({
-    url: form.action,
-    type: "POST",
-    data: formData,
-    contentType: false,
-    processData: false,
-    complete: function () {
-      hideModal("newFolderModal");
+    $.ajax({
+      url: form.action,
+      type: "POST",
+      data: formData,
+      contentType: false,
+      processData: false,
+      complete: function () {
+        hideModal("newFolderModal");
 
-      if (isSearching) {
-        const searchValue = $("#searchFileInput").val().trim();
-        if (searchValue) {
-          performSearch(searchValue);
-          return;
+        if (window.isSearching) {
+          const searchValue = $("#searchFileInput").val().trim();
+          if (searchValue) {
+            performSearch(searchValue);
+            return;
+          }
         }
-      }
 
-      const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
-      $.pjax
-        .reload({
-          container: "#list-item-pjax",
-          url: reloadUrl,
-          replace: false,
-          push: false,
-        })
-        .done(function () {
-          $.pjax.reload({ container: "#pjax-flash-message" });
-        });
-    },
+        const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
+        $.pjax
+          .reload({
+            container: "#list-item-pjax",
+            url: reloadUrl,
+            replace: false,
+            push: false,
+          })
+          .done(function () {
+            $.pjax.reload({ container: "#pjax-flash-message" });
+          });
+      },
+    });
   });
-});
 
 function openRenameFolderModal(id) {
   event.preventDefault();
   let url = "/storage/default/rename-folder?id=" + id;
-  if (currentDirectoryId) {
-    url += "&id_directory=" + currentDirectoryId;
+  if (window.currentDirectoryId) {
+    url += "&id_directory=" + window.currentDirectoryId;
   } else {
     url += "&id_directory=null";
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     url += "&isPicker=1";
   }
 
@@ -415,7 +428,7 @@ function openRenameFolderModal(id) {
 
           modal.find("#storagedirectory-name").on("keydown", function (e) {
             if (e.key === "Enter") {
-              e.preventDefault(); 
+              e.preventDefault();
               modal.find("#renameFolderButton").click();
             }
           });
@@ -437,13 +450,13 @@ $(document).on("click", "#renameFolderButton", function (e) {
   var form = document.getElementById("renameFolderForm");
   var formData = new FormData(form);
 
-  if (currentDirectoryId) {
-    formData.append("id_directory", currentDirectoryId);
+  if (window.currentDirectoryId) {
+    formData.append("id_directory", window.currentDirectoryId);
   } else {
     formData.append("id_directory", "null");
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     formData.append("isPicker", "1");
   }
 
@@ -452,7 +465,7 @@ $(document).on("click", "#renameFolderButton", function (e) {
       "/storage/default/rename-folder?id=" +
       $("#renameFolderButton").data("id") +
       "&id_directory=" +
-      currentDirectoryId,
+      window.currentDirectoryId,
     type: "POST",
     data: formData,
     contentType: false,
@@ -470,11 +483,11 @@ function deleteFolder(id) {
   $.ajax({
     url:
       "/storage/default/delete-folder?id_directory=" +
-      (currentDirectoryId || "null") +
+      (window.currentDirectoryId || "null") +
       "&id=" +
       id,
     type: "POST",
-    data: currentIsPicker ? { isPicker: "1" } : {},
+    data: window.currentIsPicker ? { isPicker: "1" } : {},
     headers: {
       "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
     },
@@ -490,7 +503,7 @@ function downloadFile(id) {
     url: "/storage/default/download-file",
     data: {
       id: id,
-      isPicker: currentIsPicker ? "1" : "0",
+      isPicker: window.currentIsPicker ? "1" : "0",
     },
     xhrFields: { responseType: "blob" },
     headers: {
@@ -523,13 +536,13 @@ function downloadFile(id) {
 function openRenameModal(id) {
   event.preventDefault();
   let url = "/storage/default/rename-file?id=" + id;
-  if (currentDirectoryId) {
-    url += "&id_directory=" + currentDirectoryId;
+  if (window.currentDirectoryId) {
+    url += "&id_directory=" + window.currentDirectoryId;
   } else {
     url += "&id_directory=null";
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     url += "&isPicker=1";
   }
 
@@ -567,13 +580,13 @@ $(document).on("click", "#renameButton", function (e) {
   var form = document.getElementById("renameForm");
   var formData = new FormData(form);
 
-  if (currentDirectoryId) {
-    formData.append("id_directory", currentDirectoryId);
+  if (window.currentDirectoryId) {
+    formData.append("id_directory", window.currentDirectoryId);
   } else {
     formData.append("id_directory", "null");
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     formData.append("isPicker", "1");
   }
 
@@ -593,13 +606,13 @@ $(document).on("click", "#renameButton", function (e) {
 function openUpdateModal(id) {
   event.preventDefault();
   let url = "/storage/default/update-file?id=" + id;
-  if (currentDirectoryId) {
-    url += "&id_directory=" + currentDirectoryId;
+  if (window.currentDirectoryId) {
+    url += "&id_directory=" + window.currentDirectoryId;
   } else {
     url += "&id_directory=null";
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     url += "&isPicker=1";
   }
 
@@ -630,13 +643,13 @@ $(document).on("click", "#updateButton", function (e) {
   var form = document.getElementById("updateForm");
   var formData = new FormData(form);
 
-  if (currentDirectoryId) {
-    formData.append("id_directory", currentDirectoryId);
+  if (window.currentDirectoryId) {
+    formData.append("id_directory", window.currentDirectoryId);
   } else {
     formData.append("id_directory", "null");
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     formData.append("isPicker", "1");
   }
 
@@ -656,13 +669,13 @@ $(document).on("click", "#updateButton", function (e) {
 function openShareModal(id) {
   event.preventDefault();
   let url = "/storage/default/share-file?id=" + id;
-  if (currentDirectoryId) {
-    url += "&id_directory=" + currentDirectoryId;
+  if (window.currentDirectoryId) {
+    url += "&id_directory=" + window.currentDirectoryId;
   } else {
     url += "&id_directory=null";
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     url += "&isPicker=1";
   }
 
@@ -693,13 +706,13 @@ $(document).on("click", "#shareButton", function (e) {
   var form = document.getElementById("shareForm");
   var formData = new FormData(form);
 
-  if (currentDirectoryId) {
-    formData.append("id_directory", currentDirectoryId);
+  if (window.currentDirectoryId) {
+    formData.append("id_directory", window.currentDirectoryId);
   } else {
     formData.append("id_directory", "null");
   }
 
-  if (currentIsPicker) {
+  if (window.currentIsPicker) {
     formData.append("isPicker", "1");
   }
 
@@ -707,7 +720,7 @@ $(document).on("click", "#shareButton", function (e) {
     url:
       form.action +
       "?id_directory=" +
-      (currentDirectoryId || "null") +
+      (window.currentDirectoryId || "null") +
       "&id=" +
       $("#shareButton").data("id"),
     type: "POST",
@@ -729,8 +742,8 @@ function copyFile(id) {
     type: "POST",
     data: {
       id: id,
-      id_directory: currentDirectoryId || null,
-      isPicker: currentIsPicker ? "1" : "0",
+      id_directory: window.currentDirectoryId || null,
+      isPicker: window.currentIsPicker ? "1" : "0",
     },
     headers: {
       "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
@@ -749,8 +762,8 @@ function deleteFile(id) {
     type: "POST",
     data: {
       id: id,
-      id_directory: currentDirectoryId || null,
-      isPicker: currentIsPicker ? "1" : "0",
+      id_directory: window.currentDirectoryId || null,
+      isPicker: window.currentIsPicker ? "1" : "0",
     },
     headers: {
       "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
@@ -762,37 +775,39 @@ function deleteFile(id) {
 }
 
 // Data is sent here
-let lastListItemPjaxUrl = null;
+window.lastListItemPjaxUrl = null;
 
-$(document).on('pjax:send', function (e, xhr, options) {
-    if (options.container === "#list-item-pjax") {
-        lastListItemPjaxUrl = options.url;
-    }
+$(document).on("pjax:send", function (e, xhr, options) {
+  if (options.container === "#list-item-pjax") {
+    window.lastListItemPjaxUrl = options.url;
+  }
 });
 
 function refreshCurrentView() {
-    if (isSearching) {
-        const searchValue = $("#searchFileInput").val().trim();
-        if (searchValue) {
-            performSearch(searchValue);
-        } else {
-            returnToMainPage();
-        }
+  if (window.isSearching) {
+    const searchValue = $("#searchFileInput").val().trim();
+    if (searchValue) {
+      performSearch(searchValue);
     } else {
-        const reloadUrl = lastListItemPjaxUrl || getBaseUrl();
-
-        $.pjax.reload({
-            container: "#list-item-pjax",
-            url: reloadUrl,
-            replace: false,
-            push: false,
-        }).done(function () {
-            $.pjax.reload({ container: "#pjax-flash-message" });
-
-            const mode = localStorage.getItem('viewMode') || 'grid';
-            setViewMode(mode);
-        });
+      returnToMainPage();
     }
+  } else {
+    const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
+
+    $.pjax
+      .reload({
+        container: "#list-item-pjax",
+        url: reloadUrl,
+        replace: false,
+        push: false,
+      })
+      .done(function () {
+        $.pjax.reload({ container: "#pjax-flash-message" });
+
+        const mode = localStorage.getItem("viewMode") || "grid";
+        setViewMode(mode);
+      });
+  }
 }
 
 function performSearch(query) {
@@ -801,7 +816,7 @@ function performSearch(query) {
     return;
   }
 
-  isSearching = true;
+  window.isSearching = true;
   const isPicker = $("#searchFileInput").data("is-picker") ? 1 : 0;
 
   // fileExtensions parameter added
@@ -814,8 +829,8 @@ function performSearch(query) {
     "&isPicker=" +
     isPicker;
 
-  if (currentDirectoryId !== null) {
-    finalUrl += "&id_directory=" + currentDirectoryId;
+  if (window.currentDirectoryId !== null) {
+    finalUrl += "&id_directory=" + window.currentDirectoryId;
   }
 
   if (fileExtensions) {
@@ -843,7 +858,7 @@ async function refreshFileList() {
 
     if ($(container).length) {
       let refreshUrl = "/storage/default/file-list";
-      if (currentIsPicker) {
+      if (window.currentIsPicker) {
         refreshUrl += "?isPicker=1";
       }
 
@@ -869,41 +884,41 @@ async function refreshFileList() {
     }
   });
 }
+
 function bindPageSizer() {
-    const $select = $('#file-page-sizer select');
+  const $select = $("#file-page-sizer select");
 
-    $select.each(function() {
-        this.onchange = null;
+  $select.each(function () {
+    this.onchange = null;
+  });
+
+  $select.off("change").on("change", function (e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const perPage = $(this).val();
+    const container = "#list-item-pjax";
+    let reloadUrl = getBaseUrl();
+    const separator = reloadUrl.includes("?") ? "&" : "?";
+    reloadUrl += separator + "per-page=" + perPage;
+
+    $.pjax.reload({
+      container: container,
+      url: reloadUrl,
+      push: false,
+      replace: false,
+      timeout: 10000,
     });
-
-    $select.off('change').on('change', function(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        const perPage = $(this).val();
-        const container = '#list-item-pjax';
-        let reloadUrl = getBaseUrl();
-        const separator = reloadUrl.includes('?') ? '&' : '?';
-        reloadUrl += separator + 'per-page=' + perPage;
-
-        $.pjax.reload({
-            container: container,
-            url: reloadUrl,
-            push: false,
-            replace: false,
-            timeout: 10000,
-        });
-    });
+  });
 }
-
 
 function bindSearchInput() {
   $(document)
     .off("keyup.search input.search")
     .on("keyup.search input.search", "#searchFileInput", function () {
-      clearTimeout(searchTimer);
+      clearTimeout(window.searchTimer);
       const q = $(this).val().trim();
 
-      searchTimer = setTimeout(function () {
+      window.searchTimer = setTimeout(function () {
         if (q === "") {
           console.log("Arama kutusu boş, ana sayfaya dönülüyor...");
           returnToMainPage();
@@ -967,7 +982,7 @@ $(document).on("pjax:end", function () {
   bindSearchInput();
   bindPageSizer();
   console.log("Search binding refreshed after pjax");
-  if (typeof window.updateFileCard === 'function') {
-      window.updateFileCard(window.selectedIdStorage);
+  if (typeof window.updateFileCard === "function") {
+    window.updateFileCard(window.selectedIdStorage);
   }
 });

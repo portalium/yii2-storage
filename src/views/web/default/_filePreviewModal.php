@@ -145,7 +145,7 @@ window.openFilePreview = function(url, attributesRaw) {
     var title = attributes.title || 'Başlık yok';
     var iconClass = attributes.icon_class_php || 'fa fa-file'; 
     var mime_type = attributes.mime_type;
-
+    url = '/data/'+attributes.name;
     var modalHeader = '<div class="d-flex align-items-center">';
     modalHeader += '<i class="' + iconClass + ' file-icon me-2"></i>';
     modalHeader += '<span class="file-title">' + title + '</span>';
@@ -163,7 +163,7 @@ window.openFilePreview = function(url, attributesRaw) {
     $('#file-preview-modal').modal('show');
 
     var content = '';
-
+    console.log('mime_type:', mime_type);
     if (mime_type == 2) {
         content = '<div class="file-preview-container">';
         content += '<div class="pdf-viewer-container">';
@@ -179,7 +179,7 @@ window.openFilePreview = function(url, attributesRaw) {
             $('#filePreviewContent .loading-spinner').removeClass('show');
         }, 500);
 
-    } else if ([0,1,17].includes(parseInt(mime_type))) {
+    } else if ([0,1,17,25].includes(parseInt(mime_type))) {
         content = '<div class="file-preview text-center">';
         content += '<img src="' + url + '" alt="' + title + '" ';
         content += 'class="file-icon img-fluid" ';
@@ -275,6 +275,15 @@ $(document).on('hidden.bs.modal', '#file-preview-modal', function () {
   // remove inline z-index so other modals behave normally
   $(this).css('z-index', '');
   $('.modal-backdrop').last().css('z-index', '');
+  // stop media and clear modal content/title
+  $('#filePreviewContent').find('video,audio').each(function(){
+    try { this.pause(); this.removeAttribute('src'); this.load && this.load(); } catch(e){}
+  });
+  $('#filePreviewContent').find('iframe,embed,object,source').each(function(){
+    try { $(this).attr('src',''); } catch(e){}
+  });
+  $('#filePreviewContent').empty();
+  $('#file-preview-modal .modal-title').html('');
 });
 ZJS;
 
