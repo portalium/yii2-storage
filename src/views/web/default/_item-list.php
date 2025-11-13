@@ -256,6 +256,23 @@ if ($viewMode === 'grid') {
     $listViewOptions['class'] = $isPicker ? 'file-grid picker mb-3' : 'file-grid mb-3';
 }
 
+$sortField = Yii::$app->request->get('sortField', null);
+$sortDirection = Yii::$app->request->get('sortDirection', 'desc');
+
+if ($fileDataProvider && $fileDataProvider->query) {
+    if ($sortField === 'name') {
+        $fileDataProvider->query->orderBy([
+            'title' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+        ]);
+    } 
+    elseif ($sortField === null || $sortField === 'default') {
+        $fileDataProvider->query->orderBy([
+            'date_create' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+            'id_storage' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+        ]);
+    }
+}
+
 echo ListView::widget([
     'dataProvider' => $fileDataProvider,
     'layout' =>

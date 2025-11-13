@@ -888,3 +888,18 @@ opacity: 1;
   }
 }
 
+.active-sort { 
+  font-weight: bold; color: #007bff !important; 
+}
+
+#sortDropdownBtn {
+  position: relative;
+  height: 38px !important;
+  min-width: 78px !important;
+  background: white;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: #dee2e6 solid !important;
+  border-width: 1px !important;
+  border-radius: 3px;
+}

@@ -122,8 +122,8 @@ class FilePicker extends InputWidget
     }
 
     protected function registerJsScript()
-    {
-        $js = <<<'JS'
+{
+    $js = <<<'JS'
 // Modal registry - for modal level assignation
 if (!window.modalRegistry) {
     window.modalRegistry = new Map();
@@ -501,19 +501,37 @@ if (!window.openFilePickerModal) {
             window.closeModalById('file-picker-modal');
         }
 
-        $.get('/storage/default/picker-modal', {
+        const savedSortField = localStorage.getItem('sortField');
+        const savedSortDirection = localStorage.getItem('sortDirection');
+        
+        const modalParams = {
             id: id,
             multiple: multiple,
             isJson: isJson,
             fileExtensions: window.fileExtensions,
             isPicker: isPicker,
             attributes: window.currentAttributes
-        }).done(function(response) {
+        };
+        
+        if (savedSortField) {
+            modalParams.sortField = savedSortField;
+            modalParams.sortDirection = savedSortDirection || 'desc';
+        }
+        
+        $.get('/storage/default/picker-modal', modalParams).done(function(response) {
             $('#file-picker-modal').remove();
             $('body').append(response);
 
             const modalEl = document.getElementById('file-picker-modal');
             if (modalEl) {
+                window.pjaxBaseUrl = '/storage/default/picker-modal?isPicker=1';
+                if (window.fileExtensions && window.fileExtensions.length > 0) {
+                    window.pjaxBaseUrl += '&fileExtensions=' + window.fileExtensions.join(',');
+                }
+                if (savedSortField) {
+                    window.pjaxBaseUrl += '&sortField=' + savedSortField;
+                    window.pjaxBaseUrl += '&sortDirection=' + (savedSortDirection || 'desc');
+                }
                 window.bindModalCloseEvents('file-picker-modal', 0);
                 
                 const modal = new bootstrap.Modal(modalEl, {
@@ -529,6 +547,13 @@ if (!window.openFilePickerModal) {
                 modal.show();
                 
                 modalEl.addEventListener('shown.bs.modal', function() {
+                    if (typeof updateSortDirectionLabels === 'function') {
+                        updateSortDirectionLabels();
+                    }
+                    if (typeof highlightActiveSort === 'function') {
+                        highlightActiveSort();
+                    }
+                    
                     if(id_storage_2 && !isNaN(id_storage_2)) {
                         window.updateFileCard(id_storage_2);
                     }else{
@@ -557,6 +582,14 @@ if (!window.refreshFilePicker) {
             }).done(function(response) {
                 container.html(response);
                 window.bindFilePickerEvents();
+                
+                if (typeof updateSortDirectionLabels === 'function') {
+                    updateSortDirectionLabels();
+                }
+                if (typeof highlightActiveSort === 'function') {
+                    highlightActiveSort();
+                }
+                
                 const id_storage = window.currentSelectedIdStorage || null;
                 if (window.updateFileCard) {
                     window.updateFileCard(id_storage);
@@ -635,6 +668,6 @@ if (!window.saveSelect) {
 }
 JS;
 
-        $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
-    }
+    $this->view->registerJs($js, \yii\web\View::POS_BEGIN);
+}
 }
