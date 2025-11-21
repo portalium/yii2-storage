@@ -76,9 +76,15 @@ class FilePicker extends InputWidget
         if ($this->hasModel()) {
             echo Html::activeHiddenInput($this->model, $this->attribute, $this->options);
         }
-        echo Html::hiddenInput('preview-file-' . $this->options['id'], '', ['id' => 'preview-file-' . $this->options['id']]);
 
-        $value = $this->model->{$this->attribute} ?? '';
+        $realAttribute = $this->attribute;
+        if (preg_match('/\](\w+)$/', $this->attribute, $matches)) {
+            $realAttribute = $matches[1];
+        } elseif (preg_match('/^(\w+)/', $this->attribute, $matches)) {
+            $realAttribute = $matches[1];
+        }
+
+        $value = $this->model->{$realAttribute} ?? '';
         $decoded = json_decode($value, true);
         $idStorage = '';
 
@@ -88,6 +94,12 @@ class FilePicker extends InputWidget
         } elseif (!empty($decoded)) {
             $idStorage = is_array($decoded) ? ($decoded['id_storage'] ?? '') : $decoded;
         }
+        
+        $previewValue = '';
+        if (!empty($idStorage)) {
+            $previewValue = json_encode(['id_storage' => $idStorage]);
+        }
+        echo Html::hiddenInput('preview-file-' . $this->options['id'], $previewValue, ['id' => 'preview-file-' . $this->options['id']]);
 
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
         echo Html::script("window.isPicker = " . ($this->isPicker ? 'true' : 'false') . ";");
@@ -131,7 +143,6 @@ if (!window.modalRegistry) {
 
 function previewSelectedFile(button) {
     const $btn = $(button);
-
     const $container = $btn.closest('div');
     const $input = $container.find('input[type="hidden"][name*="preview-file"]');
 
@@ -140,9 +151,16 @@ function previewSelectedFile(button) {
         return;
     }
 
+    const rawValue = $input.val();
+    
+    if (!rawValue || rawValue.trim() === '') {
+        console.warn('Dosya seçili değil.');
+        return;
+    }
+
     let value;
     try {
-        value = JSON.parse($input.val());
+        value = JSON.parse(rawValue);
     } catch (e) {
         console.error('JSON parse hatası:', e);
         return;
