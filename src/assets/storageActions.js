@@ -901,6 +901,10 @@ function bindPageSizer() {
     const separator = reloadUrl.includes("?") ? "&" : "?";
     reloadUrl += separator + "per-page=" + perPage;
 
+    if (window.selectedIdStorage) {
+      reloadUrl += "&selectedFileId=" + window.selectedIdStorage;
+    }
+
     $.pjax.reload({
       container: container,
       url: reloadUrl,

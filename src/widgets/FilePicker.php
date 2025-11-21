@@ -528,7 +528,8 @@ if (!window.openFilePickerModal) {
             isJson: isJson,
             fileExtensions: window.fileExtensions,
             isPicker: isPicker,
-            attributes: window.currentAttributes
+            attributes: window.currentAttributes,
+            selectedFileId: id_storage_2 || inputValue || null
         };
         
         if (savedSortField) {
@@ -543,6 +544,9 @@ if (!window.openFilePickerModal) {
             const modalEl = document.getElementById('file-picker-modal');
             if (modalEl) {
                 window.pjaxBaseUrl = '/storage/default/picker-modal?isPicker=1';
+                if (id_storage_2 || inputValue) {
+                    window.pjaxBaseUrl += '&selectedFileId=' + (id_storage_2 || inputValue);
+                }
                 if (window.fileExtensions && window.fileExtensions.length > 0) {
                     window.pjaxBaseUrl += '&fileExtensions=' + window.fileExtensions.join(',');
                 }
