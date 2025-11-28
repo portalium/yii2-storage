@@ -28,7 +28,10 @@ class m220227_125705_storage_rbac extends Migration
             'storageWebDefaultDeleteFolder',
             'storageWebDefaultdeleteFolderRecursive',
             'storageWebDefaultManageDirectory',
-            'storageWebDefaultGetFile'
+            'storageWebDefaultGetFile',
+            'storageApiDefaultCreate',
+            'storageApiDefaultUpdate',
+            'storageApiDefaultDelete',
         ];
 
         foreach ($permissionNames as $permissionName) {
@@ -62,6 +65,9 @@ class m220227_125705_storage_rbac extends Migration
             'storageWebDefaultDeleteFolder',
             'storageWebDefaultdeleteFolderRecursive',
             'storageWebDefaultManageDirectory',
+            'storageApiDefaultCreate',
+            'storageApiDefaultUpdate',
+            'storageApiDefaultDelete',
         ];
 
         foreach ($permissionNames as $permissionName) {
