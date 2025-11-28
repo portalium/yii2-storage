@@ -979,14 +979,78 @@ window.deleteFolder = deleteFolder;
 $(document).ready(function () {
   bindSearchInput();
   bindPageSizer();
-  console.log("Search binding initialized");
+  console.log("Search binding initialized in storageactions.js");
+  
+  $(document).on('click.fileItem', '.file-item', function(event) {
+    console.log('File item clicked in storageactions.js!', {
+      ctrlKey: event.ctrlKey,
+      target: event.target,
+      this: this,
+      id: $(this).closest('.file-card').data('id'),
+    });
+    
+    if (event.ctrlKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const id_storage = $(this).closest('.file-card').data('id');
+      console.log('Ctrl+Click detected! id_storage:', id_storage);
+      console.log('toggleBulkSelection exists?', typeof window.toggleBulkSelection);
+      
+      if (id_storage && typeof window.toggleBulkSelection === 'function') {
+        console.log('Calling toggleBulkSelection...');
+        window.toggleBulkSelection(id_storage, event);
+        console.log('toggleBulkSelection called, selectedFiles:', Array.from(window.selectedFiles));
+      } else {
+        console.warn('toggleBulkSelection not available or id_storage missing');
+      }
+      return false;
+    }
+  });
+  
+  if (typeof window.restoreBulkSelection === 'function') {
+    console.log('Initial bulk selection restore in storageactions.js...');
+    window.restoreBulkSelection();
+  }
 });
 
 $(document).on("pjax:end", function () {
+  console.log("PJAX END - Rebinding events in storageactions.js");
   bindSearchInput();
   bindPageSizer();
   console.log("Search binding refreshed after pjax");
+  
   if (typeof window.updateFileCard === "function") {
     window.updateFileCard(window.selectedIdStorage);
+  }
+  
+  console.log("Re-binding file-item click handlers after pjax");
+  
+  $(document).off('click.fileItem').on('click.fileItem', '.file-item', function(event) {
+    console.log('File item clicked (post-pjax) in storageactions.js!', {
+      ctrlKey: event.ctrlKey,
+      target: event.target,
+      id: $(this).closest('.file-card').data('id'),
+    });
+    
+    if (event.ctrlKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const id_storage = $(this).closest('.file-card').data('id');
+      console.log('Ctrl+Click detected (post-pjax)! id_storage:', id_storage);
+      
+      if (id_storage && typeof window.toggleBulkSelection === 'function') {
+        console.log('Calling toggleBulkSelection...');
+        window.toggleBulkSelection(id_storage, event);
+        console.log('After toggleBulkSelection, selectedFiles:', Array.from(window.selectedFiles));
+      }
+      return false;
+    }
+  });
+  
+  if (typeof window.restoreBulkSelection === 'function') {
+    console.log('Restoring bulk selection after pjax in storageactions.js...');
+    window.restoreBulkSelection();
   }
 });

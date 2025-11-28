@@ -903,3 +903,52 @@ opacity: 1;
   border-width: 1px !important;
   border-radius: 3px;
 }
+
+.bulk-action-toolbar {
+    position: sticky !important;
+    top: 0 !important;
+    bottom: auto !important;
+    background: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    padding: 15px !important;
+    z-index: 999 !important;
+    animation: slideDown 0.3s ease-out;
+    margin-bottom: 20px;
+}
+
+.bulk-action-toolbar.d-none {
+    display: none !important;
+    animation: slideUp 0.3s ease-out;
+    margin-bottom: 0;
+}
+
+.file-card.bulk-selected .file-header {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.file-card.bulk-selected .file-item {
+    border: 2px solid #0d6efd !important;
+    box-shadow: inset 0 0 8px rgba(13, 110, 253, 0.2) !important;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+}
