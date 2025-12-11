@@ -207,6 +207,52 @@ if (!empty($directories)){
 }
 echo Html::endTag('div'); // folders-section
 
+echo Html::beginTag('div', [
+    'id' => 'bulk-action-toolbar',
+    'class' => 'bulk-action-toolbar d-none',
+    'style' => 'background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 15px; z-index: 999; margin-bottom: 20px;'
+]);
+
+echo Html::beginTag('div', ['class' => 'd-flex align-items-center justify-content-between']);
+
+echo Html::tag('span', '', [
+    'id' => 'bulk-selection-count',
+    'class' => 'text-muted',
+]);
+
+echo Html::beginTag('div', ['class' => 'gap-2 d-flex']);
+
+echo Html::button(
+    Html::tag('i', '', ['class' => 'fa fa-download me-2']) . Module::t('Download Selected'),
+    [
+        'class' => 'btn btn-success btn-sm',
+        'id' => 'bulk-download-btn',
+        'onclick' => 'bulkDownloadFiles()',
+    ]
+);
+
+echo Html::button(
+    Html::tag('i', '', ['class' => 'fa fa-trash me-2']) . Module::t('Delete Selected'),
+    [
+        'class' => 'btn btn-danger btn-sm',
+        'id' => 'bulk-delete-btn',
+        'onclick' => 'bulkDeleteFiles()',
+    ]
+);
+
+echo Html::button(
+    Module::t('Cancel'),
+    [
+        'class' => 'btn btn-primary btn-sm',
+        'id' => 'bulk-cancel-btn',
+        'onclick' => 'clearBulkSelection()',
+    ]
+);
+
+echo Html::endTag('div');
+echo Html::endTag('div');
+echo Html::endTag('div'); // bulk-action-toolbar
+
 echo Html::beginTag('div', ['class' => 'files-section', 'id' => 'files-section']);
 
 if ($fileDataProvider->getTotalCount() > 0) {
@@ -451,90 +497,258 @@ echo Html::endTag('div'); // end of container-fluid
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
 $this->registerJsVar('currentFileExtensions', $fileExtensionsParam);
 $this->registerJsVar('actionId', $actionId);
+
+$this->registerJsVar('translations', [
+    'fileSelected' => Module::t('file selected'),
+    'filesSelected' => Module::t('files selected'),
+    'selectToDelete' => Module::t('Please select files to delete'),
+    'selectToDownload' => Module::t('Please select files to download'),
+    'confirmDelete' => Module::t('Are you sure you want to delete {count} files?'),
+    'downloading' => Module::t('Downloading...'),
+    'download' => Module::t('Download'),
+]);
+
 $this->registerJs(<<<JS
 if (window.isPicker) {
     if (typeof window.setPickerContext === 'function') {
         window.setPickerContext(true);
     }
-    $('body').addClass('picker-context');
+    \$('body').addClass('picker-context');
 }
 
+if (!window.selectedFiles) {
+    window.selectedFiles = new Set();
+}
 
-window.openFolder = function(folderId, event, fileExtensions) {
-    if (event) {
+window.updateBulkToolbar = function() {
+    const count = window.selectedFiles.size;
+    const toolbar = \$('#bulk-action-toolbar');
+    const countSpan = \$('#bulk-selection-count');
+    
+    console.log('updateBulkToolbar called, count:', count);
+    
+    if (count > 0) {
+        toolbar.removeClass('d-none');
+        const text = count === 1 ? window.translations.fileSelected : window.translations.filesSelected;
+        countSpan.text(count + ' ' + text);
+    } else {
+        toolbar.addClass('d-none');
+        countSpan.text('');
+    }
+};
+
+window.saveBulkSelection = function() {
+    const selectedArray = Array.from(window.selectedFiles);
+    localStorage.setItem('bulkSelectedFiles', JSON.stringify(selectedArray));
+    console.log('Bulk selection saved:', selectedArray);
+};
+
+window.restoreBulkSelection = function() {
+    try {
+        const saved = localStorage.getItem('bulkSelectedFiles');
+        if (saved) {
+            const selectedArray = JSON.parse(saved);
+            console.log('Restoring bulk selection:', selectedArray);
+            
+            window.selectedFiles.clear();
+            selectedArray.forEach(id => window.selectedFiles.add(id));
+            
+            selectedArray.forEach(id => {
+                const el = \$('.file-card[data-id="' + id + '"]');
+                if (el.length > 0) {
+                    el.addClass('bulk-selected');
+                    console.log('Highlighted visible file:', id);
+                }
+            });
+            
+            if (typeof window.updateBulkToolbar === 'function') {
+                window.updateBulkToolbar();
+            }
+        }
+    } catch (e) {
+        console.error('Error restoring bulk selection:', e);
+    }
+};
+
+window.toggleBulkSelection = function(id_storage, event) {
+    console.log('toggleBulkSelection called with:', {
+        id_storage: id_storage,
+        event: event,
+        hasCtrlKey: event && event.ctrlKey,
+    });
+    
+    if (event && event.ctrlKey) {
         event.preventDefault();
         event.stopPropagation();
+        
+        console.log('Before toggle - selectedFiles:', Array.from(window.selectedFiles));
+        
+        const fileCard = \$(".file-card[data-id='" + id_storage + "']");
+        
+        if (window.selectedFiles.has(id_storage)) {
+            window.selectedFiles.delete(id_storage);
+            console.log('Removed from selection:', id_storage);
+            fileCard.removeClass('bulk-selected');
+        } else {
+            window.selectedFiles.add(id_storage);
+            console.log('Added to selection:', id_storage);
+            fileCard.addClass('bulk-selected');
+        }
+        
+        console.log('After toggle - selectedFiles:', Array.from(window.selectedFiles));
+        
+        saveBulkSelection();
+        updateBulkToolbar();
+        
+        return false;
     }
+    return true;
+};
 
-    var currentActionId = window.actionId || 'index';
-    var isPicker = window.isPicker || 0;
-    var url = '/storage/default/' + currentActionId + '?id_directory=' + folderId;
+window.clearBulkSelection = function() {
+    window.clearBulkSelectionAndStorage();
+};
 
-    if (isPicker === 1) {
-        url += '&isPicker=1';
+window.clearBulkSelectionAndStorage = function() {
+    console.log('Clearing all bulk selections');
+    
+    \$('.file-card.bulk-selected').removeClass('bulk-selected');
+    
+    window.selectedFiles.clear();
+    
+    localStorage.removeItem('bulkSelectedFiles');
+    
+    
+    if (typeof window.updateBulkToolbar === 'function') {
+        window.updateBulkToolbar();
     }
     
+    console.log('Bulk selection cleared');
+};
 
-    if (fileExtensions && fileExtensions.length > 0) {
-        url += '&fileExtensions=' + encodeURIComponent(fileExtensions);
+window.bulkDownloadFiles = function() {
+    if (window.selectedFiles.size === 0) {
+        alert(window.translations.selectToDownload || 'Please select files to download');
+        return;
     }
     
-    window.currentDirectoryId = folderId;
+    const btn = \$('#bulk-download-btn');
+    const originalText = btn.html();
+    btn.html('<i class="fa fa-spinner fa-spin me-2"></i>' + (window.translations.downloading || 'Downloading...'));
+    btn.prop('disabled', true);
     
-
-    $.pjax({
-        url: url,
-        container: '#list-item-pjax',
-        push: true,
-        replace: false
+    const selectedArray = Array.from(window.selectedFiles);
+    let completed = 0;
+    
+    selectedArray.forEach(id => {
+        if (typeof window.downloadFile === 'function') {
+            window.downloadFile(id);
+        }
+        completed++;
+        if (completed === selectedArray.length) {
+            setTimeout(() => {
+                btn.html(originalText);
+                btn.prop('disabled', false);
+            }, 1000);
+        }
     });
 };
 
-if (typeof selectFile === 'undefined') {
-    window.selectFile = function (element, id_storage) {
-        if (window.multiple) {
-            if ($(element).is(':checked')) {
-                $('.file-card[data-id="' + id_storage + '"]').addClass('active');
-            } else {
-                $('.file-card[data-id="' + id_storage + '"]').removeClass('active');
-            }
-        } else {
-            $('.file-card.active').removeClass('active');
-            $('.file-select-checkbox').not(element).prop('checked', false);
-            if ($(element).is(':checked')) {
-                $('.file-card[data-id="' + id_storage + '"]').addClass('active');
-            }
-        }
-    };
-}
-
-window.handleFileCardClick = function(event, id_storage) {
-    if (event.target === this || 
-        event.target.classList.contains('file-info') ||
-        event.target.classList.contains('file-icon') || 
-        event.target.classList.contains('file-title')) { 
-        var checkbox = document.querySelector(".file-select-checkbox[value='" + id_storage + "']");
-        if (checkbox) {
-            checkbox.checked = !checkbox.checked;
-            if (typeof selectFile === "function") {
-                selectFile(checkbox, id_storage);
-            }
-        }
+window.bulkDeleteFiles = function() {
+    if (window.selectedFiles.size === 0) {
+        alert(window.translations.selectToDelete || 'Please select files to delete');
+        return;
     }
+    
+    const count = window.selectedFiles.size;
+    const confirmMsg = (window.translations.confirmDelete || 'Are you sure you want to delete {count} files?').replace('{count}', count);
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    const selectedArray = Array.from(window.selectedFiles);
+    let completed = 0;
+    
+    selectedArray.forEach(id => {
+        \$.ajax({
+            url: '/storage/default/delete-file',
+            type: 'POST',
+            data: {
+                id: id,
+                id_directory: window.currentDirectoryId || null,
+                isPicker: window.currentIsPicker ? '1' : '0',
+            },
+            headers: {
+                'X-CSRF-Token': \$('meta[name="csrf-token"]').attr('content'),
+            },
+            complete: function() {
+                completed++;
+                window.selectedFiles.delete(id);
+                saveBulkSelection();
+                
+                if (completed === selectedArray.length) {
+                    if (typeof window.refreshCurrentView === 'function') {
+                        window.refreshCurrentView();
+                    }
+                    updateBulkToolbar();
+                }
+            }
+        });
+    });
 };
 
-$('.toggle-folders').on('click', function () {
-    $('#folder-list').toggle();
+\$(document).on('pjax:end', function() {
+    console.log('PJAX END - Restoring selections in itemlist.php');
+    console.log('Current selectedFiles before restore:', Array.from(window.selectedFiles));
+    
+    const savedFolderState = localStorage.getItem('folderListOpen');
+    if (savedFolderState === 'true') {
+        \$('#folder-list').show();
+        \$('.toggle-icon-folders').removeClass('fa-caret-right').addClass('fa-caret-down');
+    } else if (savedFolderState === 'false') {
+        \$('#folder-list').hide();
+        \$('.toggle-icon-folders').removeClass('fa-caret-down').addClass('fa-caret-right');
+    }
+    
+    const savedFileState = localStorage.getItem('fileListOpen');
+    if (savedFileState === 'true') {
+        \$('#file-list').show();
+        \$('.toggle-icon-files').removeClass('fa-caret-right').addClass('fa-caret-down');
+    } else if (savedFileState === 'false') {
+        \$('#file-list').hide();
+        \$('.toggle-icon-files').removeClass('fa-caret-down').addClass('fa-caret-right');
+    }
+    
+    if (typeof window.restoreBulkSelection === 'function') {
+        console.log('Calling restoreBulkSelection...');
+        window.restoreBulkSelection();
+    }
+    
+    console.log('Current selectedFiles after restore:', Array.from(window.selectedFiles));
+});
 
-    const icon = $(this).find('.toggle-icon-folders');
+\$(document).ready(function() {
+    console.log('Document ready in itemlist.php - restoring selections');
+    if (typeof window.restoreBulkSelection === 'function') {
+        window.restoreBulkSelection();
+    }
+});
+
+\$('.toggle-folders').on('click', function () {
+    \$('#folder-list').toggle();
+    const icon = \$(this).find('.toggle-icon-folders');
+    const isOpen = \$('#folder-list').is(':visible');
+    localStorage.setItem('folderListOpen', isOpen);
     icon.toggleClass('fa-caret-down fa-caret-right');
 });
 
-$('.toggle-files').on('click', function () {
-    $('#file-list').toggle();
-    $('.files-section.list-view >.file-card.file-card-header').toggle();
-
-    const icon = $(this).find('.toggle-icon-files');
+\$('.toggle-files').on('click', function () {
+    \$('#file-list').toggle();
+    \$('.files-section.list-view >.file-card.file-card-header').toggle();
+    const icon = \$(this).find('.toggle-icon-files');
+    const isOpen = \$('#file-list').is(':visible');
+    localStorage.setItem('fileListOpen', isOpen);
     icon.toggleClass('fa-caret-down fa-caret-right');
 });
 

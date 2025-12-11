@@ -109,7 +109,7 @@ class FilePicker extends InputWidget
             'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ')'
         ]);
 
-        echo Html::button('<span class="btn-text">Preview File</span>', [
+        echo Html::button('<span class="btn-text">' . Module::t('Preview File') . '</span>', [
             'class' => 'btn btn-primary ms-2',
             'onclick' => 'previewSelectedFile(this)',
             'style' => 'padding-right: 5px;'

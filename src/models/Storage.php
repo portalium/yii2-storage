@@ -57,9 +57,10 @@ class Storage extends \yii\db\ActiveRecord
         'application/json' => '23',
         'application/x-tar' => '24',
         'image/svg+xml' => '25',
+        'other' => '99',
     ];
 
-    public static $allowExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'mp4', 'mp3', 'avi', 'mov', 'mkv', 'zip', 'rar', 'txt', 'pt', 'csv', 'html', 'htm', 'xml', 'json', 'tar', 'gz', '7z', 'svg'];
+    // Removed $allowExtensions - all file types are now accepted
 
     const THUMBNAIL_MAX_SIZE_KB = 40;
     const THUMBNAIL_DEFAULT_HEIGHT = 200;
@@ -156,10 +157,6 @@ class Storage extends \yii\db\ActiveRecord
 
         $filename = md5(rand()) . '.' . $this->file->extension;
 
-        if (!in_array(strtolower($this->file->extension), self::$allowExtensions)) {
-            return false;
-        }
-
         $fullPath = $path . '/' . $filename;
         $this->date_create = date('Y-m-d H:i:s');
         $this->date_update = date('Y-m-d H:i:s');
@@ -169,7 +166,7 @@ class Storage extends \yii\db\ActiveRecord
 
         $mimeType = $this->getMIMEType($fullPath);
         $this->name = $filename;
-        $this->mime_type = self::MIME_TYPE[$mimeType] ?? $mimeType;
+        $this->mime_type = self::MIME_TYPE[$mimeType] ?? self::MIME_TYPE['other'];
 
         if (!$this->save()) {
             return false;
@@ -181,6 +178,7 @@ class Storage extends \yii\db\ActiveRecord
 
     /**
      * Get MIME type for a file
+     * Returns one of the predefined MIME types or 'other' for all other types
      * @param string|null $filename The file name
      * @return string The MIME type
      */
@@ -188,7 +186,7 @@ class Storage extends \yii\db\ActiveRecord
     {
         // Check if filename is empty or null
         if (empty($filename)) {
-            return 'application/octet-stream'; // Default MIME type for unknown files
+            return 'other';
         }
 
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
@@ -255,15 +253,18 @@ class Storage extends \yii\db\ActiveRecord
             case 'json':
                 return 'application/json';
             default:
-                if (function_exists('finfo_open')) {
+                if (function_exists('finfo_open') && file_exists($filename)) {
                     $finfo = finfo_open(FILEINFO_MIME);
-                    $mimetype = finfo_file($finfo, $filename);
+                    $detectedMime = finfo_file($finfo, $filename);
                     finfo_close($finfo);
-                    $mimetype = explode(';', $mimetype);
-                    return $mimetype[0];
-                } else {
-                    return 'application/octet-stream';
+                    if ($detectedMime) {
+                        $detectedMime = explode(';', $detectedMime)[0];
+                        if (array_key_exists($detectedMime, self::MIME_TYPE)) {
+                            return $detectedMime;
+                        }
+                    }
                 }
+                return 'other';
         }
     }
 
@@ -451,6 +452,7 @@ class Storage extends \yii\db\ActiveRecord
                         'url' => $url,
                         'class' => 'image-file'
                     ];
+                case 'other':
                 default:
                     return [
                         'url' => $iconPath . '/unknown-icon.png',
@@ -501,6 +503,7 @@ class Storage extends \yii\db\ActiveRecord
             case 'application/gzip':
             case 'application/x-tar':
                 return 'fa fa-file-archive-o file-icon archive';
+            case 'other':
             default:
                 return 'fa fa-file file-icon';
         }
