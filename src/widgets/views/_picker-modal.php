@@ -65,10 +65,13 @@ Yii::$app->view->registerCss("
 
 ");
 
+$allowedExtensionsJson = isset($allowedExtensions) ? json_encode($allowedExtensions) : '[]';
+
 Modal::begin([
     'title' => Module::t('Select File'),
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_LARGE,
+    'options' => ['data-allowed-extensions' => $allowedExtensionsJson],
     'footer' =>
         Html::button(Module::t('Close'), [
             'class' => 'btn btn-danger filepicker-close',

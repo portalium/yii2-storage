@@ -27,6 +27,7 @@ class Storage extends \yii\db\ActiveRecord
 {
     public $file;
     public $type;
+    public $allowedExtensions;
 
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
@@ -110,7 +111,7 @@ class Storage extends \yii\db\ActiveRecord
             [['name', 'title', 'thumbnail'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             [['id_directory'], 'integer'],
-            [['file', 'access', 'hash_file', 'id_workspace'], 'safe'],
+            [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions'], 'safe'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE]
         ];
@@ -156,6 +157,17 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         $filename = md5(rand()) . '.' . $this->file->extension;
+
+        if (!empty($this->allowedExtensions) && is_array($this->allowedExtensions)) {
+            $fileExtension = strtolower($this->file->extension);
+            $normalizedAllowed = array_map('strtolower', $this->allowedExtensions);
+            
+            if (!in_array($fileExtension, $normalizedAllowed)) {
+                $this->addError('file', 'Only files with the following extensions are allowed: ' . implode(', ', $this->allowedExtensions));
+                Yii::warning('File extension not allowed: ' . $fileExtension . '. Allowed: ' . implode(', ', $this->allowedExtensions), __METHOD__);
+                return false;
+            }
+        }
 
         $fullPath = $path . '/' . $filename;
         $this->date_create = date('Y-m-d H:i:s');

@@ -197,6 +197,14 @@ class DefaultController extends Controller
 
         if (Yii::$app->request->isPost) {
             $model->load($post);
+            
+            if (!empty($post['Storage']['allowedExtensions'])) {
+                $allowedExt = json_decode($post['Storage']['allowedExtensions'], true);
+                if (is_array($allowedExt)) {
+                    $model->allowedExtensions = $allowedExt;
+                }
+            }
+            
             $uploadedFiles = UploadedFile::getInstancesByName('Storage[file]');
             $success = false;
             if ($type === 'folder') {
@@ -505,6 +513,7 @@ class DefaultController extends Controller
 
         $id_directory = Yii::$app->request->get('id_directory');
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
+        $allowedExtensions = Yii::$app->request->get('allowedExtensions', []);
         $isPicker = Yii::$app->request->get('isPicker', true);
         $multiple = Yii::$app->request->get('multiple', false);
         $isJson = Yii::$app->request->get('isJson', true);
@@ -516,6 +525,13 @@ class DefaultController extends Controller
         }
         if (!is_array($fileExtensions)) {
             $fileExtensions = [];
+        }
+        
+        if (is_string($allowedExtensions) && !empty($allowedExtensions)) {
+            $allowedExtensions = json_decode($allowedExtensions, true) ?: [];
+        }
+        if (!is_array($allowedExtensions)) {
+            $allowedExtensions = [];
         }
 
         $fileExtensions = array_filter($fileExtensions, function ($ext) {
@@ -610,6 +626,7 @@ class DefaultController extends Controller
             'files' => $files,
             'pagination' => $pagination,
             'fileExtensions' => $fileExtensions,
+            'allowedExtensions' => $allowedExtensions,
             'isPicker' => $isPicker,
             'multiple' => $multiple,
             'isJson' => $isJson,

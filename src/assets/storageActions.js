@@ -162,6 +162,29 @@ function uploadFileMenu(event) {
   fileInput.id = "hiddenUploadInput";
   fileInput.style.display = "none";
   fileInput.multiple = true;
+  
+  var allowedExtensions = [];
+  var pickerModal = document.getElementById('file-picker-modal');
+  if (pickerModal) {
+    var allowedExtStr = pickerModal.getAttribute('data-allowed-extensions');
+    if (allowedExtStr) {
+      try {
+        allowedExtensions = JSON.parse(allowedExtStr);
+        console.log('uploadFileMenu - allowedExtensions:', allowedExtensions);
+      } catch (e) {
+        console.error('Failed to parse allowedExtensions:', e);
+      }
+    }
+  }
+  
+  if (allowedExtensions && allowedExtensions.length > 0) {
+    var acceptValue = allowedExtensions.map(function(ext) {
+      return '.' + ext.replace(/^\./, '');
+    }).join(',');
+    fileInput.setAttribute('accept', acceptValue);
+    console.log('File input accept attribute set to:', acceptValue);
+  }
+  
   document.body.appendChild(fileInput);
 
   fileInput.addEventListener("change", function () {
@@ -178,6 +201,10 @@ function uploadFileMenu(event) {
           "id_directory",
           window.currentDirectoryId ? window.currentDirectoryId : ""
         );
+        
+        if (allowedExtensions && allowedExtensions.length > 0) {
+          formData.append("Storage[allowedExtensions]", JSON.stringify(allowedExtensions));
+        }
 
         if (window.currentIsPicker) {
           formData.append("isPicker", "1");
