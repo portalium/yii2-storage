@@ -341,7 +341,7 @@ class DefaultController extends Controller
         if (Yii::$app->request->isPost) {
             $model->file = UploadedFile::getInstance($model, 'file');
 
-            if ($model->file && in_array($model->file->extension, Storage::$allowExtensions)) {
+            if ($model->file) {
                 $path = realpath(Yii::getAlias('@app') . '/../data');
                 $newFileName = md5(rand()) . '.' . $model->file->extension;
                 $hash = md5_file($model->file->tempName);
