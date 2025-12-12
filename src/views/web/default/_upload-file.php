@@ -72,6 +72,10 @@ if ($model instanceof Storage) {
     ]);
 }
 
+echo Html::hiddenInput('Storage[allowedExtensions]', '', [
+    'id' => 'allowed-extensions-input',
+]);
+
 ActiveForm::end();
 Modal::end();
 ?>
@@ -82,9 +86,37 @@ $this->registerJs(<<<JS
     var uploadType        = document.getElementById('upload-type'),
         fileInput         = document.getElementById('file-input'),
         titleFieldWrapper = document.getElementById('title-field-wrapper'),
-        titleInput        = document.querySelector('[name="Storage[title]"]');
+        titleInput        = document.querySelector('[name="Storage[title]"]'),
+        allowedExtInput   = document.getElementById('allowed-extensions-input');
 
     if (!uploadType || !fileInput || !titleFieldWrapper || !titleInput) return;
+
+    var allowedExtensions = [];
+    var pickerModal = document.getElementById('file-picker-modal');
+    if (pickerModal) {
+        var allowedExtStr = pickerModal.getAttribute('data-allowed-extensions');
+        if (allowedExtStr) {
+            try {
+                allowedExtensions = JSON.parse(allowedExtStr);
+                console.log('Upload modal - allowedExtensions from modal:', allowedExtensions);
+            } catch (e) {
+                console.error('Failed to parse allowedExtensions:', e);
+            }
+        }
+    }
+    
+    if (allowedExtensions && allowedExtensions.length > 0) {
+        if (allowedExtInput) {
+            allowedExtInput.value = JSON.stringify(allowedExtensions);
+        }
+        var acceptValue = allowedExtensions.map(function(ext) {
+            return '.' + ext.replace(/^\./, '');
+        }).join(',');
+        fileInput.setAttribute('accept', acceptValue);
+        console.log('Accept attribute set to:', acceptValue);
+    } else {
+        console.log('No allowedExtensions restrictions');
+    }
 
     function updateInputAttributes() {
         if (uploadType.value === 'folder') {

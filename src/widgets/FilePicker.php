@@ -19,6 +19,7 @@ class FilePicker extends InputWidget
     public $callbackName = null;
     public $manage = false;
     public $fileExtensions = null;
+    public $allowedExtensions = null;
     public $attributes = ['id_storage'];
     public $isPicker = true;
 
@@ -31,6 +32,7 @@ class FilePicker extends InputWidget
         $this->isJson = $this->options['isJson'] ?? $this->isJson;
         $this->callbackName = $this->options['callbackName'] ?? $this->callbackName;
         $this->fileExtensions = $this->options['fileExtensions'] ?? $this->fileExtensions;
+        $this->allowedExtensions = $this->options['allowedExtensions'] ?? $this->allowedExtensions;
         $this->isPicker = $this->options['isPicker'] ?? $this->isPicker;
 
         if (isset($this->options['attributes'])) {
@@ -106,7 +108,8 @@ class FilePicker extends InputWidget
 
         echo Html::button('<span class="btn-text">' . Module::t('Select File') . '</span>', [
             'class' => 'btn btn-primary',
-            'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ')'
+            'data-allowed-extensions' => json_encode($this->allowedExtensions ?? []),
+            'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ', ' . json_encode($this->allowedExtensions ?? []) . ')'
         ]);
 
         echo Html::button('<span class="btn-text">' . Module::t('Preview File') . '</span>', [
@@ -199,14 +202,16 @@ function previewSelectedFile(button) {
 }
 
 if (!window.handleFilePickerClick) {
-    window.handleFilePickerClick = function(btn, ...args) {
+    window.handleFilePickerClick = function(btn, id, id_storage, multiple, isJson, callbackName, isPicker, attributes, allowedExtensions) {
         var $btn = $(btn);
 
         if ($btn.hasClass("btn-loading")) return;
 
         $btn.addClass("btn-loading").css("pointer-events", "none");
+        
+        window.currentAllowedExtensions = allowedExtensions || [];
 
-        window.openFilePickerModal(...args);
+        window.openFilePickerModal(id, id_storage, multiple, isJson, callbackName, isPicker, attributes, allowedExtensions);
 
         $(document).one('shown.bs.modal', '#file-picker-modal', function () {
             $btn.removeClass("btn-loading").css("pointer-events", "auto");
@@ -491,13 +496,14 @@ if (!window.openActionModal) {
 
 // Main file picker modal opening
 if (!window.openFilePickerModal) {
-    window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage']) {
+    window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage'], allowedExtensions = []) {
         window.multiple = multiple;
         window.isJson = isJson;
         window.callbackName = callbackName;
         window.inputId = id;
         window.isPicker = isPicker;
         window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes];
+        window.allowedExtensions = allowedExtensions || [];
 
         let inputValue = $('#' + id).val();
         let parsedValue = {};
@@ -529,7 +535,8 @@ if (!window.openFilePickerModal) {
             fileExtensions: window.fileExtensions,
             isPicker: isPicker,
             attributes: window.currentAttributes,
-            selectedFileId: id_storage_2 || inputValue || null
+            selectedFileId: id_storage_2 || inputValue || null,
+            allowedExtensions: allowedExtensions
         };
         
         if (savedSortField) {
