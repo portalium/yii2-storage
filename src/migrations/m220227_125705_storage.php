@@ -57,6 +57,8 @@ class m220227_125705_storage extends Migration
             'hash_file'=> $this->string(255)->null(),
             'thumbnail'=> $this->string(255)->null(),
             'id_directory' => $this->integer(11)->null(),
+            'date_last_access' => $this->datetime()->null(),
+            'access_count' => $this->integer(11)->notNull()->defaultValue(0),
             'date_create'=> $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
             'date_update'=> $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
         ], $tableOptions);
@@ -83,6 +85,18 @@ class m220227_125705_storage extends Migration
             '{{%' . Module::$tablePrefix . 'storage_directory}}',
             'id_directory',
             'SET NULL'
+        );
+
+        $this->createIndex(
+            '{{%idx-' . Module::$tablePrefix . 'storage-date_last_access}}',
+            '{{%' . Module::$tablePrefix . 'storage}}',
+            'date_last_access'
+        );
+
+        $this->createIndex(
+            '{{%idx-' . Module::$tablePrefix . 'storage-access_count}}',
+            '{{%' . Module::$tablePrefix . 'storage}}',
+            'access_count'
         );
     }
 
