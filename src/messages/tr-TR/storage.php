@@ -97,4 +97,10 @@ return [
     'Downloading...' => 'İndiriliyor...',
     'file selected' => 'dosya seçildi',
     'files selected' => 'dosya seçildi',
+    'Last Accessed' => 'En Son Erişilen',
+    'Most Accessed' => 'En Çok Erişilen',
+    'Last to First' => 'Sondan Başa',
+    'First to Last' => 'Baştan Sona',
+    'Most to Least' => 'En Çoktan En Aza',
+    'Least to Most' => 'En Azdan En Çoğa',
 ];

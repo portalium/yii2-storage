@@ -3,6 +3,7 @@ use portalium\theme\widgets\Modal;
 use portalium\theme\widgets\Button;
 use portalium\storage\Module;
 use yii\helpers\Html;
+use yii\helpers\Url;
 
 Yii::$app->view->registerCss("
 
@@ -132,6 +133,7 @@ Modal::begin([
 <?php Modal::end(); ?>
 
 <?php
+$trackAccessUrl = Url::to(['/storage/default/track-access']);
 $js = <<<JS
 window.openFilePreview = function(url, attributesRaw) {
     if (!url) return console.warn('data-url bulunamadı');
@@ -145,7 +147,23 @@ window.openFilePreview = function(url, attributesRaw) {
     var title = attributes.title || 'Başlık yok';
     var iconClass = attributes.icon_class_php || 'fa fa-file'; 
     var mime_type = attributes.mime_type;
+    var fileId = attributes.id_storage;
     url = '/data/'+attributes.name;
+    
+    if (fileId) {
+        $.ajax({
+            url: '$trackAccessUrl',
+            type: 'GET',
+            data: { id: fileId },
+            dataType: 'json',
+            success: function(response) {
+                console.log('Access tracked:', response);
+            },
+            error: function(xhr, status, error) {
+                console.error('Access tracking failed:', error);
+            }
+        });
+    }
     var modalHeader = '<div class="d-flex align-items-center">';
     modalHeader += '<i class="' + iconClass + ' file-icon me-2"></i>';
     modalHeader += '<span class="file-title">' + title + '</span>';
