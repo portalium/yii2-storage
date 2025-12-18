@@ -111,9 +111,11 @@ class Storage extends \yii\db\ActiveRecord
             [['name', 'title', 'thumbnail'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             [['id_directory'], 'integer'],
-            [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions'], 'safe'],
+            [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions', 'access_count', 'date_last_access'], 'safe'],
             ['mime_type', 'integer'],
-            ['access', 'default', 'value' => self::ACCESS_PRIVATE]
+            ['access', 'default', 'value' => self::ACCESS_PRIVATE],
+            ['access_count', 'integer', 'min' => 0],
+            ['date_last_access', 'datetime', 'format' => 'php:Y-m-d H:i:s']
         ];
     }
 

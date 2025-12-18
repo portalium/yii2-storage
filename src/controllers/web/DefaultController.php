@@ -341,7 +341,7 @@ class DefaultController extends Controller
         if (Yii::$app->request->isPost) {
             $model->file = UploadedFile::getInstance($model, 'file');
 
-            if ($model->file && in_array($model->file->extension, Storage::$allowExtensions)) {
+            if ($model->file) {
                 $path = realpath(Yii::getAlias('@app') . '/../data');
                 $newFileName = md5(rand()) . '.' . $model->file->extension;
                 $hash = md5_file($model->file->tempName);
@@ -972,6 +972,30 @@ class DefaultController extends Controller
     {
         $updated = Storage::generateMissingThumbnails();
         return;
+    }
+
+    /**
+     * Track file access when preview modal is opened
+     * This updates access_count and date_last_access
+     */
+    public function actionTrackAccess($id)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        try {
+            $file = $this->findModel($id);
+            
+            $file->access_count = ($file->access_count ?? 0) + 1;
+            $file->date_last_access = date('Y-m-d H:i:s');
+            
+            if ($file->save(false, ['access_count', 'date_last_access'])) {
+                return ['success' => true];
+            }
+            
+            return ['success' => false, 'message' => 'Failed to update access tracking'];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 
     protected function findModel($id)

@@ -315,6 +315,16 @@ if ($fileDataProvider && $fileDataProvider->query) {
                 new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),
                 'title' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
             ]);
+        } elseif ($sortField === 'last_accessed') {
+            $fileDataProvider->query->orderBy([
+                new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),
+                'date_last_access' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+            ]);
+        } elseif ($sortField === 'most_accessed') {
+            $fileDataProvider->query->orderBy([
+                new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),
+                'access_count' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+            ]);
         } else {
             $fileDataProvider->query->orderBy([
                 new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),
@@ -326,6 +336,14 @@ if ($fileDataProvider && $fileDataProvider->query) {
         if ($sortField === 'name') {
             $fileDataProvider->query->orderBy([
                 'title' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+            ]);
+        } elseif ($sortField === 'last_accessed') {
+            $fileDataProvider->query->orderBy([
+                'date_last_access' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+            ]);
+        } elseif ($sortField === 'most_accessed') {
+            $fileDataProvider->query->orderBy([
+                'access_count' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
             ]);
         } elseif ($sortField === null || $sortField === 'default') {
             $fileDataProvider->query->orderBy([

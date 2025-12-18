@@ -130,6 +130,16 @@ echo Html::tag('li', Html::a(Module::t('Date Added (Default)'), '#', [
   'data-sort-field' => 'default',
 ]));
 
+echo Html::tag('li', Html::a(Module::t('Last Accessed'), '#', [
+  'class' => 'dropdown-item sort-option',
+  'data-sort-field' => 'last_accessed',
+]));
+
+echo Html::tag('li', Html::a(Module::t('Most Accessed'), '#', [
+  'class' => 'dropdown-item sort-option',
+  'data-sort-field' => 'most_accessed',
+]));
+
 echo Html::tag('li', Html::tag('hr', '', ['class' => 'dropdown-divider']));
 
 echo Html::tag('li', Html::tag('strong', Module::t('Sort Direction')));
@@ -138,13 +148,43 @@ echo Html::tag('li', Html::tag('hr', '', ['class' => 'dropdown-divider']));
 echo Html::tag('li', Html::a(Module::t("New to Old"), '#', [
   'class' => 'dropdown-item sort-direction',
   'data-sort-direction' => 'desc',
+  'data-for-fields' => 'default,name',
   'id' => 'sort-first-option'
 ]));
 
 echo Html::tag('li', Html::a(Module::t("Old to New"), '#', [
   'class' => 'dropdown-item sort-direction',
   'data-sort-direction' => 'asc',
+  'data-for-fields' => 'default,name',
   'id' => 'sort-second-option'
+]));
+
+echo Html::tag('li', Html::a(Module::t("Last to First"), '#', [
+  'class' => 'dropdown-item sort-direction d-none',
+  'data-sort-direction' => 'desc',
+  'data-for-fields' => 'last_accessed',
+  'id' => 'sort-last-to-first'
+]));
+
+echo Html::tag('li', Html::a(Module::t("First to Last"), '#', [
+  'class' => 'dropdown-item sort-direction d-none',
+  'data-sort-direction' => 'asc',
+  'data-for-fields' => 'last_accessed',
+  'id' => 'sort-first-to-last'
+]));
+
+echo Html::tag('li', Html::a(Module::t("Most to Least"), '#', [
+  'class' => 'dropdown-item sort-direction d-none',
+  'data-sort-direction' => 'desc',
+  'data-for-fields' => 'most_accessed',
+  'id' => 'sort-most-to-least'
+]));
+
+echo Html::tag('li', Html::a(Module::t("Least to Most"), '#', [
+  'class' => 'dropdown-item sort-direction d-none',
+  'data-sort-direction' => 'asc',
+  'data-for-fields' => 'most_accessed',
+  'id' => 'sort-least-to-most'
 ]));
 
 echo Html::endTag('ul');
@@ -354,6 +394,9 @@ $(document).on('click', '.sort-option', function(e) {
 
   const sortField = $(this).data('sort-field');
   
+  $('.sort-direction').addClass('d-none');
+  $(`.sort-direction[data-for-fields*="${sortField}"]`).removeClass('d-none');
+  
   const currentUrl = lastListItemPjaxUrl || ((document.getElementById('file-picker-modal') && window.pjaxBaseUrl) ? window.pjaxBaseUrl : pjaxBaseUrl);
   
   const url = new URL(currentUrl, window.location.origin);
@@ -363,14 +406,16 @@ $(document).on('click', '.sort-option', function(e) {
     url.searchParams.set('page', currentPage);
   }
 
-  let newDirection = 'asc';
+  let newDirection = 'desc';
   const currentField = url.searchParams.get('sortField');
   const currentDirection = url.searchParams.get('sortDirection') || 'desc';
 
   if (currentField === sortField) {
       newDirection = (currentDirection === 'asc') ? 'desc' : 'asc';
-  } else if (sortField === 'default') {
+  } else if (sortField === 'default' || sortField === 'most_accessed' || sortField === 'last_accessed') {
       newDirection = 'desc';
+  } else {
+      newDirection = 'asc';
   }
 
   url.searchParams.set('sortField', sortField);
@@ -439,7 +484,11 @@ function highlightActiveSort() {
 
   const scope = getSortScope();
   scope.find(`.sort-option[data-sort-field="${savedField}"]`).addClass('active-sort');
-  scope.find(`.sort-direction[data-sort-direction="${savedDir}"]`).addClass('active-sort');
+  
+  scope.find('.sort-direction').addClass('d-none');
+  scope.find(`.sort-direction[data-for-fields*="${savedField}"]`).removeClass('d-none');
+  
+  scope.find(`.sort-direction[data-sort-direction="${savedDir}"][data-for-fields*="${savedField}"]`).addClass('active-sort');
 }
 
 function updateSortDirectionLabels() {
