@@ -107,20 +107,9 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
         $userId = Yii::$app->user->id;
         $workspaceId = $this->id_workspace ?? 1;
-        $allowed = Storage::$allowExtensions;
-        $validFiles = [];
-
-        foreach ($uploadedFiles as $file) {
-            $ext = strtolower(pathinfo($file->name, PATHINFO_EXTENSION));
-            if (in_array($ext, $allowed)) {
-                $validFiles[] = $file;
-            }
-        }
-
-        if (empty($validFiles)) {
-            $this->addError('file', Module::t('No valid files to upload.'));
-            return false;
-        }
+        
+        // All file types are now accepted - no extension filtering needed
+        $validFiles = $uploadedFiles;
 
         $directories = [];
         $success = true;
