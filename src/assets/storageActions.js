@@ -100,6 +100,64 @@ function returnToMainPage() {
     });
 }
 
+window.handleFileCardClick = function(event, id_storage) {
+  console.log('handleFileCardClick called', { event, id_storage, isPicker: window.isPicker });
+  
+  if (event && event.ctrlKey) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    if (id_storage && typeof window.toggleBulkSelection === 'function') {
+      window.toggleBulkSelection(id_storage, event);
+    }
+    return false;
+  }
+  
+  if (window.isPicker) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const fileCard = $('.file-card[data-id="' + id_storage + '"]');
+    const checkbox = fileCard.find('.file-select-checkbox');
+    
+    if (checkbox.length > 0) {
+      const newCheckedState = !checkbox.prop('checked');
+      checkbox.prop('checked', newCheckedState);
+      
+      if (typeof window.selectFile === 'function') {
+        window.selectFile(checkbox[0], id_storage);
+      }
+    } else {
+      $('.file-card.active').removeClass('active');
+      fileCard.addClass('active');
+      window.selectedIdStorage = id_storage;
+    }
+  }
+};
+
+window.selectFile = function(checkbox, id_storage) {
+  const fileCard = $(checkbox).closest('.file-card');
+  const isChecked = $(checkbox).prop('checked');
+  
+  if (window.multiple) {
+    if (isChecked) {
+      fileCard.addClass('active');
+    } else {
+      fileCard.removeClass('active');
+    }
+  } else {
+    $('.file-card.active').removeClass('active');
+    $('.file-card input[type="checkbox"]').not(checkbox).prop('checked', false);
+    
+    if (isChecked) {
+      fileCard.addClass('active');
+      window.selectedIdStorage = id_storage;
+    } else {
+      window.selectedIdStorage = null;
+    }
+  }
+};
+
 window.openFolder = function (id_directory, event) {
   if (
     event &&
