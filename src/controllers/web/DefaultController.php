@@ -722,6 +722,7 @@ class DefaultController extends Controller
         }
 
         $fileQuery = Storage::find();
+        
         if (!empty($q)) {
             $fileQuery->andFilterWhere(['like', 'title', $q]);
         }
@@ -729,6 +730,9 @@ class DefaultController extends Controller
             $fileQuery->andWhere(['id_directory' => $id_directory]);
         }
 
+        if (!\Yii::$app->user->can('storageWebDefaultManage')) {
+            $fileQuery->andWhere(['id_user' => Yii::$app->user->id]);
+        }
 
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
@@ -749,6 +753,7 @@ class DefaultController extends Controller
         ]);
 
         $directoryQuery = \portalium\storage\models\StorageDirectory::find();
+        
         if ($id_directory !== null) {
             $directoryQuery->andWhere(['id_parent' => $id_directory]);
         } else {
@@ -757,6 +762,10 @@ class DefaultController extends Controller
 
         if (!empty($q)) {
             $directoryQuery->andFilterWhere(['like', 'name', $q]);
+        }
+
+        if (!\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
+            $directoryQuery->andWhere(['id_user' => Yii::$app->user->id]);
         }
 
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
