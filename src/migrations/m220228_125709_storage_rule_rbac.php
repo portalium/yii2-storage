@@ -12,6 +12,7 @@ class m220228_125709_storage_rule_rbac extends Migration
         $auth->add($rule);
         $role = Yii::$app->setting->getValue('site::admin_role');
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
+        $user = $auth->getRole('user');
 
         $permissions = [
             'storageWebDefaultUploadFile',
@@ -39,6 +40,11 @@ class m220228_125709_storage_rule_rbac extends Migration
             $permissionOwn->ruleName = $rule->name;
             $auth->add($permissionOwn);
             $auth->addChild($admin, $permissionOwn);
+            
+            if ($user) {
+                $auth->addChild($user, $permissionOwn);
+            }
+            
             $permission = $auth->getPermission($permissionKey);
             $auth->addChild($permissionOwn, $permission);
         }
