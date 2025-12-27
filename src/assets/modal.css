@@ -844,7 +844,7 @@ opacity: 1;
 }
 
 
-@media (max-width: 950px) { 
+@media (max-width: 1038px) { 
   .input-group{
     min-width: max-content !important;
     max-width: unset !important;
