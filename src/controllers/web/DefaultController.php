@@ -53,7 +53,11 @@ class DefaultController extends Controller
 
         $id_user = Yii::$app->user->id;
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        $fileDataProvider->query->andWhere(['id_directory' => $id_directory])->andWhere(['id_user' => $id_user]);
+        $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
+        
+        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManage')) {
+            $fileDataProvider->query->andWhere(['id_user' => $id_user]);
+        }
 
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
             $orConditions = ['or'];
@@ -69,11 +73,18 @@ class DefaultController extends Controller
 
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
 
+        $directoryQuery = StorageDirectory::find()
+            ->andWhere(['id_parent' => $id_directory])
+            ->orderBy(['id_directory' => SORT_DESC]);
+        
+        // File picker modunda ve yetkili kullanıcı: tüm klasörleri göster
+        // Normal index sayfasında: herkes sadece kendi klasörlerini görsün
+        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
+            $directoryQuery->andWhere(['id_user' => $id_user]);
+        }
+        
         $directoryDataProvider = new ActiveDataProvider([
-            'query' => StorageDirectory::find()
-                ->andWhere(['id_parent' => $id_directory])
-                ->andWhere(['id_user' => $id_user])
-                ->orderBy(['id_directory' => SORT_DESC]),
+            'query' => $directoryQuery,
             'pagination' => [
                 'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
