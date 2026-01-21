@@ -58,8 +58,17 @@ class Storage extends \yii\db\ActiveRecord
         'application/json' => '23',
         'application/x-tar' => '24',
         'image/svg+xml' => '25',
+        'application/pb'=>'26',
+        'application/onnx'=>'27',
+        'application/weights'=>'28',
+        'application/prototxt'=>'29',
+        'application/cfg'=>'30',
+        'application/pbtxt'=>'31',
+        'application/pth' => '32',
+        'application/vnd.caffemodel+json' => '33',
         'other' => '99',
     ];
+
 
     // Removed $allowExtensions - all file types are now accepted
 
@@ -166,7 +175,6 @@ class Storage extends \yii\db\ActiveRecord
             
             if (!in_array($fileExtension, $normalizedAllowed)) {
                 $this->addError('file', 'Only files with the following extensions are allowed: ' . implode(', ', $this->allowedExtensions));
-                Yii::warning('File extension not allowed: ' . $fileExtension . '. Allowed: ' . implode(', ', $this->allowedExtensions), __METHOD__);
                 return false;
             }
         }
@@ -266,6 +274,22 @@ class Storage extends \yii\db\ActiveRecord
                 return 'application/xml';
             case 'json':
                 return 'application/json';
+            case 'caffemodel':
+                return 'application/vnd.caffemodel+json';
+            case 'pb':
+                return 'application/pb';
+            case 'onnx':
+                return 'application/onnx';
+            case 'weights':
+                return 'application/weights';
+            case 'cfg':
+                return 'application/cfg';
+            case 'pbtxt':
+                return 'application/pbtxt';
+            case 'prototxt':
+                return 'application/prototxt';
+            case 'pth':
+                return 'application/pth';
             default:
                 if (function_exists('finfo_open') && file_exists($filename)) {
                     $finfo = finfo_open(FILEINFO_MIME);
@@ -284,7 +308,7 @@ class Storage extends \yii\db\ActiveRecord
 
     public function getFilePath()
     {
-        return '/storage/default/get-file?id=' . $this->id_storage;
+        return Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
     }
 
     public function deleteFile()

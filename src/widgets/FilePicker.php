@@ -101,7 +101,7 @@ class FilePicker extends InputWidget
         if (!empty($idStorage)) {
             $previewValue = json_encode(['id_storage' => $idStorage]);
         }
-        echo Html::hiddenInput('preview-file-' . $this->options['id'], $previewValue, ['id' => 'preview-file-' . $this->options['id']]);
+        echo Html::hiddenInput('preview-file-' . $this->options['id'], $this->model->{$this->attribute} ?? '', ['id' => 'preview-file-' . $this->options['id']]);
 
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
         echo Html::script("window.isPicker = " . ($this->isPicker ? 'true' : 'false') . ";");
@@ -115,7 +115,7 @@ class FilePicker extends InputWidget
         echo Html::button('<span class="btn-text">' . Module::t('Preview File') . '</span>', [
             'class' => 'btn btn-primary ms-2',
             'onclick' => 'previewSelectedFile(this)',
-            'style' => 'padding-right: 5px;'
+            'style' => 'margin-right: 5px;'
         ]);
 
         $modalHtml = $this->render('@portalium/storage/views/web/default/_filePreviewModal');

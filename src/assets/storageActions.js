@@ -3,6 +3,7 @@ var currentIsPicker = $("#searchFileInput").data("is-picker") === 1;
 var searchTimer;
 var isSearching = false;
 var originalUrl = window.location.href;
+window.lastListItemPjaxUrl = null;
 
 function isInWidgetContext() {
   return (
@@ -859,8 +860,7 @@ function deleteFile(id) {
   });
 }
 
-// Data is sent here
-window.lastListItemPjaxUrl = null;
+
 
 $(document).on("pjax:send", function (e, xhr, options) {
   if (options.container === "#list-item-pjax") {
