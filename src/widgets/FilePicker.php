@@ -80,9 +80,10 @@ class FilePicker extends InputWidget
         }
 
         $realAttribute = $this->attribute;
-        if (preg_match('/\](\w+)$/', $this->attribute, $matches)) {
+
+        if (preg_match('/\](\w+)$/', $this->attribute ?? '', $matches)) {
             $realAttribute = $matches[1];
-        } elseif (preg_match('/^(\w+)/', $this->attribute, $matches)) {
+        } elseif (preg_match('/^(\w+)/', $this->attribute ?? '', $matches)) {
             $realAttribute = $matches[1];
         }
 
@@ -448,50 +449,77 @@ if (!window.openActionModal) {
     window.openActionModal = function(action, href) {
         const modalId = 'action-modal-' + Date.now();
         
-        $.get(href).done(function(response) {
-            $('.modal[id*="action-modal"], .modal[id*="Modal"]:not(#file-picker-modal), .modal[id*="modal-"]:not(#file-picker-modal)').each(function() {
-                window.closeModalById(this.id);
-            });
+        // Show loading indicator for share modal
+        if (action === 'share') {
+            window.showLoading && window.showLoading('Paylaşım ekranı açılıyor...');
             
-            const idMap = {
-                'rename': 'renameModal',
-                'update': 'updateModal', 
-                'share': 'modal-share'
-            };
-            const oldId = idMap[action] || 'modal';
-            response = response.replace(new RegExp('id="' + oldId + '"', 'g'), 'id="' + modalId + '"');
-            
-            $('body').append(response);
-            
-            setTimeout(() => {
-                const modalEl = document.getElementById(modalId);
-                if (modalEl) {
-                    window.bindModalCloseEvents(modalId, 1);
-                    
-                    const modal = new bootstrap.Modal(modalEl, {
-                        backdrop: 'static',
-                        keyboard: false
-                    });
-                    modal.show();
-                    
-                    $(modalEl).find('form').on('submit', function(e) {
-                        e.preventDefault();
-                        $.ajax({
-                            url: this.action,
-                            type: 'POST',
-                            data: new FormData(this),
-                            processData: false,
-                            contentType: false,
-                            complete: function() {
-                                window.closeModalById(modalId);
-                                window.refreshFilePicker && window.refreshFilePicker();
-                            }
-                        });
-                    });
-                }
-            }, 100);
-        });
+            // Wait 1 second before sending request
+            setTimeout(function() {
+                sendActionModalRequest(action, href, modalId);
+            }, 1000);
+        } else {
+            sendActionModalRequest(action, href, modalId);
+        }
     };
+    
+    function sendActionModalRequest(action, href, modalId) {
+        $.get(href)
+            .done(function(response) {
+                $('.modal[id*="action-modal"], .modal[id*="Modal"]:not(#file-picker-modal), .modal[id*="modal-"]:not(#file-picker-modal)').each(function() {
+                    window.closeModalById(this.id);
+                });
+                
+                const idMap = {
+                    'rename': 'renameModal',
+                    'update': 'updateModal', 
+                    'share': 'modal-share'
+                };
+                const oldId = idMap[action] || 'modal';
+                response = response.replace(new RegExp('id="' + oldId + '"', 'g'), 'id="' + modalId + '"');
+                
+                $('body').append(response);
+                
+                setTimeout(() => {
+                    // Hide loading indicator
+                    if (action === 'share') {
+                        window.hideLoading && window.hideLoading();
+                    }
+                    
+                    const modalEl = document.getElementById(modalId);
+                    if (modalEl) {
+                        window.bindModalCloseEvents(modalId, 1);
+                        
+                        const modal = new bootstrap.Modal(modalEl, {
+                            backdrop: 'static',
+                            keyboard: false
+                        });
+                        modal.show();
+                        
+                        $(modalEl).find('form').on('submit', function(e) {
+                            e.preventDefault();
+                            $.ajax({
+                                url: this.action,
+                                type: 'POST',
+                                data: new FormData(this),
+                                processData: false,
+                                contentType: false,
+                                complete: function() {
+                                    window.closeModalById(modalId);
+                                    window.refreshFilePicker && window.refreshFilePicker();
+                                }
+                            });
+                        });
+                    }
+                }, 100);
+            })
+            .fail(function(e) {
+                console.log('Error loading modal:', e);
+                // Hide loading indicator on error
+                if (action === 'share') {
+                    window.hideLoading && window.hideLoading();
+                }
+            });
+    }
 }
 
 // Main file picker modal opening

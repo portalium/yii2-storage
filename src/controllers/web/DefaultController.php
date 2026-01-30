@@ -7,6 +7,7 @@ use portalium\storage\Module;
 use portalium\web\Controller;
 use portalium\storage\models\Storage;
 use portalium\storage\models\StorageSearch;
+use portalium\storage\helpers\StoragePermissionHelper;
 use Yii;
 use yii\web\NotFoundHttpException;
 use yii\web\UploadedFile;
@@ -55,8 +56,113 @@ class DefaultController extends Controller
         $fileDataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $fileDataProvider->query->andWhere(['id_directory' => $id_directory]);
         
+        // Get user's workspace IDs for shared files
+        $userWorkspaceIds = \portalium\workspace\models\WorkspaceUser::find()
+            ->select('id_workspace')
+            ->where(['id_user' => $id_user])
+            ->column();
+        
         if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManage')) {
-            $fileDataProvider->query->andWhere(['id_user' => $id_user]);
+            // Include own files + files shared with user + files shared with user's workspaces + files in shared directories + files in full storage shares
+            $fileDataProvider->query->andWhere([
+                'or',
+                // Own files
+                ['{{%storage_storage}}.id_user' => $id_user],
+                // Files shared directly with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_storage', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_storage')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files shared with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_storage', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_storage')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files in directories shared directly with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files in directories shared with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files from users who shared their full storage with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files from full storage shares with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+            ]);
         }
 
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
@@ -77,10 +183,77 @@ class DefaultController extends Controller
             ->andWhere(['id_parent' => $id_directory])
             ->orderBy(['id_directory' => SORT_DESC]);
         
-        // File picker modunda ve yetkili kullanıcı: tüm klasörleri göster
-        // Normal index sayfasında: herkes sadece kendi klasörlerini görsün
+        // Include own directories + directories shared with user + directories from full storage shares
         if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
-            $directoryQuery->andWhere(['id_user' => $id_user]);
+            $directoryQuery->andWhere([
+                'or',
+                // Own directories
+                ['{{%storage_storage_directory}}.id_user' => $id_user],
+                // Directories shared directly with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Directories shared with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Directories from users who shared their full storage with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Directories from full storage shares with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+            ]);
         }
         
         $directoryDataProvider = new ActiveDataProvider([
@@ -156,10 +329,14 @@ class DefaultController extends Controller
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
 
 
+        $directoryQuery = StorageDirectory::find()
+            ->andWhere(['id_parent' => $id_directory])
+            ->orderBy(['id_directory' => SORT_DESC]);
+        
+        // Manage sayfasında tüm klasörleri göster (admin erişimi)
+        
         $directoryDataProvider = new ActiveDataProvider([
-            'query' => StorageDirectory::find()
-                ->andWhere(['id_parent' => $id_directory])
-                ->orderBy(['id_directory' => SORT_DESC]),
+            'query' => $directoryQuery,
             'pagination' => [
                 'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
             ],
@@ -201,7 +378,9 @@ class DefaultController extends Controller
 
         if ($id_directory !== null) {
             $directoryModel = StorageDirectory::findOne($id_directory);
-            if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel])) {
+            if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && 
+                !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) && 
+                !\Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel])) {
                 throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
             }
         }
@@ -276,7 +455,21 @@ class DefaultController extends Controller
     {
         $id = Yii::$app->request->post('id');
         $file = Storage::findOne($id);
-        if (!\Yii::$app->user->can('storageWebDefaultDownloadFile') && !\Yii::$app->user->can('storageWebDefaultDownloadFileOwn', ["model" => $file]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $file])) {
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultDownloadFile') 
+            || \Yii::$app->user->can('storageWebDefaultDownloadFileOwn', ["model" => $file]) 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $file]);
+        
+        // Check share permissions - VIEW permission is enough for download
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            $file, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_VIEW
+        );
+        
+        if (!$hasGlobalPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -304,7 +497,21 @@ class DefaultController extends Controller
     public function actionRenameFile($id)
     {
         $model = Storage::findOne($id);
-        if (!\Yii::$app->user->can('storageWebDefaultRenameFile') && !\Yii::$app->user->can('storageWebDefaultRenameFileOwn', ["model" => $model]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFile', ['model' => $model])) {
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultRenameFile') 
+            || \Yii::$app->user->can('storageWebDefaultRenameFileOwn', ["model" => $model]) 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFile', ['model' => $model]);
+        
+        // Check share permissions - need EDIT or MANAGE permission
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            $model, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_EDIT
+        );
+        
+        if (!$hasGlobalPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -332,9 +539,24 @@ class DefaultController extends Controller
     public function actionUpdateFile($id)
     {
         $model = Storage::findOne($id);
-        if (!\Yii::$app->user->can('storageWebDefaultUpdateFile') && !\Yii::$app->user->can('storageWebDefaultUpdateFileOwn', ["model" => $model]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultUpdateFile', ['model' => $model])) {
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultUpdateFile') 
+            || \Yii::$app->user->can('storageWebDefaultUpdateFileOwn', ["model" => $model]) 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultUpdateFile', ['model' => $model]);
+        
+        // Check share permissions - need EDIT or MANAGE permission
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            $model, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_EDIT
+        );
+        
+        if (!$hasGlobalPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+        
         if (!$model) {
             Yii::$app->session->setFlash('error', Module::t('File not found!'));
             return '';
@@ -434,11 +656,81 @@ class DefaultController extends Controller
     public function actionShareFile($id)
     {
         $model = Storage::findOne($id);
-        if (!\Yii::$app->user->can('storageWebDefaultShareFile') && !\Yii::$app->user->can('storageWebDefaultShareFileOwn', ["model" => $model]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultShareFile', ['model' => $model])) {
+        if (!$model) {
+            throw new \yii\web\NotFoundHttpException(Module::t('File not found!'));
+        }
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultShareFile') 
+            || \Yii::$app->user->can('storageWebDefaultShareFileOwn', ["model" => $model]) 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultShareFileOwn', ['model' => $model]);
+        
+        // Check if user has MANAGE permission through share
+        $hasManageSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            $model, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+        );
+        
+        if (!$hasGlobalPermission && !$hasManageSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+        
         return $this->renderPartial('_share', [
             'model' => $model,
+            'shareType' => 'file',
+        ]);
+    }
+
+    /**
+     * Share a directory (folder)
+     */
+    public function actionShareDirectory($id)
+    {
+        $directory = StorageDirectory::findOne($id);
+        if (!$directory) {
+            throw new \yii\web\NotFoundHttpException(Module::t('Folder not found!'));
+        }
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultShareDirectory') 
+            || \Yii::$app->user->can('storageWebDefaultShareDirectoryOwn', ["model" => $directory]) 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultShareDirectory', ['model' => $directory]);
+        
+        // Check if user has MANAGE permission through share
+        $hasManageSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            null, 
+            $directory, 
+            \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+        );
+        
+        if (!$hasGlobalPermission && !$hasManageSharePermission) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+        
+        return $this->renderPartial('_share', [
+            'directory' => $directory,
+            'shareType' => 'directory',
+        ]);
+    }
+
+    /**
+     * Share full storage of a user
+     */
+    public function actionShareFullStorage($id = null)
+    {
+        $userId = $id ?? Yii::$app->user->id;
+        
+        // Only admin can share other users' full storage
+        if ($userId != Yii::$app->user->id && !\Yii::$app->user->can('storageWebDefaultShareFullStorage')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+        
+        return $this->renderPartial('_share', [
+            'userId' => $userId,
+            'shareType' => 'storage',
         ]);
     }
 
@@ -732,6 +1024,7 @@ class DefaultController extends Controller
             $fileExtensions = [];
         }
 
+        $id_user = Yii::$app->user->id;
         $fileQuery = Storage::find();
         
         if (!empty($q)) {
@@ -741,8 +1034,114 @@ class DefaultController extends Controller
             $fileQuery->andWhere(['id_directory' => $id_directory]);
         }
 
-        if (!\Yii::$app->user->can('storageWebDefaultManage')) {
-            $fileQuery->andWhere(['id_user' => Yii::$app->user->id]);
+        // Get user's workspace IDs for shared files
+        $userWorkspaceIds = \portalium\workspace\models\WorkspaceUser::find()
+            ->select('id_workspace')
+            ->where(['id_user' => $id_user])
+            ->column();
+
+        // Include own files + shared files + files in shared directories + files in full storage shares
+        if (!\Yii::$app->user->can('storageWebDefaultIndex') && 
+            !\Yii::$app->workspace->can('storage', 'storageWebDefaultIndex')) {
+            $fileQuery->andWhere([
+                'or',
+                // Own files
+                ['{{%storage_storage}}.id_user' => $id_user],
+                // Files shared directly with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_storage', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_storage')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files shared with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_storage', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_storage')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files in directories shared directly with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files in directories shared with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files from users who shared their full storage with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Files from full storage shares with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+            ]);
         }
 
         if (!empty($fileExtensions) && is_array($fileExtensions)) {
@@ -775,8 +1174,78 @@ class DefaultController extends Controller
             $directoryQuery->andFilterWhere(['like', 'name', $q]);
         }
 
-        if (!\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
-            $directoryQuery->andWhere(['id_user' => Yii::$app->user->id]);
+        // Include own directories + shared directories + directories from full storage shares
+        if (!\Yii::$app->user->can('storageWebDefaultIndex') && 
+            !\Yii::$app->workspace->can('storage', 'storageWebDefaultIndex')) {
+            $directoryQuery->andWhere([
+                'or',
+                // Own directories
+                ['{{%storage_storage_directory}}.id_user' => $id_user],
+                // Directories shared directly with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Directories shared with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_directory', 
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_directory')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Directories from users who shared their full storage with user
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER])
+                            ->andWhere(['id_shared_with' => $id_user])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+                // Directories from full storage shares with user's workspaces
+                [
+                    'and',
+                    ['in', '{{%storage_storage_directory}}.id_user',
+                        \portalium\storage\models\StorageShare::find()
+                            ->select('id_user_owner')
+                            ->where(['is_active' => 1])
+                            ->andWhere(['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE])
+                            ->andWhere(['in', 'id_shared_with', $userWorkspaceIds])
+                            ->andWhere(['id_storage' => null])
+                            ->andWhere(['id_directory' => null])
+                            ->andWhere(['or',
+                                ['expires_at' => null],
+                                ['>', 'expires_at', date('Y-m-d H:i:s')]
+                            ])
+                    ]
+                ],
+            ]);
         }
 
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
@@ -794,7 +1263,9 @@ class DefaultController extends Controller
 
     public function actionNewFolder()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultNewFolder') && !\Yii::$app->user->can('storageWebDefaultNewFolderOwn')) {
+        if (!\Yii::$app->user->can('storageWebDefaultNewFolder') && 
+            !\Yii::$app->user->can('storageWebDefaultNewFolderOwn') && 
+            !\Yii::$app->workspace->can('storage', 'storageWebDefaultNewFolder')) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $model = new StorageDirectory();
@@ -807,7 +1278,9 @@ class DefaultController extends Controller
                 else {
                     $model->id_parent = $id_directory;
                     $directoryModel = StorageDirectory::findOne($id_directory);
-                    if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel])) {
+                    if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && 
+                        !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) && 
+                        !\Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel])) {
                         throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
                     }
                 }
@@ -844,8 +1317,21 @@ class DefaultController extends Controller
     public function actionRenameFolder($id)
     {
         $model = StorageDirectory::findOne(['id_directory' => $id]);
-
-        if (!\Yii::$app->user->can('storageWebDefaultRenameFolder') && !\Yii::$app->user->can('storageWebDefaultRenameFolderOwn', ["model" => $model]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFolder', ['model' => $model])) {
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultRenameFolder') 
+            || \Yii::$app->user->can('storageWebDefaultRenameFolderOwn', ["model" => $model]) 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFolder', ['model' => $model]);
+        
+        // Check share permissions - need EDIT or MANAGE permission
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            null, 
+            $model, 
+            \portalium\storage\models\StorageShare::PERMISSION_EDIT
+        );
+        
+        if (!$hasGlobalPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -888,10 +1374,24 @@ class DefaultController extends Controller
     public function actionDeleteFolder($id, $id_directory = null)
     {
         $folder = StorageDirectory::findOne(['id_directory' => $id]);
-
-        if (!\Yii::$app->user->can('storageWebDefaultDeleteFolder') && !\Yii::$app->user->can('storageWebDefaultDeleteFolderOwn', ["model" => $folder]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFolder', ['model' => $folder])) {
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultDeleteFolder') 
+            || \Yii::$app->user->can('storageWebDefaultDeleteFolderOwn', ["model" => $folder]) 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFolder', ['model' => $folder]);
+        
+        // Check share permissions - need MANAGE permission for deletion
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            null, 
+            $folder, 
+            \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+        );
+        
+        if (!$hasGlobalPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
+        
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
 
 
@@ -907,7 +1407,7 @@ class DefaultController extends Controller
 
     protected function deleteFolderRecursive($folder)
     {
-        if (!\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursive') && !\Yii::$app->user->can('storageWebDefaultdeleteFolderRecursiveOwn', ["model" => $folder]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultdeleteFolderRecursive', ['model' => $folder])) {
+        if (!\Yii::$app->user->can('storageWebDefaultDeleteFolderRecursive') && !\Yii::$app->user->can('storageWebDefaultDeleteFolderRecursiveOwn', ["model" => $folder]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFolderRecursive', ['model' => $folder])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
         $subFolders = StorageDirectory::findAll(['id_parent' => $folder->id_directory]);
@@ -932,6 +1432,22 @@ class DefaultController extends Controller
         $file = \portalium\storage\models\Storage::findOne($id);
         if (!$file) {
             return ['error' => 'File not found'];
+        }
+        
+        // Check global permissions
+        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultIndex') 
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $file]);
+        
+        // Check share permissions - VIEW permission is enough
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            $file, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_VIEW
+        );
+        
+        if (!$hasGlobalPermission && !$hasSharePermission) {
+            return ['error' => 'You are not allowed to access this file'];
         }
 
         return [
@@ -1025,4 +1541,256 @@ class DefaultController extends Controller
         }
         throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
     }
+
+    /**
+     * Create a new share for file, directory, or full storage
+     */
+    public function actionCreateShare()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        if (!Yii::$app->request->isPost) {
+            return ['success' => false, 'message' => Module::t('Only POST requests are allowed.')];
+        }
+
+        $id_storage = Yii::$app->request->post('id_storage');
+        $id_directory = Yii::$app->request->post('id_directory');
+        $id_user_owner = Yii::$app->request->post('id_user_owner');
+        $shared_with_type = Yii::$app->request->post('shared_with_type');
+        $id_shared_with = Yii::$app->request->post('id_shared_with');
+        $permission_level = Yii::$app->request->post('permission_level', \portalium\storage\models\StorageShare::PERMISSION_VIEW);
+        $expires_at = Yii::$app->request->post('expires_at');
+
+        // Permission checks using helper
+        if ($id_storage) {
+            $storage = Storage::findOne($id_storage);
+            if (!$storage) {
+                return ['success' => false, 'message' => Module::t('File not found!')];
+            }
+            
+            if (!StoragePermissionHelper::canShareFile(Yii::$app->user->id, $storage, 'storageWebDefaultShareFileOwn', 'storageWebDefaultShareFile')) {
+                return ['success' => false, 'message' => Module::t('You are not allowed to share this file.')];
+            }
+        } elseif ($id_directory) {
+            $directory = StorageDirectory::findOne($id_directory);
+            if (!$directory) {
+                return ['success' => false, 'message' => Module::t('Folder not found!')];
+            }
+            
+            if (!StoragePermissionHelper::canShareDirectory(Yii::$app->user->id, $directory, 'storageWebDefaultShareDirectoryOwn', 'storageWebDefaultShareDirectory')) {
+                return ['success' => false, 'message' => Module::t('You are not allowed to share this folder.')];
+            }
+        } elseif ($id_user_owner) {
+            if (!\Yii::$app->user->can('storageWebDefaultShareFullStorage') && $id_user_owner != Yii::$app->user->id) {
+                return ['success' => false, 'message' => Module::t('You are not allowed to access this page.')];
+            }
+        } else {
+            return ['success' => false, 'message' => Module::t('Invalid share target.')];
+        }
+
+        $share = new \portalium\storage\models\StorageShare();
+        $share->id_storage = $id_storage ?: null;
+        $share->id_directory = $id_directory ?: null;
+        $share->id_user_owner = $id_user_owner ?: null;
+        $share->shared_with_type = $shared_with_type;
+        $share->id_shared_with = $id_shared_with ?: null;
+        $share->permission_level = $permission_level;
+        $share->expires_at = $expires_at ?: null;
+
+        // Generate token for link type
+        if ($shared_with_type === \portalium\storage\models\StorageShare::TYPE_LINK) {
+            $share->generateShareToken();
+        }
+
+        if ($share->save()) {
+            return ['success' => true, 'message' => Module::t('Share created successfully!'), 'share' => $share];
+        } else {
+            return ['success' => false, 'message' => Module::t('Failed to create share!'), 'errors' => $share->errors];
+        }
+    }
+
+    /**
+     * Get all shares for a file, directory, or user storage
+     */
+    public function actionGetShares()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $id_storage = Yii::$app->request->get('id_storage');
+        $id_directory = Yii::$app->request->get('id_directory');
+        $id_user_owner = Yii::$app->request->get('id_user_owner');
+
+        // Permission checks using helper
+        if ($id_storage) {
+            $storage = Storage::findOne($id_storage);
+            if (!$storage) {
+                return ['success' => false, 'message' => Module::t('File not found!')];
+            }
+            
+            if (!StoragePermissionHelper::canViewFileShares(Yii::$app->user->id, $storage, 'storageWebDefaultViewShares', 'storageWebDefaultViewSharesOwn', 'storageWebDefaultViewShares')) {
+                return ['success' => false, 'message' => Module::t('You are not allowed to access this page.')];
+            }
+            $shares = \portalium\storage\models\StorageShare::getShares($storage)->all();
+        } elseif ($id_directory) {
+            $directory = StorageDirectory::findOne($id_directory);
+            if (!$directory) {
+                return ['success' => false, 'message' => Module::t('Folder not found!')];
+            }
+            
+            if (!StoragePermissionHelper::canViewDirectoryShares(Yii::$app->user->id, $directory, 'storageWebDefaultViewShares', 'storageWebDefaultViewSharesOwn', 'storageWebDefaultViewShares')) {
+                return ['success' => false, 'message' => Module::t('You are not allowed to access this page.')];
+            }
+            $shares = \portalium\storage\models\StorageShare::getShares(null, $directory)->all();
+        } elseif ($id_user_owner) {
+            if (!\Yii::$app->user->can('storageWebDefaultViewShares') && $id_user_owner != Yii::$app->user->id) {
+                return ['success' => false, 'message' => Module::t('You are not allowed to access this page.')];
+            }
+            $shares = \portalium\storage\models\StorageShare::getShares(null, null, $id_user_owner)->all();
+        } else {
+            return ['success' => false, 'message' => Module::t('Invalid share target.')];
+        }
+
+        // Render shares list HTML
+        $html = $this->renderPartial('_shares-list', [
+            'shares' => $shares,
+        ]);
+
+        return ['success' => true, 'shares' => $shares, 'html' => $html];
+    }
+
+    /**
+     * Revoke a share
+     */
+    public function actionRevokeShare($id)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $share = \portalium\storage\models\StorageShare::findOne($id);
+        if (!$share) {
+            return ['success' => false, 'message' => Module::t('Share not found!')];
+        }
+
+        // Permission check using helper
+        if (!StoragePermissionHelper::canManageShare(Yii::$app->user->id, $share, 'storageWebDefaultRevokeShare')) {
+            return ['success' => false, 'message' => Module::t('You are not allowed to access this page.')];
+        }
+
+        $share->is_active = 0;
+        if ($share->save(false)) {
+            return ['success' => true, 'message' => Module::t('Share revoked successfully!')];
+        } else {
+            return ['success' => false, 'message' => Module::t('Failed to revoke share!')];
+        }
+    }
+
+    /**
+     * Update share permission level
+     */
+    public function actionUpdateSharePermission($id)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        if (!Yii::$app->request->isPost) {
+            return ['success' => false, 'message' => Module::t('Only POST requests are allowed.')];
+        }
+
+        $share = \portalium\storage\models\StorageShare::findOne($id);
+        if (!$share) {
+            return ['success' => false, 'message' => Module::t('Share not found!')];
+        }
+
+        $permission_level = Yii::$app->request->post('permission_level');
+        if (!in_array($permission_level, [
+            \portalium\storage\models\StorageShare::PERMISSION_VIEW,
+            \portalium\storage\models\StorageShare::PERMISSION_EDIT,
+            \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+        ])) {
+            return ['success' => false, 'message' => Module::t('Invalid permission level.')];
+        }
+
+        // Permission check using helper
+        if (!StoragePermissionHelper::canManageShare(Yii::$app->user->id, $share, 'storageWebDefaultUpdateSharePermission')) {
+            return ['success' => false, 'message' => Module::t('You are not allowed to access this page.'), 'share' => $share->attributes];
+        }
+
+        $share->permission_level = $permission_level;
+        if ($share->save(false)) {
+            return ['success' => true, 'message' => Module::t('Share permission updated successfully!')];
+        } else {
+            return ['success' => false, 'message' => Module::t('Failed to update share permission!')];
+        }
+    }
+
+    /**
+     * View shared items (items shared with current user)
+     */
+    public function actionSharedWithMe()
+    {
+        if (!\Yii::$app->user->can('storageWebDefaultViewShares')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
+        $userId = Yii::$app->user->id;
+        $userWorkspaceIds = \portalium\workspace\models\WorkspaceUser::find()
+            ->select('id_workspace')
+            ->where(['id_user' => $userId])
+            ->column();
+
+        // Get all active shares for this user
+        $shares = \portalium\storage\models\StorageShare::find()
+            ->where(['is_active' => 1])
+            ->andWhere(['OR',
+                ['expires_at' => null],
+                ['>', 'expires_at', date('Y-m-d H:i:s')]
+            ])
+            ->andWhere(['OR',
+                ['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_USER, 'id_shared_with' => $userId],
+                ['shared_with_type' => \portalium\storage\models\StorageShare::TYPE_WORKSPACE, 'id_shared_with' => $userWorkspaceIds],
+            ])
+            ->with(['storage', 'directory', 'owner'])
+            ->all();
+
+        return $this->render('shared-with-me', [
+            'shares' => $shares,
+        ]);
+    }
+
+    /**
+     * View items shared by current user (my shares)
+     */
+    public function actionMyShares()
+    {
+        if (!\Yii::$app->user->can('storageWebDefaultManageShares')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
+        $userId = Yii::$app->user->id;
+
+        // Get all shares created by this user
+        $fileShares = \portalium\storage\models\StorageShare::find()
+            ->joinWith('storage')
+            ->where(['is_active' => 1])
+            ->andWhere(['{{%storage_storage}}.id_user' => $userId])
+            ->andWhere(['IS NOT', '{{%' . Module::$tablePrefix . 'storage_share}}.id_storage', null])
+            ->all();
+
+        $directoryShares = \portalium\storage\models\StorageShare::find()
+            ->joinWith('directory')
+            ->where(['is_active' => 1])
+            ->andWhere(['{{%storage_storage_directory}}.id_user' => $userId])
+            ->andWhere(['IS NOT', '{{%' . Module::$tablePrefix . 'storage_share}}.id_directory', null])
+            ->all();
+
+        $fullStorageShares = \portalium\storage\models\StorageShare::find()
+            ->where(['is_active' => 1])
+            ->andWhere(['id_user_owner' => $userId])
+            ->all();
+
+        return $this->render('my-shares', [
+            'fileShares' => $fileShares,
+            'directoryShares' => $directoryShares,
+            'fullStorageShares' => $fullStorageShares,
+        ]);
+    }
 }
+

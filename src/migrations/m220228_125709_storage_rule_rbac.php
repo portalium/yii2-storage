@@ -55,17 +55,6 @@ class m220228_125709_storage_rule_rbac extends Migration
         $auth = Yii::$app->authManager;
 
         $permissions = [
-            'storageWebDefaultIndex',
-            'storageWebDefaultUploadFile',
-            'storageWebDefaultDownloadFile',
-            'storageWebDefaultRenameFile',
-            'storageWebDefaultUpdateFile',
-            'storageWebDefaultShareFile',
-            'storageWebDefaultCopyFile',
-            'storageWebDefaultDeleteFile',
-            'storageWebDefaultPickerModal',
-            'storageWebDefaultFileList',
-            'storageWebDefaultSearch',
             'storageWebDefaultNewFolder',
             'storageWebDefaultRenameFolder',
             'storageWebDefaultDeleteFolder',

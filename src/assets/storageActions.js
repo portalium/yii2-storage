@@ -754,38 +754,127 @@ $(document).on("click", "#updateButton", function (e) {
 
 function openShareModal(id) {
   event.preventDefault();
-  let url = "/storage/default/share-file?id=" + id;
-  if (window.currentDirectoryId) {
-    url += "&id_directory=" + window.currentDirectoryId;
-  } else {
-    url += "&id_directory=null";
-  }
+  
+  // Show loading indicator
+  window.showLoading('Opening share file modal...');
+  
+  // Wait 1 second before sending request
+  setTimeout(function() {
+    let url = "/storage/default/share-file?id=" + id;
+    if (window.currentDirectoryId) {
+      url += "&id_directory=" + window.currentDirectoryId;
+    } else {
+      url += "&id_directory=null";
+    }
 
-  if (window.currentIsPicker) {
-    url += "&isPicker=1";
-  }
+    if (window.currentIsPicker) {
+      url += "&isPicker=1";
+    }
 
-  $.ajax({
-    url: url,
-    type: "GET",
-    success: function (response) {
-      $('.modal[id^="shareModal"]').remove();
-      $("#share-file-pjax").html(response);
-      setTimeout(function () {
-        if ($("#shareModal").length) {
-          showModal("shareModal");
-        } else {
-          refreshCurrentView();
-        }
-      }, 100);
-    },
-    error: function (e) {
-      console.log("Error Modal:", e);
-      refreshCurrentView();
-    },
-  });
+    $.ajax({
+      url: url,
+      type: "GET",
+      success: function (response) {
+        $('.modal[id^="shareModal"]').remove();
+        $("#share-file-pjax").html(response);
+        setTimeout(function () {
+          window.hideLoading();
+          if ($("#shareModal").length) {
+            showModal("shareModal");
+          } else {
+            refreshCurrentView();
+          }
+        }, 100);
+      },
+      error: function (e) {
+        console.log("Error Modal:", e);
+        window.hideLoading();
+        refreshCurrentView();
+      },
+    });
+  }, 1000);
 }
 
+function openShareFolderModal(id) {
+  event.preventDefault();
+  
+  // Show loading indicator
+  window.showLoading('Klasör paylaşım ekranı açılıyor...');
+  
+  // Wait 1 second before sending request
+  setTimeout(function() {
+    let url = "/storage/default/share-directory?id=" + id;
+    if (window.currentDirectoryId) {
+      url += "&id_directory=" + window.currentDirectoryId;
+    } else {
+      url += "&id_directory=null";
+    }
+
+    if (window.currentIsPicker) {
+      url += "&isPicker=1";
+    }
+
+    $.ajax({
+      url: url,
+      type: "GET",
+      success: function (response) {
+        $('.modal[id^="shareModal"]').remove();
+        $("#share-file-pjax").html(response);
+        setTimeout(function () {
+          window.hideLoading();
+          if ($("#shareModal").length) {
+            showModal("shareModal");
+          } else {
+            refreshCurrentView();
+          }
+        }, 100);
+      },
+      error: function (e) {
+        console.log("Error Modal:", e);
+        window.hideLoading();
+        refreshCurrentView();
+      },
+    });
+  }, 1000);
+}
+
+function openShareStorageModal(event) {
+  event.preventDefault();
+  
+  // Show loading indicator
+  window.showLoading('Depolama paylaşım ekranı açılıyor...');
+  
+  // Wait 1 second before sending request
+  setTimeout(function() {
+    let url = "/storage/default/share-full-storage";
+
+    $.ajax({
+      url: url,
+      type: "GET",
+      success: function (response) {
+        $('.modal[id^="shareModal"]').remove();
+        $("#share-file-pjax").html(response);
+        setTimeout(function () {
+          window.hideLoading();
+          if ($("#shareModal").length) {
+            showModal("shareModal");
+          } else {
+            console.log("Share modal not found in response");
+          }
+        }, 100);
+      },
+      error: function (e) {
+        console.log("Error Modal:", e);
+        window.hideLoading();
+        alert("Error loading share modal");
+      },
+    });
+  }, 1000);
+}
+
+// DEPRECATED: Old share button handler - now using share-modal.js
+// This was closing the modal after share creation
+/*
 $(document).on("click", "#shareButton", function (e) {
   e.preventDefault();
 
@@ -819,6 +908,7 @@ $(document).on("click", "#shareButton", function (e) {
     },
   });
 });
+*/
 
 function copyFile(id) {
   event.preventDefault();
@@ -1055,6 +1145,8 @@ $(document)
 window.openRenameModal = openRenameModal;
 window.openUpdateModal = openUpdateModal;
 window.openShareModal = openShareModal;
+window.openShareFolderModal = openShareFolderModal;
+window.openShareStorageModal = openShareStorageModal;
 window.openRenameFolderModal = openRenameFolderModal;
 window.downloadFile = downloadFile;
 window.copyFile = copyFile;

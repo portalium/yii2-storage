@@ -4,6 +4,7 @@ use portalium\storage\bundles\StorageAsset;
 use portalium\storage\Module;
 use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Html;
+use portalium\theme\widgets\Loading;
 use portalium\widgets\Pjax;
 use yii\helpers\Url;
 
@@ -24,12 +25,17 @@ StorageAsset::register($this);
 $this->title = Module::t('Storage');
 $this->params['breadcrumbs'][] = $this->title;
 
+// Register Loading widget
+echo Loading::widget([
+    'defaultMessage' => Module::t('Loading...'),
+]);
+
 ?>
 <div class="file-manager">
   <div class="file-controls">
     <?php
     echo Html::beginTag('div', [
-      'class' => 'd-flex align-items-center gap-2 flex-wrap'
+      'class' => 'd-flex align-items-center gap-1 flex-wrap'
     ]);
 
     echo Html::tag(
@@ -96,6 +102,21 @@ $this->params['breadcrumbs'][] = $this->title;
     
 echo Html::endTag('ul');
 echo Html::endTag('div');
+
+// Share My Storage Button
+if (!$isPicker) {
+    echo Html::button(
+        Html::tag('i', '', ['class' => 'fa fa-share-alt me-2', 'style' => 'color: #000;']) . 
+        Html::tag('span', Module::t('Share'), ['class' => 'btn-text']),
+        [
+            'class' => 'newDropdownClass',
+            'type' => 'button',
+            'onclick' => 'openShareStorageModal(event)',
+            'title' => Module::t('Share My Storage'),
+            'data-bs-toggle' => 'tooltip',
+        ]
+    );
+}
 
 echo Html::beginTag('div', ['class' => 'dropdown d-inline']);
 
@@ -532,3 +553,11 @@ $(document).ready(function() {
 });
 
 </script>
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <!-- Content will be loaded via AJAX -->
+    </div>
+  </div>
+</div>

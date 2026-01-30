@@ -160,26 +160,62 @@ foreach ($directories as $model) {
     ]
     );
 
-    $dropdownItems = [
-        [
+    // Check user's permissions for this folder
+    $isOwner = ($model->id_user == Yii::$app->user->id);
+    $hasGlobalEditPerm = Yii::$app->user->can('storageWebDefaultRenameFolder') || Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFolder', ['model' => $model]);
+    $hasGlobalDeletePerm = Yii::$app->user->can('storageWebDefaultDeleteFolder') || Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFolder', ['model' => $model]);
+    
+    // Check share permissions
+    $hasEditPermission = $isOwner || $hasGlobalEditPerm || \portalium\storage\models\StorageShare::hasAccess(
+        Yii::$app->user->id, 
+        null, 
+        $model, 
+        \portalium\storage\models\StorageShare::PERMISSION_EDIT
+    );
+    
+    $hasManagePermission = $isOwner || $hasGlobalDeletePerm || \portalium\storage\models\StorageShare::hasAccess(
+        Yii::$app->user->id, 
+        null, 
+        $model, 
+        \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+    );
+
+    $dropdownItems = [];
+    
+    // Rename - requires Edit permission
+    if ($hasEditPermission) {
+        $dropdownItems[] = [
             'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
             'url' => '#',
             'encode' => false,
             'linkOptions' => ['onclick' => 'openRenameFolderModal(' . $folderId . ')'],
-        ],
-        /* [
+        ];
+    }
+    
+    /* Move - requires Edit permission
+    if ($hasEditPermission) {
+        $dropdownItems[] = [
             'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
             'url' => '#',
             'encode' => false,
             'linkOptions' => ['onclick' => 'openMoveFolderModal(' . $folderId . ')'],
-        ], */
-        [
+        ];
+    }
+    */
+    
+    // Share - requires Manage permission
+    if ($hasManagePermission) {
+        $dropdownItems[] = [
             'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
             'url' => '#',
             'encode' => false,
             'linkOptions' => ['onclick' => 'openShareFolderModal(' . $folderId . ')'],
-        ],
-        [
+        ];
+    }
+    
+    // Delete - requires Manage permission
+    if ($hasManagePermission) {
+        $dropdownItems[] = [
             'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
             'url' => '#',
             'encode' => false,
@@ -187,8 +223,8 @@ foreach ($directories as $model) {
                 'onclick' => 'deleteFolder(' . $folderId . '); return false;',
                 'data-id' => $folderId,
             ],
-        ],
-    ];
+        ];
+    }
 
     $content .= Dropdown::widget([
         'items' => $dropdownItems,
@@ -441,51 +477,109 @@ echo ListView::widget([
 
         $content .= Html::endTag('div'); // .file-header
 
-        // Dropdown menu
-        $content .= Dropdown::widget([
-            'items' => [
-                [
-                    'label' => Html::tag('i', '', ['class' => 'fa fa-download']) . ' ' . Module::t('Download'),
-                    'url' => '#',
-                    'encode' => false,
-                    'linkOptions' => ['onclick' => 'downloadFile(' . $model->id_storage . '); return false;'],
-                ],
-                [
-                    'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
-                    'url' => '#',
-                    'encode' => false,
-                    'linkOptions' => ['onclick' => 'openRenameModal(' . $model->id_storage . ')'],
-                ],
-                [
-                    'label' => Html::tag('i', '', ['class' => 'fa fa-refresh']) . ' ' . Module::t('Update'),
-                    'url' => '#',
-                    'encode' => false,
-                    'linkOptions' => ['onclick' => 'openUpdateModal(' . $model->id_storage . ')'],
-                ],            
-                /* [
+        // Check user's permissions for this file
+        $isOwner = ($model->id_user == Yii::$app->user->id);
+        $hasGlobalEditPerm = Yii::$app->user->can('storageWebDefaultRenameFile') || Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFile', ['model' => $model]);
+        $hasGlobalDeletePerm = Yii::$app->user->can('storageWebDefaultDeleteFile') || Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFile', ['model' => $model]);
+        
+        // Check share permissions
+        $hasViewPermission = $isOwner || Yii::$app->user->can('storageWebDefaultIndex') || \portalium\storage\models\StorageShare::hasAccess(
+            Yii::$app->user->id, 
+            $model, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_VIEW
+        );
+        
+        $hasEditPermission = $isOwner || $hasGlobalEditPerm || \portalium\storage\models\StorageShare::hasAccess(
+            Yii::$app->user->id, 
+            $model, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_EDIT
+        );
+        
+        $hasManagePermission = $isOwner || $hasGlobalDeletePerm || \portalium\storage\models\StorageShare::hasAccess(
+            Yii::$app->user->id, 
+            $model, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+        );
+
+        // Build dropdown items based on permissions
+        $fileDropdownItems = [];
+        
+        // Download - requires View permission
+        if ($hasViewPermission) {
+            $fileDropdownItems[] = [
+                'label' => Html::tag('i', '', ['class' => 'fa fa-download']) . ' ' . Module::t('Download'),
+                'url' => '#',
+                'encode' => false,
+                'linkOptions' => ['onclick' => 'downloadFile(' . $model->id_storage . '); return false;'],
+            ];
+        }
+        
+        // Rename - requires Edit permission
+        if ($hasEditPermission) {
+            $fileDropdownItems[] = [
+                'label' => Html::tag('i', '', ['class' => 'fa fa-pencil']) . ' ' . Module::t('Rename'),
+                'url' => '#',
+                'encode' => false,
+                'linkOptions' => ['onclick' => 'openRenameModal(' . $model->id_storage . ')'],
+            ];
+        }
+        
+        // Update - requires Edit permission
+        if ($hasEditPermission) {
+            $fileDropdownItems[] = [
+                'label' => Html::tag('i', '', ['class' => 'fa fa-refresh']) . ' ' . Module::t('Update'),
+                'url' => '#',
+                'encode' => false,
+                'linkOptions' => ['onclick' => 'openUpdateModal(' . $model->id_storage . ')'],
+            ];
+        }
+        
+        /* Move - requires Edit permission
+        if ($hasEditPermission) {
+            $fileDropdownItems[] = [
                 'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
                 'url' => '#',
                 'encode' => false,
-                ], */
-                [
-                    'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
-                    'url' => '#',
-                    'encode' => false,
-                    'linkOptions' => ['onclick' => 'openShareModal(' . $model->id_storage . ')'],
-                ],
-                [
-                    'label' => Html::tag('i', '', ['class' => 'fa fa-copy']) . ' ' . Module::t('Make a Copy'),
-                    'url' => '#',
-                    'encode' => false,
-                    'linkOptions' => ['onclick' => 'copyFile(' . $model->id_storage . '); return false;'],
-                ],
-                [
-                    'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
-                    'url' => '#',
-                    'encode' => false,
-                    'linkOptions' => ['onclick' => 'deleteFile(' . $model->id_storage . '); return false;'],
-                ],
-            ],
+            ];
+        }
+        */
+        
+        // Share - requires Manage permission
+        if ($hasManagePermission) {
+            $fileDropdownItems[] = [
+                'label' => Html::tag('i', '', ['class' => 'fa fa-share-alt']) . ' ' . Module::t('Share'),
+                'url' => '#',
+                'encode' => false,
+                'linkOptions' => ['onclick' => 'openShareModal(' . $model->id_storage . ')'],
+            ];
+        }
+        
+        // Make a Copy - requires View permission
+        if ($hasViewPermission) {
+            $fileDropdownItems[] = [
+                'label' => Html::tag('i', '', ['class' => 'fa fa-copy']) . ' ' . Module::t('Make a Copy'),
+                'url' => '#',
+                'encode' => false,
+                'linkOptions' => ['onclick' => 'copyFile(' . $model->id_storage . '); return false;'],
+            ];
+        }
+        
+        // Delete - requires Manage permission
+        if ($hasManagePermission) {
+            $fileDropdownItems[] = [
+                'label' => Html::tag('i', '', ['class' => 'fa fa-trash']) . ' ' . Module::t('Remove'),
+                'url' => '#',
+                'encode' => false,
+                'linkOptions' => ['onclick' => 'deleteFile(' . $model->id_storage . '); return false;'],
+            ];
+        }
+        
+        // Dropdown menu
+        $content .= Dropdown::widget([
+            'items' => $fileDropdownItems,
             'options' => [
                 'class' => 'custom-dropdown-menu',
                 'id' => 'context-menu-' . $model->id_storage,

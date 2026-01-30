@@ -10,6 +10,7 @@ use portalium\user\models\User;
 use yii\web\UploadedFile;
 use portalium\base\Event;
 use portalium\workspace\models\Workspace;
+use portalium\storage\models\StorageShare;
 
 /**
  * This is the model class for table "{{%storage_storage}}".
@@ -734,4 +735,71 @@ class Storage extends \yii\db\ActiveRecord
 
         return $updated;
     }
+
+    /**
+     * Gets query for [[Shares]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getShares()
+    {
+        return $this->hasMany(StorageShare::class, ['id_storage' => 'id_storage']);
+    }
+
+    /**
+     * Gets active shares for this storage
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getActiveShares()
+    {
+        return $this->getShares()
+            ->where(['is_active' => 1])
+            ->andWhere(['OR',
+                ['expires_at' => null],
+                ['>', 'expires_at', date('Y-m-d H:i:s')]
+            ]);
+    }
+
+    /**
+     * Check if storage is shared with a specific user
+     *
+     * @param int $id_user User ID
+     * @param string $requiredPermission Required permission level
+     * @return bool
+     */
+    public function isSharedWith($id_user, $requiredPermission = StorageShare::PERMISSION_VIEW)
+    {
+        return StorageShare::hasAccess($id_user, $this, null, $requiredPermission);
+    }
+
+    /**
+     * Check if current user can access this storage item
+     * Considers: ownership, shares, workspace membership
+     *
+     * @param string $requiredPermission Required permission level
+     * @return bool
+     */
+    public function canAccess($requiredPermission = StorageShare::PERMISSION_VIEW)
+    {
+        $userId = Yii::$app->user->id;
+
+        // Owner can always access
+        if ($this->id_user == $userId) {
+            return true;
+        }
+
+        // Check if shared with user
+        if ($this->isSharedWith($userId, $requiredPermission)) {
+            return true;
+        }
+
+        // Check workspace access
+        if ($this->id_workspace && Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $this])) {
+            return true;
+        }
+
+        return false;
+    }
 }
+
