@@ -41,6 +41,16 @@ class Module extends \portalium\base\Module
                     'menu' => 'web',
                     'type' => 'action',
                     'route' => '/storage/default/manage',
+                ],
+                [
+                    'menu' => 'web',
+                    'type' => 'action',
+                    'route' => '/storage/default/shared-with-me',
+                ],
+                [
+                    'menu' => 'web',
+                    'type' => 'action',
+                    'route' => '/storage/default/my-shares',
                 ]
             ],
         ];

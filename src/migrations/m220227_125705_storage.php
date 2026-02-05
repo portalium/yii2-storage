@@ -17,6 +17,37 @@ class m220227_125705_storage extends Migration
     {
         $tableOptions = 'ENGINE=InnoDB';
 
+        $this->createTable('{{%' . Module::$tablePrefix . 'storage_directory}}', [
+            'id_directory' => $this->primaryKey(11),
+            'id_parent' => $this->integer(11)->null(),
+            'id_user'=> $this->integer(11)->notNull(),
+            'name' => $this->string(256)->notNull(),
+            'date_create' => $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
+            'date_update' => $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
+        ], $tableOptions);
+
+        $this->addForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage_directory-id_parent}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}',
+            'id_parent',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}',
+            'id_directory',
+            'SET NULL'
+        );
+        $this->addForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage_directory-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}',
+            'id_user',
+            '{{%' . UserModule::$tablePrefix . 'user}}',
+            'id_user',
+            'RESTRICT'
+        );
+        $this->createIndex(
+            '{{%idx-' . Module::$tablePrefix . 'storage_directory-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}',
+            'id_user'
+        );
+        
         $this->createTable('{{%' . Module::$tablePrefix . 'storage}}',[
             'id_storage'=> $this->primaryKey(11),
             'name'=> $this->string(255)->notNull(),
@@ -24,18 +55,20 @@ class m220227_125705_storage extends Migration
             'id_user'=> $this->integer(11)->notNull(),
             'mime_type'=> $this->integer(11)->notNull(),
             'hash_file'=> $this->string(255)->null(),
+            'thumbnail'=> $this->string(255)->null(),
+            'id_directory' => $this->integer(11)->null(),
+            'date_last_access' => $this->datetime()->null(),
+            'access_count' => $this->integer(11)->notNull()->defaultValue(0),
             'date_create'=> $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
             'date_update'=> $this->datetime()->notNull()->defaultExpression("CURRENT_TIMESTAMP"),
         ], $tableOptions);
 
-        // creates index for column `id_user`
         $this->createIndex(
             '{{%idx-' . Module::$tablePrefix . 'storage-id_user}}',
             '{{%' . Module::$tablePrefix . 'storage}}',
             'id_user'
         );
 
-        // add foreign key for table `{{%user}}`
         $this->addForeignKey(
             '{{%fk-' . Module::$tablePrefix . 'storage-id_user}}',
             '{{%' . Module::$tablePrefix . 'storage}}',
@@ -44,10 +77,55 @@ class m220227_125705_storage extends Migration
             'id_user',
             'RESTRICT'
         );
+
+        $this->addForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage-id_directory}}',
+            '{{%' . Module::$tablePrefix . 'storage}}',
+            'id_directory',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}',
+            'id_directory',
+            'SET NULL'
+        );
+
+        $this->createIndex(
+            '{{%idx-' . Module::$tablePrefix . 'storage-date_last_access}}',
+            '{{%' . Module::$tablePrefix . 'storage}}',
+            'date_last_access'
+        );
+
+        $this->createIndex(
+            '{{%idx-' . Module::$tablePrefix . 'storage-access_count}}',
+            '{{%' . Module::$tablePrefix . 'storage}}',
+            'access_count'
+        );
     }
+
 
     public function safeDown()
     {
-            $this->dropTable('{{%' . Module::$tablePrefix . 'storage}}');
+        $this->dropForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage}}'
+        );
+
+        $this->dropForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage-id_directory}}',
+            '{{%' . Module::$tablePrefix . 'storage}}'
+        );
+
+        $this->dropTable('{{%' . Module::$tablePrefix . 'storage}}');
+
+        $this->dropForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage_directory-id_parent}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}'
+        );
+
+        $this->dropForeignKey(
+            '{{%fk-' . Module::$tablePrefix . 'storage_directory-id_user}}',
+            '{{%' . Module::$tablePrefix . 'storage_directory}}'
+        );
+
+        $this->dropTable('{{%' . Module::$tablePrefix . 'storage_directory}}');
     }
+
 }

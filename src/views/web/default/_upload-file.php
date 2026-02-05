@@ -1,0 +1,143 @@
+<?php
+
+use portalium\storage\models\Storage;
+use portalium\storage\Module;
+use portalium\theme\widgets\ActiveForm;
+use portalium\theme\widgets\Button;
+use portalium\theme\widgets\Modal;
+use portalium\theme\widgets\Html;
+
+/* @var $this yii\web\View */
+/* @var $model portalium\storage\models\Storage */
+/* @var $form yii\widgets\ActiveForm */
+
+Modal::begin([
+    'id' => 'uploadModal',
+    'title' => Module::t('Upload File'),
+    'options' => ['class' => 'fade'],
+    'bodyOptions' => ['class' => 'modal-body'],
+    'clientOptions' => [
+        'backdrop' => 'static',
+        'keyboard' => false,
+    ],
+    'footer' => Button::widget([
+            'label' => Module::t('Close'),
+            'options' => [
+                'class' => 'btn btn-danger',
+                'onclick' => 'hideModal("uploadModal")',
+            ],
+        ]) . ' ' . Button::widget([
+            'label' => Html::tag('i', '', ['class' => 'fa fa-cloud-upload-alt']) . ' ' . Module::t('Upload'),
+            'encodeLabel' => false,
+            'options' => [
+                'class' => 'btn btn-success',
+                'id' => 'uploadButton',
+                'type' => 'button',
+                'onclick' => 'uploadFile(event)',
+            ],
+        ]),
+    'dialogOptions' => ['class' => 'modal-dialog-centered'],
+]);
+
+$form = ActiveForm::begin([
+    'id' => 'uploadForm',
+    'action' => '/storage/default/upload-file',
+    'method' => 'post',
+    'options' => ['enctype' => 'multipart/form-data', 'data-pjax' => true]
+]);
+
+echo $form->field($model, 'type')->dropDownList([
+    'file'   => Module::t('File'),
+    'folder' => Module::t('Folder'),
+], ['id' => 'upload-type']);
+
+echo Html::beginTag('div', ['id' => 'title-field-wrapper']);
+if ($model instanceof Storage) {
+    echo $form->field($model, 'title')->textInput(['required' => true]);
+}
+echo Html::endTag('div');
+
+if ($model instanceof Storage) {
+    echo $form->field($model, 'file[]')->fileInput([
+        'id' => 'file-input',
+        'required' => true,
+    ]);
+} else {
+    echo Html::fileInput('Storage[file][]', null, [
+        'id'           => 'file-input',
+        'required'     => true,
+        'multiple'     => true,
+        'webkitdirectory' => true,
+        'directory'    => true,
+    ]);
+}
+
+echo Html::hiddenInput('Storage[allowedExtensions]', '', [
+    'id' => 'allowed-extensions-input',
+]);
+
+ActiveForm::end();
+Modal::end();
+?>
+
+<?php
+$this->registerJs(<<<JS
+(function () {
+    var uploadType        = document.getElementById('upload-type'),
+        fileInput         = document.getElementById('file-input'),
+        titleFieldWrapper = document.getElementById('title-field-wrapper'),
+        titleInput        = document.querySelector('[name="Storage[title]"]'),
+        allowedExtInput   = document.getElementById('allowed-extensions-input');
+
+    if (!uploadType || !fileInput || !titleFieldWrapper || !titleInput) return;
+
+    var allowedExtensions = [];
+    var pickerModal = document.getElementById('file-picker-modal');
+    if (pickerModal) {
+        var allowedExtStr = pickerModal.getAttribute('data-allowed-extensions');
+        if (allowedExtStr) {
+            try {
+                allowedExtensions = JSON.parse(allowedExtStr);
+                console.log('Upload modal - allowedExtensions from modal:', allowedExtensions);
+            } catch (e) {
+                console.error('Failed to parse allowedExtensions:', e);
+            }
+        }
+    }
+    
+    if (allowedExtensions && allowedExtensions.length > 0) {
+        if (allowedExtInput) {
+            allowedExtInput.value = JSON.stringify(allowedExtensions);
+        }
+        var acceptValue = allowedExtensions.map(function(ext) {
+            return '.' + ext.replace(/^\./, '');
+        }).join(',');
+        fileInput.setAttribute('accept', acceptValue);
+        console.log('Accept attribute set to:', acceptValue);
+    } else {
+        console.log('No allowedExtensions restrictions');
+    }
+
+    function updateInputAttributes() {
+        if (uploadType.value === 'folder') {
+            fileInput.setAttribute('multiple', '');
+            fileInput.setAttribute('webkitdirectory', '');
+            fileInput.setAttribute('directory', '');
+            titleFieldWrapper.style.display = 'none';
+            titleInput.disabled = true;
+        } else {
+            fileInput.removeAttribute('multiple');
+            fileInput.removeAttribute('webkitdirectory');
+            fileInput.removeAttribute('directory');
+            titleFieldWrapper.style.display = '';
+            titleInput.disabled = false;
+        }
+    }
+
+    uploadType.addEventListener('change', updateInputAttributes);
+    updateInputAttributes();
+})();
+JS
+);
+
+?>

@@ -1,0 +1,32 @@
+/* Share Modal Styles */
+
+#shareModal .nav-tabs .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+#shareModal .nav-tabs .nav-link.active {
+    color: #198754;
+    border-bottom-color: #198754;
+    background: transparent;
+}
+
+#shareModal .nav-tabs .nav-link:hover {
+    border-bottom-color: #dee2e6;
+}
+
+#shareModal .list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+#shareModal .list-group-item:first-child {
+    border-top: none;
+}
+
+#shareToast {
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+}

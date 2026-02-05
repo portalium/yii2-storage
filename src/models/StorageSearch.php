@@ -42,10 +42,14 @@ class StorageSearch extends Storage
     {
         $query = Storage::find();
 
+        $query->orderBy(['id_storage' => SORT_DESC]);
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => 12, // ✅ her sayfada 12 dosya gösterilsin
+            ],
         ]);
 
         $this->load($params);
