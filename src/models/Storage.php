@@ -190,7 +190,7 @@ class Storage extends \yii\db\ActiveRecord
         $mimeType = $this->getMIMEType($fullPath);
         $this->name = $filename;
         $this->mime_type = self::MIME_TYPE[$mimeType] ?? self::MIME_TYPE['other'];
-
+        $this->id_workspace = Yii::$app->workspace->id;
         if (!$this->save()) {
             return false;
         }

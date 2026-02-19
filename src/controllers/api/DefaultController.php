@@ -233,7 +233,11 @@ class DefaultController extends RestActiveController
         // Check upload permission
         if (
             !\Yii::$app->user->can('storageApiDefaultUpload') &&
-            !\Yii::$app->workspace->can('storage', 'storageApiDefaultUpload')
+            !\Yii::$app->workspace->can('storage', 'storageApiDefaultUpload') &&
+            !\Yii::$app->user->can('storageApiDefaultUploadFile') &&
+            !\Yii::$app->workspace->can('storage', 'storageApiDefaultUploadFile') &&
+            !\Yii::$app->user->can('storageWebDefaultUploadFile') &&
+            !\Yii::$app->workspace->can('storage', 'storageWebDefaultUploadFile')
         ) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to upload files.'));
         }
