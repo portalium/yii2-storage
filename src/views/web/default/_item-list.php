@@ -442,9 +442,8 @@ echo ListView::widget([
 
         $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
         $title = $model->title ?: 'Başlık yok';
-        $content .= Html::tag('span', Html::encode($title), [
-            'class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')
-        ]);
+        $titleAttrs = ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal'), 'data-title' => $title];
+        $content .= Html::tag('span', Html::encode($title), $titleAttrs);
 
         $content .= Html::tag(
             'span',
@@ -863,5 +862,32 @@ window.bulkDeleteFiles = function() {
     localStorage.setItem('fileListOpen', isOpen);
     icon.toggleClass('fa-caret-down fa-caret-right');
 });
+
+// File title tooltip
+(function() {
+    var tooltip = document.getElementById('file-title-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'file-title-tooltip';
+        tooltip.style.cssText = 'position:fixed;background:#333;color:#fff;padding:5px 8px;border-radius:4px;font-size:11px;white-space:nowrap;z-index:9999;pointer-events:none;opacity:0;transition:opacity 0.2s ease;';
+        document.body.appendChild(tooltip);
+    }
+
+    \$(document).on('mouseenter', '.file-title[data-title]', function() {
+        if (this.scrollWidth <= this.offsetWidth) return;
+        var title = \$(this).attr('data-title');
+        tooltip.textContent = title;
+        tooltip.style.opacity = '1';
+        var rect = this.getBoundingClientRect();
+        var left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
+        var top = rect.top - tooltip.offsetHeight - 6;
+        if (left < 4) left = 4;
+        if (left + tooltip.offsetWidth > window.innerWidth - 4) left = window.innerWidth - tooltip.offsetWidth - 4;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+    }).on('mouseleave', '.file-title[data-title]', function() {
+        tooltip.style.opacity = '0';
+    });
+})();
 
 JS);
