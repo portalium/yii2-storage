@@ -1280,9 +1280,16 @@ class DefaultController extends Controller
                 else {
                     $model->id_parent = $id_directory;
                     $directoryModel = StorageDirectory::findOne($id_directory);
-                    if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && 
-                        !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) && 
-                        !\Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel])) {
+                    $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultManageDirectory') || 
+                        \Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) || 
+                        \Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel]);
+                    $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+                        \Yii::$app->user->id,
+                        null,
+                        $directoryModel,
+                        \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+                    );
+                    if (!$hasGlobalPermission && !$hasSharePermission) {
                         throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
                     }
                 }
