@@ -422,12 +422,14 @@ class DefaultController extends Controller
                         $filename = $matches[1];
                     }
 
-                    if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory])->exists()) {
+                    $currentUserId = Yii::$app->user->id;
+
+                    if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory, 'id_user' => $currentUserId])->exists()) {
                         $model->title = $filename . $extension;
                     } else {
                         $counter = 1;
                         $newTitle = "{$filename} ({$counter}){$extension}";
-                        while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory])->exists()) {
+                        while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory, 'id_user' => $currentUserId])->exists()) {
                             $counter++;
                             $newTitle = "{$filename} ({$counter}){$extension}";
                         }
