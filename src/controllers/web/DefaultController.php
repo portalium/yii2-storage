@@ -750,7 +750,21 @@ class DefaultController extends Controller
 
         $sourceModel = Storage::findOne($id);
 
-        if (!\Yii::$app->user->can('storageWebDefaultCopyFile') && !\Yii::$app->user->can('storageWebDefaultCopyFileOwn', ["model" => $sourceModel]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultCopyFile', ['model' => $sourceModel])) {
+        // Global + Own + Workspace permission check
+        $hasGlobalPermission =
+            \Yii::$app->user->can('storageWebDefaultCopyFile') ||
+            \Yii::$app->user->can('storageWebDefaultCopyFileOwn', ['model' => $sourceModel]) ||
+            \Yii::$app->workspace->can('storage', 'storageWebDefaultCopyFile', ['model' => $sourceModel]);
+
+        // Check share permissions - VIEW permission is enough for copy
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id,
+            $sourceModel,
+            null,
+            \portalium\storage\models\StorageShare::PERMISSION_VIEW
+        );
+
+        if (!$hasGlobalPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
