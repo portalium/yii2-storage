@@ -281,11 +281,21 @@ class StorageShare extends \yii\db\ActiveRecord
 
         // Check direct file share
         if ($storage !== null) {
-            $query->andWhere(['OR',
-                ['id_storage' => $storage->id_storage],
-                ['id_directory' => $storage->id_directory],
-                ['id_user_owner' => $storage->id_user]
-            ]);
+            $orConditions = [
+                'OR',
+                ['id_storage' => $storage->id_storage],   // Direct file share
+                ['id_user_owner' => $storage->id_user],    // Full storage share from file owner
+            ];
+
+            // Only check directory shares if the file is actually inside a directory.
+            // When id_directory is null, ['id_directory' => null] generates 'id_directory IS NULL'
+            // in Yii2 which would incorrectly match ALL direct file shares (which also have null id_directory).
+            if ($storage->id_directory !== null) {
+                $orConditions[] = ['id_directory' => $storage->id_directory];
+            }
+
+            $query->andWhere($orConditions);
+        
         }
 
         // Check directory share (includes parent directories)
