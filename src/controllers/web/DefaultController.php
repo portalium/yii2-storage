@@ -795,10 +795,30 @@ class DefaultController extends Controller
             return;
         }
 
-        $file = Storage::findOne($fileId);
+               $file = Storage::findOne($fileId);
 
-        if (!\Yii::$app->user->can('storageWebDefaultDeleteFile') && !\Yii::$app->user->can('storageWebDefaultDeleteFileOwn', ["model" => $file]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFile', ['model' => $file])) {
+        $isOwnFile = $file && $file->id_user == \Yii::$app->user->id;
+
+        // Global admin-level permission: can delete any file (admin role only)
+        $hasAdminPermission = \Yii::$app->user->can('storageWebDefaultDeleteFile')
+            || \Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFile', ['model' => $file]);
+
+        // Own file permission: only applies if the file actually belongs to this user
+        $hasOwnPermission = $isOwnFile
+            && \Yii::$app->user->can('storageWebDefaultDeleteFileOwn', ["model" => $file]);
+
+        // Share-based permission: need MANAGE level to delete a file shared by someone else
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id, 
+            $file, 
+            null, 
+            \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+        );
+
+        if (!$hasAdminPermission && !$hasOwnPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
         }
 
         if (!Yii::$app->request->isPost) {
