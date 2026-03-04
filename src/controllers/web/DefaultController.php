@@ -422,12 +422,14 @@ class DefaultController extends Controller
                         $filename = $matches[1];
                     }
 
-                    if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory])->exists()) {
+                    $currentUserId = Yii::$app->user->id;
+
+                    if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory, 'id_user' => $currentUserId])->exists()) {
                         $model->title = $filename . $extension;
                     } else {
                         $counter = 1;
                         $newTitle = "{$filename} ({$counter}){$extension}";
-                        while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory])->exists()) {
+                        while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory, 'id_user' => $currentUserId])->exists()) {
                             $counter++;
                             $newTitle = "{$filename} ({$counter}){$extension}";
                         }
@@ -748,7 +750,21 @@ class DefaultController extends Controller
 
         $sourceModel = Storage::findOne($id);
 
-        if (!\Yii::$app->user->can('storageWebDefaultCopyFile') && !\Yii::$app->user->can('storageWebDefaultCopyFileOwn', ["model" => $sourceModel]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultCopyFile', ['model' => $sourceModel])) {
+        // Global + Own + Workspace permission check
+        $hasGlobalPermission =
+            \Yii::$app->user->can('storageWebDefaultCopyFile') ||
+            \Yii::$app->user->can('storageWebDefaultCopyFileOwn', ['model' => $sourceModel]) ||
+            \Yii::$app->workspace->can('storage', 'storageWebDefaultCopyFile', ['model' => $sourceModel]);
+
+        // Check share permissions - VIEW permission is enough for copy
+        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+            \Yii::$app->user->id,
+            $sourceModel,
+            null,
+            \portalium\storage\models\StorageShare::PERMISSION_VIEW
+        );
+
+        if (!$hasGlobalPermission && !$hasSharePermission) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
@@ -1278,9 +1294,16 @@ class DefaultController extends Controller
                 else {
                     $model->id_parent = $id_directory;
                     $directoryModel = StorageDirectory::findOne($id_directory);
-                    if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && 
-                        !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) && 
-                        !\Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel])) {
+                    $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultManageDirectory') || 
+                        \Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) || 
+                        \Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel]);
+                    $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+                        \Yii::$app->user->id,
+                        null,
+                        $directoryModel,
+                        \portalium\storage\models\StorageShare::PERMISSION_MANAGE
+                    );
+                    if (!$hasGlobalPermission && !$hasSharePermission) {
                         throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
                     }
                 }
