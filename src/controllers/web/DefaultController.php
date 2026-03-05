@@ -819,12 +819,9 @@ class DefaultController extends Controller
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
-        }
-
         if (!Yii::$app->request->isPost) {
             throw new \yii\web\BadRequestHttpException('Only POST requests are allowed.');
         }
-
         if ($file) {
             $path = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
 
