@@ -62,15 +62,6 @@ class StorageDirectory extends \yii\db\ActiveRecord
                     }
                 },
             ],
-            [
-                'class' => \yii\behaviors\AttributeBehavior::className(),
-                'attributes' => [
-                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_directory',
-                ],
-                'value' => function ($event) {
-                    return $this->getOldAttribute('id_directory');
-                },
-            ],
         ];
     }
 
