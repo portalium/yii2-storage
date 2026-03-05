@@ -4,32 +4,38 @@ function toggleContextMenu(e, id) {
     document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
         if (menu.id !== 'context-menu-' + id) {
             menu.classList.remove('show');
-            const card = menu.closest('.file-card'); // find card
-            if (card) card.onmouseleave = null;
+
+            const parentRow = menu.closest('tr, .file-card, [data-key], .list-view-item');
+            if (parentRow) {
+                parentRow.style.zIndex = '';
+            }
         }
     });
-    
-    const menu = document.getElementById('context-menu-' + id);
-    const card = e.currentTarget.closest('.file-card');
 
-    if (menu && card) {
+    const menu = document.getElementById('context-menu-' + id);
+    if (menu) {
         menu.classList.toggle('show');
 
-        if (menu.classList.contains('show')) {
-            card.onmouseleave = function () {
-                menu.classList.remove('show');
-                card.onmouseleave = null;
-            };
-        } else {
-            card.onmouseleave = null;
+        const parentRow = menu.closest('tr, .file-card, [data-key], .list-view-item');
+
+        if (menu.classList.contains('show') && parentRow) {
+            if (getComputedStyle(parentRow).position === 'static') {
+                parentRow.style.position = 'relative';
+            }
+            parentRow.style.zIndex = '9999';
+        } else if (parentRow) {
+            parentRow.style.zIndex = '';
         }
     }
 
     const closeContextMenus = function () {
         document.querySelectorAll('[id^="context-menu-"]').forEach(menu => {
             menu.classList.remove('show');
-            const card = menu.closest('.file-card');
-            if (card) card.onmouseleave = null;
+
+            const parentRow = menu.closest('tr, .file-card, [data-key], .list-view-item');
+            if (parentRow) {
+                parentRow.style.zIndex = '';
+            }
         });
         document.removeEventListener('click', closeContextMenus);
     };

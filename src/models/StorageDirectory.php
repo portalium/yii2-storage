@@ -29,27 +29,48 @@ class StorageDirectory extends \yii\db\ActiveRecord
 {
     public $type;
 
-     public function behaviors()
+    public function behaviors()
     {
         return [
             [
-                'class' => \yii\behaviors\AttributeBehavior::className(),
+                'class' => \yii\behaviors\AttributeBehavior::class,
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_user',
+                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_user',
                 ],
-                'value' => function () {
-                    return Yii::$app->user->id;
+                'value' => function ($event) {
+                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_INSERT) {
+                        return Yii::$app->user->id;
+                    }
+                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE) {
+                        return $this->getOldAttribute('id_user');
+                    }
                 },
             ],
             [
-                'class' => \yii\behaviors\AttributeBehavior::className(),
+                'class' => \yii\behaviors\AttributeBehavior::class,
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_workspace',
+                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_workspace',
                 ],
-                'value' => function () {
-                    return Yii::$app->workspace->id ?? null;
+                'value' => function ($event) {
+                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_INSERT) {
+                        return Yii::$app->workspace->id ?? null;
+                    }
+                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE) {
+                        return $this->getOldAttribute('id_workspace');
+                    }
                 },
-            ]
+            ],
+            [
+                'class' => \yii\behaviors\AttributeBehavior::class,
+                'attributes' => [
+                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_directory',
+                ],
+                'value' => function ($event) {
+                    return $this->getOldAttribute('id_directory');
+                },
+            ],
         ];
     }
 
