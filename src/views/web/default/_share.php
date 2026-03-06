@@ -99,10 +99,20 @@ $shareConfigJson = json_encode([
     ],
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
+// Find existing valid link share to pre-populate the copy link button
+$existingLinkUrl = '';
+foreach ($shares as $share) {
+    if ($share->shared_with_type === StorageShare::TYPE_LINK && $share->is_active && !$share->isExpired()) {
+        $existingLinkUrl = Yii::$app->urlManager->createAbsoluteUrl(['/storage/default/view-share', 'id' => $share->id_share]);
+        break;
+    }
+}
 ?>
 <script>
 window.shareConfig = <?= $shareConfigJson ?>;
+window.generatedShareLink = <?= json_encode($existingLinkUrl) ?>;
 </script>
+
 <?php
 
 Modal::begin([

@@ -85,6 +85,9 @@
             },
             success: function(response) {
                 if (response.success) {
+                     if (response.link) {  
+                         window.generatedShareLink = response.link;
+                    }
                     showShareToast(config.messages.shareCreated);
                     refreshSharesList();
                     // Reset form
@@ -255,21 +258,56 @@
      * Handle copy link button
      */
     window.handleCopyLink = function(btn) {
-        const config = window.shareConfig;
-        if (!config) return;
+        var linkToCopy = window.generatedShareLink || '';
+        if (!linkToCopy) {
+            showShareToast('Please generate a link first', false);
+            return;
+        }
 
-        const url = window.location.origin + config.urls.getFileUrl + '?id=' + config.itemId;
-        
-        navigator.clipboard.writeText(url).then(function() {
-            const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fa fa-check me-2"></i>' + btn.dataset.copied;
+          //275-2280 yeni eklendi
+           function onCopied() {
+            var original = btn.innerHTML;
+            btn.innerHTML = '<i class="fa fa-check me-2"></i>' + (btn.dataset.copied || 'Copied!');
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-success');
+
+
             setTimeout(function() {
                 btn.innerHTML = original;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
             }, 2000);
-        }).catch(function(err) {
-            console.error('Failed to copy link:', err);
-            showShareToast(config.messages.error || 'Failed to copy link', false);
-        });
+      
+        }
+
+        // Modern API (HTTPS / localhost)
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(linkToCopy).then(onCopied).catch(function () {
+                fallbackCopy(linkToCopy);
+            });
+        } else {
+            fallbackCopy(linkToCopy);
+        }
+
+        function fallbackCopy(text) {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            ta.style.top = '-9999px';
+             btn.parentNode.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                onCopied();
+            } catch (e) {
+                showShareToast('Failed to copy link', false);
+            } finally { 
+                
+                btn.parentNode.removeChild(ta); 
+            }
+        }
     };
 
 })();
