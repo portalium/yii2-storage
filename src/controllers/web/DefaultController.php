@@ -1643,11 +1643,79 @@ class DefaultController extends Controller
         }
 
         if ($share->save()) {
-            return ['success' => true, 'message' => Module::t('Share created successfully!'), 'share' => $share];
+            $generatedLink = '';
+            if ($shared_with_type === \portalium\storage\models\StorageShare::TYPE_LINK) {
+            
+                $generatedLink = \yii\helpers\Url::to(['/storage/default/view-share', 'id' => $share->id_share], true);
+            }
+
+            return [
+                'success' => true, 
+                'message' => Module::t('Share created successfully!'), 
+                'share' => $share,
+                'link' => $generatedLink 
+            ];
+        }
         } else {
             return ['success' => false, 'message' => Module::t('Failed to create share!'), 'errors' => $share->errors];
         }
     }
+
+    
+    /**
+     * View a shared item via link
+     */
+    public function actionViewShare($id)
+    {
+        $share = \portalium\storage\models\StorageShare::findOne($id);
+
+        if (!$share || $share->shared_with_type !== \portalium\storage\models\StorageShare::TYPE_LINK || !$share->isValid()) {
+            throw new NotFoundHttpException(Module::t('The requested share link is invalid or has expired.'));
+        }
+
+        // If it's a direct file share, just serve the file
+        if ($share->id_storage !== null) {
+            $file = Storage::findOne($share->id_storage);
+            if (!$file) {
+                throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
+            }
+            
+            // Log access
+            $file->access_count = ($file->access_count ?? 0) + 1;
+            $file->date_last_access = date('Y-m-d H:i:s');
+            $file->save(false, ['access_count', 'date_last_access']);
+
+            // Reuse GetFile logic for returning the file
+            $path = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
+            if (file_exists($path)) {
+                $response = Yii::$app->response;
+                $fileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                
+                if (in_array($file->mime_type, ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'])) {
+                    $response->headers->set('Content-Disposition', 'inline; filename="' . $file->title . '.' . $fileExtension . '"');
+                } else {
+                    $response->headers->set('Content-Disposition', 'attachment; filename="' . $file->title . '.' . $fileExtension . '"');
+                }
+                return $response->sendFile($path, $file->title . '.' . $fileExtension, ['inline' => true]);
+            }
+            throw new NotFoundHttpException(Module::t('File not found on disk.'));
+        }
+        
+        // For directory or full storage, redirect to index with specific parameters or render a custom view
+        // Since we are creating a generic view for shared folders, we'll render a simple view or redirect
+        // For now, redirect to login if guest, or to storage index with a flash message
+        if (Yii::$app->user->isGuest) {
+            Yii::$app->user->setReturnUrl(['/storage/default/view-share', 'id' => $id]);
+            return $this->redirect(['/site/auth/login']);
+        }
+        
+        if ($share->id_directory) {
+            return $this->redirect(['/storage/default/index', 'id_directory' => $share->id_directory]);
+        }
+        
+        return $this->redirect(['/storage/default/index']);
+    }
+    
 
     /**
      * Get all shares for a file, directory, or user storage
