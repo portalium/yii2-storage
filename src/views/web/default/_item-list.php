@@ -151,15 +151,6 @@ foreach ($directories as $model) {
 
     $content .= Html::tag('span', $folderName, ['class' => 'folder-name']);
 
-    $content .= Html::button(
-    Html::tag('i', '', ['class' => 'fa fa-ellipsis-v']),
-    [
-        'class' => 'more-options',
-        'onclick' => "toggleFolderMenu(event, $folderId)",
-        'data-title' => Module::t('More Options'),
-    ]
-    );
-
     // Check user's permissions for this folder
     $isOwner = ($model->id_user == Yii::$app->user->id);
     $hasGlobalEditPerm = Yii::$app->user->can('storageWebDefaultRenameFolder') || Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFolder', ['model' => $model]);
@@ -226,14 +217,26 @@ foreach ($directories as $model) {
         ];
     }
 
-    $content .= Dropdown::widget([
-        'items' => $dropdownItems,
-        'options' => [
-            'class' => 'folder-dropdown-menu',
-            'id' => 'context-folder-menu-' . $folderId,
-        ],
-    ]);
+    if (!empty($dropdownItems)) {
 
+        $content .= Html::button(
+            Html::tag('i', '', ['class' => 'fa fa-ellipsis-v']),
+            [
+                'class' => 'more-options',
+                'onclick' => "toggleFolderMenu(event, $folderId)",
+                'data-title' => Module::t('More Options'),
+            ]
+        );
+
+        $content .= Dropdown::widget([
+            'items' => $dropdownItems,
+            'options' => [
+                'class' => 'folder-dropdown-menu',
+                'id' => 'context-folder-menu-' . $folderId,
+            ],
+        ]);
+    }
+    
     $content .= Html::endTag('div'); 
     $content .= Html::endTag('div'); 
     echo $content; 
@@ -461,21 +464,6 @@ echo ListView::widget([
 
         $content .= Html::endTag('div'); // .file-info
 
-        $content .= Html::button(
-            Html::tag('i', '', [
-                'class' => 'fa fa-ellipsis-v',
-                'id' => 'menu-trigger-' . $model->id_storage,
-                'data-title' => $title,
-            ]),
-            [
-                'class' => 'file-more-options',
-                'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
-                'data-title' => Module::t('More Options'),
-            ]
-        );
-
-        $content .= Html::endTag('div'); // .file-header
-
         // Check user's permissions for this file
         $isOwner = ($model->id_user == Yii::$app->user->id);
         $hasGlobalEditPerm = Yii::$app->user->can('storageWebDefaultRenameFile') || Yii::$app->workspace->can('storage', 'storageWebDefaultRenameFile', ['model' => $model]);
@@ -576,14 +564,28 @@ echo ListView::widget([
             ];
         }
         
-        // Dropdown menu
-        $content .= Dropdown::widget([
-            'items' => $fileDropdownItems,
-            'options' => [
-                'class' => 'custom-dropdown-menu',
-                'id' => 'context-menu-' . $model->id_storage,
-            ],
-        ]);
+        if (!empty($fileDropdownItems)) {
+            $content .= Html::button(
+                Html::tag('i', '', ['class' => 'fa fa-ellipsis-v',
+                    'id' => 'menu-trigger-' . $model->id_storage,
+                    'data-title' => $title,
+                ]),
+                [
+                    'class' => 'file-more-options',
+                    'onclick' => 'toggleContextMenu(event, ' . $model->id_storage . ')',
+                    'data-title' => Module::t('More Options'),
+                ]
+            );
+            $content .= Dropdown::widget([
+                'items' => $fileDropdownItems,
+                'options' => [
+                    'class' => 'custom-dropdown-menu',
+                    'id' => 'context-menu-' . $model->id_storage,
+                ],
+            ]);
+        }
+        
+        $content .= Html::endTag('div'); // .file-header
 
         // file preview
         $content .= Html::beginTag('div', ['class' => 'file-preview']);
