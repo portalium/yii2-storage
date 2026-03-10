@@ -18,7 +18,7 @@ class StorageSearch extends Storage
     {
         return [
             [['id_storage'], 'integer'],
-            [['name', 'title', 'access'], 'safe'],
+            [['name', 'title', 'access', 'type'], 'safe'],
         ];
     }
 
@@ -41,6 +41,9 @@ class StorageSearch extends Storage
     public function search($params)
     {
         $query = Storage::find();
+
+        // By default, only show files (not directories) in search results
+        $query->andWhere(['type' => Storage::TYPE_FILE]);
 
         $query->orderBy(['id_storage' => SORT_DESC]);
         // add conditions that should always apply here

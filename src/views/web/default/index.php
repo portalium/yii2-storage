@@ -35,7 +35,7 @@ echo Loading::widget([
   <div class="file-controls">
     <?php
     echo Html::beginTag('div', [
-      'class' => 'd-flex align-items-center gap-1 flex-wrap'
+      'class' => 'd-flex align-items-center gap-1 flex-nowrap w-100'
     ]);
 
     echo Html::tag(
@@ -212,7 +212,7 @@ echo Html::endTag('ul');
 echo Html::endTag('div');
 
 echo Html::beginTag('div', [
- 'class' => 'view-toggle d-flex align-items-center ms-auto align-self-center mb-0'
+ 'class' => 'view-toggle d-flex align-items-center ms-auto align-self-center mb-0 flex-shrink-0'
 ]);
 
     echo Html::button(
@@ -283,7 +283,8 @@ echo Html::beginTag('div', [
       'directoryDataProvider' => $directoryDataProvider,
       'fileDataProvider' => $fileDataProvider,
       'isPicker' => $isPicker ?? false,
-      'actionId' => $actionId
+      'actionId' => $actionId,
+      'allowFolderSelection' => $allowFolderSelection ?? false,
     ]);
 
     Pjax::end();

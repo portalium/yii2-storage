@@ -1,6 +1,6 @@
 <?php
 
-use portalium\storage\models\StorageDirectory;
+use portalium\storage\models\Storage;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Dropdown;
@@ -37,20 +37,23 @@ if (!is_array($fileExtensions)) {
 $fileExtensionsParam = !empty($fileExtensions) ? implode(',', $fileExtensions) : '';
 
 if ($id_directory !== null) {
-    $parentDirectory = StorageDirectory::findOne($id_directory);
+    $parentDirectory = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
 }
 
 echo Html::beginTag('div', ['class' => 'container-fluid mt-3']);
 
 
 if ($id_directory !== null) {
-    $parentId = $parentDirectory && $parentDirectory->id_parent ? $parentDirectory->id_parent : null;
+    $parentId = $parentDirectory && $parentDirectory->id_directory ? $parentDirectory->id_directory : null;
     $backUrlParams = [$actionId, 'isPicker' => $isPicker];
     if ($parentId) {
         $backUrlParams['id_directory'] = $parentId;
     }
     if (!empty($fileExtensionsParam)) {
         $backUrlParams['fileExtensions'] = $fileExtensionsParam;
+    }
+    if (!empty($allowFolderSelection)) {
+        $backUrlParams['allowFolderSelection'] = 1;
     }
 
     echo Html::a(
@@ -65,14 +68,14 @@ if ($id_directory !== null) {
     while ($currentDir !== null) {
         array_unshift($pathItems, [
             'name' => $currentDir->name,
-            'id' => $currentDir->id_directory
+            'id' => $currentDir->id_storage
         ]);
 
-        if ($currentDir->id_parent === null) {
+        if ($currentDir->id_directory === null) {
             break;
         }
 
-        $currentDir = StorageDirectory::findOne($currentDir->id_parent);
+        $currentDir = Storage::findOne(['id_storage' => $currentDir->id_directory, 'type' => Storage::TYPE_DIRECTORY]);
     }
 
     echo Html::beginTag('nav', ['class' => 'ml-3 d-inline-block']);
@@ -82,6 +85,9 @@ if ($id_directory !== null) {
     $homeUrlParams = ['index', 'isPicker' => $isPicker];
     if (!empty($fileExtensionsParam)) {
         $homeUrlParams['fileExtensions'] = $fileExtensionsParam;
+    }
+    if (!empty($allowFolderSelection)) {
+        $homeUrlParams['allowFolderSelection'] = 1;
     }
 
     echo Html::tag(
@@ -98,6 +104,9 @@ if ($id_directory !== null) {
             $breadcrumbUrlParams = ['index', 'id_directory' => $item['id'], 'isPicker' => $isPicker];
             if (!empty($fileExtensionsParam)) {
                 $breadcrumbUrlParams['fileExtensions'] = $fileExtensionsParam;
+            }
+            if (!empty($allowFolderSelection)) {
+                $breadcrumbUrlParams['allowFolderSelection'] = 1;
             }
 
             echo Html::tag(
@@ -129,8 +138,8 @@ echo Html::beginTag('div', ['class' => 'row g-3', 'id' => 'folder-list']);
 }
 
 foreach ($directories as $model) {
-    /** @var \portalium\storage\models\StorageDirectory $model */
-    $folderId = $model->id_directory;
+    /** @var \portalium\storage\models\Storage $model */
+    $folderId = $model->id_storage;
     $folderName = Html::encode($model->name);
 
     $content = Html::beginTag('div', [
@@ -142,6 +151,7 @@ foreach ($directories as $model) {
         'class' => 'folder-item d-flex align-items-center',
         'data-id' => $folderId,
         'ondblclick' => "if (!(event.target.closest('.more-options'))) { openFolder($folderId, event, '" . $fileExtensionsParam . "'); }",
+        'onclick' => "if (!(event.target.closest('.more-options')) && window.allowFolderSelection && window.isPicker) { handleFolderCardClick(event, $folderId); }",
     ]);
 
     $content .= Html::tag('i', '', [
@@ -347,8 +357,27 @@ $sortDirection = Yii::$app->request->get('sortDirection', 'desc');
 // Get selected file id in file picker
 $selectedFileId = Yii::$app->request->get('selectedFileId', null);
 
+// Determine whether the selected item is a directory or a file so we can
+// pin it to the top of the correct list.
+$selectedIsDirectory = false;
+if ($isPicker && $selectedFileId) {
+    $selectedModel = \portalium\storage\models\Storage::findOne($selectedFileId);
+    if ($selectedModel && $selectedModel->isDirectory()) {
+        $selectedIsDirectory = true;
+    }
+}
+
+// Pin selected directory to the top of the directory list
+if ($directoryDataProvider && $directoryDataProvider->query && $isPicker && $selectedFileId && $selectedIsDirectory) {
+    $directoryDataProvider->query->orderBy([
+        new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),
+        'id_storage' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+    ]);
+}
+
 if ($fileDataProvider && $fileDataProvider->query) {
-    if ($isPicker && $selectedFileId) {
+    // Only pin to the top of the file list when the selected item is actually a file
+    if ($isPicker && $selectedFileId && !$selectedIsDirectory) {
         if ($sortField === 'name') {
             $fileDataProvider->query->orderBy([
                 new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),
@@ -445,8 +474,9 @@ echo ListView::widget([
 
         $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
         $title = $model->title ?: 'Başlık yok';
-        $titleAttrs = ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal'), 'data-title' => $title];
-        $content .= Html::tag('span', Html::encode($title), $titleAttrs);
+        $content .= Html::tag('span', Html::encode($title), [
+            'class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')
+        ]);
 
         $content .= Html::tag(
             'span',
@@ -610,6 +640,11 @@ echo Html::endTag('div'); // end of container-fluid
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
 $this->registerJsVar('currentFileExtensions', $fileExtensionsParam);
 $this->registerJsVar('actionId', $actionId);
+$this->registerJsVar('allowFolderSelection', isset($allowFolderSelection) && $allowFolderSelection ? 1 : 0);
+
+// Also set allowFolderSelection via inline script so PJAX re-loads pick it up immediately
+$allowFolderSelectionInt = (isset($allowFolderSelection) && $allowFolderSelection) ? 1 : 0;
+echo Html::script("window.allowFolderSelection = " . $allowFolderSelectionInt . ";");
 
 $this->registerJsVar('translations', [
     'fileSelected' => Module::t('file selected'),
@@ -864,32 +899,5 @@ window.bulkDeleteFiles = function() {
     localStorage.setItem('fileListOpen', isOpen);
     icon.toggleClass('fa-caret-down fa-caret-right');
 });
-
-// File title tooltip
-(function() {
-    var tooltip = document.getElementById('file-title-tooltip');
-    if (!tooltip) {
-        tooltip = document.createElement('div');
-        tooltip.id = 'file-title-tooltip';
-        tooltip.style.cssText = 'position:fixed;background:#333;color:#fff;padding:5px 8px;border-radius:4px;font-size:11px;white-space:nowrap;z-index:9999;pointer-events:none;opacity:0;transition:opacity 0.2s ease;';
-        document.body.appendChild(tooltip);
-    }
-
-    \$(document).on('mouseenter', '.file-title[data-title]', function() {
-        if (this.scrollWidth <= this.offsetWidth) return;
-        var title = \$(this).attr('data-title');
-        tooltip.textContent = title;
-        tooltip.style.opacity = '1';
-        var rect = this.getBoundingClientRect();
-        var left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
-        var top = rect.top - tooltip.offsetHeight - 6;
-        if (left < 4) left = 4;
-        if (left + tooltip.offsetWidth > window.innerWidth - 4) left = window.innerWidth - tooltip.offsetWidth - 4;
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
-    }).on('mouseleave', '.file-title[data-title]', function() {
-        tooltip.style.opacity = '0';
-    });
-})();
 
 JS);

@@ -11,7 +11,7 @@ use portalium\workspace\models\Workspace;
 /**
  * Share Modal View
  * @var $model \portalium\storage\models\Storage|null - for file share
- * @var $directory \portalium\storage\models\StorageDirectory|null - for directory share
+ * @var $directory \portalium\storage\models\Storage|null - for directory share (type=directory)
  * @var $shareType string - 'file', 'directory', or 'storage'
  * @var $userId int|null - for full storage share
  */
@@ -29,7 +29,7 @@ if ($isFile) {
     $access = ($model->access == 1) ? 'public' : 'private';
     $shares = StorageShare::getShares($model)->all();
 } elseif ($isDirectory) {
-    $itemId = $directory->id_directory;
+    $itemId = $directory->id_storage;
     $itemName = $directory->name;
     $itemIcon = 'fa-folder';
     $access = 'private';
@@ -99,10 +99,20 @@ $shareConfigJson = json_encode([
     ],
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
+// Find existing valid link share to pre-populate the copy link button
+$existingLinkUrl = '';
+foreach ($shares as $share) {
+    if ($share->shared_with_type === StorageShare::TYPE_LINK && $share->is_active && !$share->isExpired()) {
+        $existingLinkUrl = Yii::$app->urlManager->createAbsoluteUrl(['/storage/default/view-share', 'id' => $share->id_share]);
+        break;
+    }
+}
 ?>
 <script>
 window.shareConfig = <?= $shareConfigJson ?>;
+window.generatedShareLink = <?= json_encode($existingLinkUrl) ?>;
 </script>
+
 <?php
 
 Modal::begin([

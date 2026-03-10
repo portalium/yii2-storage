@@ -24,7 +24,7 @@ use portalium\workspace\models\Workspace;
  * @property string|null $date_update
  *
  * @property Storage $storage
- * @property StorageDirectory $directory
+ * @property Storage $directory
  * @property User $owner
  * @property User $sharedWithUser
  * @property Workspace $sharedWithWorkspace
@@ -76,7 +76,7 @@ class StorageShare extends \yii\db\ActiveRecord
             
             // Foreign key validations
             [['id_storage'], 'exist', 'skipOnError' => true, 'targetClass' => Storage::class, 'targetAttribute' => ['id_storage' => 'id_storage']],
-            [['id_directory'], 'exist', 'skipOnError' => true, 'targetClass' => StorageDirectory::class, 'targetAttribute' => ['id_directory' => 'id_directory']],
+            [['id_directory'], 'exist', 'skipOnError' => true, 'targetClass' => Storage::class, 'targetAttribute' => ['id_directory' => 'id_storage']],
             [['id_user_owner'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['id_user_owner' => 'id_user']],
             [['id_shared_with'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['id_shared_with' => 'id_user'], 'when' => function($model) {
                 return $model->shared_with_type === self::TYPE_USER;
@@ -135,12 +135,13 @@ class StorageShare extends \yii\db\ActiveRecord
 
     /**
      * Gets query for [[Directory]].
+     * Now points to Storage model since directories are stored in the same table.
      *
      * @return \yii\db\ActiveQuery
      */
     public function getDirectory()
     {
-        return $this->hasOne(StorageDirectory::class, ['id_directory' => 'id_directory']);
+        return $this->hasOne(Storage::class, ['id_storage' => 'id_directory']);
     }
 
     /**
@@ -265,8 +266,8 @@ class StorageShare extends \yii\db\ActiveRecord
      * Check if a user has access to a storage item through shares
      * 
      * @param int $id_user User ID to check
-     * @param Storage|null $storage Storage model
-     * @param StorageDirectory|null $directory Directory model
+     * @param Storage|null $storage Storage model (file)
+     * @param Storage|null $directory Directory model (Storage with type=directory)
      * @param string $requiredPermission Required permission level
      * @return bool
      */
@@ -281,26 +282,16 @@ class StorageShare extends \yii\db\ActiveRecord
 
         // Check direct file share
         if ($storage !== null) {
-            $orConditions = [
-                'OR',
-                ['id_storage' => $storage->id_storage],   // Direct file share
-                ['id_user_owner' => $storage->id_user],    // Full storage share from file owner
-            ];
-
-            // Only check directory shares if the file is actually inside a directory.
-            // When id_directory is null, ['id_directory' => null] generates 'id_directory IS NULL'
-            // in Yii2 which would incorrectly match ALL direct file shares (which also have null id_directory).
-            if ($storage->id_directory !== null) {
-                $orConditions[] = ['id_directory' => $storage->id_directory];
-            }
-
-            $query->andWhere($orConditions);
-        
+            $query->andWhere(['OR',
+                ['id_storage' => $storage->id_storage],
+                ['id_directory' => $storage->id_directory],
+                ['id_user_owner' => $storage->id_user]
+            ]);
         }
 
         // Check directory share (includes parent directories)
         if ($directory !== null) {
-            $directoryIds = self::getParentDirectoryIds($directory->id_directory);
+            $directoryIds = self::getParentDirectoryIds($directory->id_storage);
             $query->andWhere(['OR',
                 ['id_directory' => $directoryIds],
                 ['id_user_owner' => $directory->id_user]
@@ -337,19 +328,20 @@ class StorageShare extends \yii\db\ActiveRecord
     }
 
     /**
-     * Get all parent directory IDs for hierarchical share checking
+     * Get all parent directory IDs for hierarchical share checking.
+     * Now uses Storage model since directories are in the same table.
      * 
-     * @param int $id_directory
+     * @param int $id_directory The storage ID of the directory
      * @return array
      */
     public static function getParentDirectoryIds($id_directory)
     {
         $ids = [$id_directory];
-        $current = StorageDirectory::findOne($id_directory);
+        $current = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
         
-        while ($current && $current->id_parent) {
-            $ids[] = $current->id_parent;
-            $current = StorageDirectory::findOne($current->id_parent);
+        while ($current && $current->id_directory) {
+            $ids[] = $current->id_directory;
+            $current = Storage::findOne(['id_storage' => $current->id_directory, 'type' => Storage::TYPE_DIRECTORY]);
         }
         
         return $ids;
@@ -358,8 +350,8 @@ class StorageShare extends \yii\db\ActiveRecord
     /**
      * Get all shares for a storage item
      * 
-     * @param Storage|null $storage
-     * @param StorageDirectory|null $directory
+     * @param Storage|null $storage File model
+     * @param Storage|null $directory Directory model (Storage with type=directory)
      * @param int|null $id_user_owner For full storage shares
      * @return \yii\db\ActiveQuery
      */
@@ -370,7 +362,7 @@ class StorageShare extends \yii\db\ActiveRecord
         if ($storage !== null) {
             $query->andWhere(['id_storage' => $storage->id_storage]);
         } elseif ($directory !== null) {
-            $query->andWhere(['id_directory' => $directory->id_directory]);
+            $query->andWhere(['id_directory' => $directory->id_storage]);
         } elseif ($id_user_owner !== null) {
             $query->andWhere(['id_user_owner' => $id_user_owner]);
         }

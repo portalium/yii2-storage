@@ -22,8 +22,9 @@ class FilePicker extends InputWidget
     public $allowedExtensions = null;
     public $attributes = ['id_storage'];
     public $isPicker = true;
+    public $allowFolderSelection = false;
 
-    public function init()
+    public function init(): void
     {
         parent::init();
         Yii::$app->view->registerJs('$.pjax.defaults.timeout = 30000;');
@@ -34,6 +35,7 @@ class FilePicker extends InputWidget
         $this->fileExtensions = $this->options['fileExtensions'] ?? $this->fileExtensions;
         $this->allowedExtensions = $this->options['allowedExtensions'] ?? $this->allowedExtensions;
         $this->isPicker = $this->options['isPicker'] ?? $this->isPicker;
+        $this->allowFolderSelection = $this->options['allowFolderSelection'] ?? $this->allowFolderSelection;
 
         if (isset($this->options['attributes'])) {
             $this->attributes = $this->options['attributes'];
@@ -106,11 +108,12 @@ class FilePicker extends InputWidget
 
         echo Html::script("window.fileExtensions = " . json_encode($this->fileExtensions ?? []) . ";");
         echo Html::script("window.isPicker = " . ($this->isPicker ? 'true' : 'false') . ";");
+        echo Html::script("window.allowFolderSelection = " . ($this->allowFolderSelection ? 'true' : 'false') . ";");
 
         echo Html::button('<span class="btn-text">' . Module::t('Select File') . '</span>', [
             'class' => 'btn btn-primary',
             'data-allowed-extensions' => json_encode($this->allowedExtensions ?? []),
-            'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ', ' . json_encode($this->allowedExtensions ?? []) . ')'
+            'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ', ' . json_encode($this->allowedExtensions ?? []) . ', ' . ($this->allowFolderSelection ? 'true' : 'false') . ')'
         ]);
 
         echo Html::button('<span class="btn-text">' . Module::t('Preview File') . '</span>', [
@@ -203,7 +206,7 @@ function previewSelectedFile(button) {
 }
 
 if (!window.handleFilePickerClick) {
-    window.handleFilePickerClick = function(btn, id, id_storage, multiple, isJson, callbackName, isPicker, attributes, allowedExtensions) {
+    window.handleFilePickerClick = function(btn, id, id_storage, multiple, isJson, callbackName, isPicker, attributes, allowedExtensions, allowFolderSelection) {
         var $btn = $(btn);
 
         if ($btn.hasClass("btn-loading")) return;
@@ -212,7 +215,7 @@ if (!window.handleFilePickerClick) {
         
         window.currentAllowedExtensions = allowedExtensions || [];
 
-        window.openFilePickerModal(id, id_storage, multiple, isJson, callbackName, isPicker, attributes, allowedExtensions);
+        window.openFilePickerModal(id, id_storage, multiple, isJson, callbackName, isPicker, attributes, allowedExtensions, allowFolderSelection);
 
         $(document).one('shown.bs.modal', '#file-picker-modal', function () {
             $btn.removeClass("btn-loading").css("pointer-events", "auto");
@@ -223,21 +226,29 @@ if (!window.handleFilePickerClick) {
 // Modal supporter functions
 if (!window.updateFileCard) {
     window.updateFileCard = function(id_storage) {
+        // Clear all active states first
         $('.file-card.active').removeClass('active');
         $('.file-card input[type="checkbox"]').prop('checked', false);
+        $('.folder-item.active').removeClass('active');
+
         if (!id_storage) return;
 
-        let el;
+        // Try to activate as a folder first, then fall back to file
+        const activateOne = function(id) {
+            let folderEl = $('#file-picker-modal .folder-item[data-id=' + id + ']');
+            if (folderEl.length) {
+                folderEl.addClass('active');
+                return;
+            }
+            let fileEl = $('#file-picker-modal .file-card[data-id=' + id + ']');
+            fileEl.addClass('active');
+            fileEl.find('input[type="checkbox"]').prop('checked', true);
+        };
+
         if (Array.isArray(id_storage)) {
-            id_storage.forEach(id => {
-                el = $('#file-picker-modal .file-card[data-id=' + id + ']');
-                el.addClass('active');
-                el.find('input[type="checkbox"]').prop('checked', true);
-            });
+            id_storage.forEach(id => activateOne(id));
         } else {
-            el = $('#file-picker-modal .file-card[data-id=' + id_storage + ']');
-            el.addClass('active');
-            el.find('input[type="checkbox"]').prop('checked', true);
+            activateOne(id_storage);
         }
     };
 }
@@ -524,7 +535,7 @@ if (!window.openActionModal) {
 
 // Main file picker modal opening
 if (!window.openFilePickerModal) {
-    window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage'], allowedExtensions = []) {
+    window.openFilePickerModal = function(id, id_storage, multiple, isJson, callbackName, isPicker = true, attributes = ['id_storage'], allowedExtensions = [], allowFolderSelection = false) {
         window.multiple = multiple;
         window.isJson = isJson;
         window.callbackName = callbackName;
@@ -532,6 +543,7 @@ if (!window.openFilePickerModal) {
         window.isPicker = isPicker;
         window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes];
         window.allowedExtensions = allowedExtensions || [];
+        window.allowFolderSelection = allowFolderSelection || false;
 
         let inputValue = $('#' + id).val();
         let parsedValue = {};
@@ -564,7 +576,8 @@ if (!window.openFilePickerModal) {
             isPicker: isPicker,
             attributes: window.currentAttributes,
             selectedFileId: id_storage_2 || inputValue || null,
-            allowedExtensions: allowedExtensions
+            allowedExtensions: allowedExtensions,
+            allowFolderSelection: allowFolderSelection ? 1 : 0
         };
         
         if (savedSortField) {
@@ -578,18 +591,27 @@ if (!window.openFilePickerModal) {
 
             const modalEl = document.getElementById('file-picker-modal');
             if (modalEl) {
-                window.pjaxBaseUrl = '/storage/default/picker-modal?isPicker=1';
+                window.pjaxBaseUrl = '/storage/default/index?isPicker=1';
                 if (id_storage_2 || inputValue) {
                     window.pjaxBaseUrl += '&selectedFileId=' + (id_storage_2 || inputValue);
                 }
                 if (window.fileExtensions && window.fileExtensions.length > 0) {
                     window.pjaxBaseUrl += '&fileExtensions=' + window.fileExtensions.join(',');
                 }
+                if (allowFolderSelection) {
+                    window.pjaxBaseUrl += '&allowFolderSelection=1';
+                }
                 if (savedSortField) {
                     window.pjaxBaseUrl += '&sortField=' + savedSortField;
                     window.pjaxBaseUrl += '&sortDirection=' + (savedSortDirection || 'desc');
                 }
                 window.bindModalCloseEvents('file-picker-modal', 0);
+                
+                // Sync allowFolderSelection from DOM attribute in case it was set server-side
+                const domAllowFolder = modalEl.getAttribute('data-allow-folder-selection');
+                if (domAllowFolder !== null) {
+                    window.allowFolderSelection = domAllowFolder === '1';
+                }
                 
                 const modal = new bootstrap.Modal(modalEl, {
                     backdrop: 'static',
@@ -681,6 +703,26 @@ if (!window.saveSelect) {
     window.saveSelect = function() {
         const attributes = window.currentAttributes || ['id_storage'];
         
+        // Check if a folder is selected (allowFolderSelection mode)
+        const selectedFolderEl = $('.folder-item.active');
+        if (window.allowFolderSelection && selectedFolderEl.length > 0) {
+            const folderId = selectedFolderEl.data('id');
+            const folderName = selectedFolderEl.find('.folder-name').text();
+            let value;
+            if (window.isJson) {
+                value = JSON.stringify({ id_directory: folderId, name: folderName });
+            } else {
+                value = folderId;
+            }
+            $('#' + window.inputId).val(value);
+            $('#preview-file-' + window.inputId).val(value);
+            if (window.callbackName && typeof window[window.callbackName] === 'function') {
+                window[window.callbackName]({ id_directory: folderId, name: folderName });
+            }
+            window.closeModalById('file-picker-modal');
+            return;
+        }
+
         const selectedFiles = window.multiple ?
             $('.file-card input[type="checkbox"]:checked').map(function() {
                 return $(this).closest('.file-card').data('id');

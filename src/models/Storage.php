@@ -7,15 +7,14 @@ use Yii;
 use portalium\storage\Module;
 use yii\helpers\ArrayHelper;
 use portalium\user\models\User;
-use yii\web\UploadedFile;
 use portalium\base\Event;
-use portalium\workspace\models\Workspace;
 use portalium\storage\models\StorageShare;
 
 /**
  * This is the model class for table "{{%storage_storage}}".
  *
  * @property int $id_storage
+ * @property string $type file|directory
  * @property string $name
  * @property string $title
  * @property string $id_user
@@ -23,15 +22,32 @@ use portalium\storage\models\StorageShare;
  * @property string $id_workspace
  * @property string $access
  * @property string $hash_file
+ * @property int|null $id_directory Parent directory (self-referencing: points to another Storage row with type=directory)
+ * @property string|null $thumbnail
+ * @property string|null $date_last_access
+ * @property int $access_count
+ * @property string $date_create
+ * @property string $date_update
+ *
+ * @property Storage|null $parentDirectory
+ * @property Storage[] $children  Child items (files + subdirectories) inside this directory
+ * @property Storage[] $childDirectories  Subdirectories only
+ * @property Storage[] $childFiles  Files only
  */
 class Storage extends \yii\db\ActiveRecord
 {
     public $file;
-    public $type;
     public $allowedExtensions;
+
+    const TYPE_FILE = 'file';
+    const TYPE_DIRECTORY = 'directory';
 
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
+
+    const IS_MODAL_TRUE = 1;
+    const IS_MODAL_FALSE = 0;
+    
     const MIME_TYPE = [
         'image/jpeg' => '0',
         'image/png' => '1',
@@ -143,14 +159,21 @@ class Storage extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
+            [['type'], 'required'],
+            [['type'], 'in', 'range' => [self::TYPE_FILE, self::TYPE_DIRECTORY]],
+            [['type'], 'default', 'value' => self::TYPE_FILE],
             [['title'], 'required', 'when' => function ($model) {
-                return $model->type === 'file';
+                return $model->type === self::TYPE_FILE;
             }, 'whenClient' => "function (attribute, value) {
             return $('#upload-type').val() === 'file';
         }"],
+            [['name'], 'required', 'when' => function ($model) {
+                return $model->type === self::TYPE_DIRECTORY;
+            }],
             [['name', 'title', 'thumbnail'], 'string', 'max' => 255],
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             [['id_directory'], 'integer'],
+            [['id_directory'], 'validateNotSelfParent'],
             [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions', 'access_count', 'date_last_access'], 'safe'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE],
@@ -159,10 +182,42 @@ class Storage extends \yii\db\ActiveRecord
         ];
     }
 
+    /**
+     * Validates that a directory cannot be its own parent (directly or indirectly).
+     */
+    public function validateNotSelfParent($attribute, $params)
+    {
+        if ($this->type !== self::TYPE_DIRECTORY || empty($this->id_directory)) {
+            return;
+        }
+
+        // Cannot be its own parent
+        if ($this->id_storage && $this->id_directory == $this->id_storage) {
+            $this->addError($attribute, Module::t('A folder cannot be its own parent.'));
+            return;
+        }
+
+        // Check for circular reference: walk up the tree
+        $visited = [$this->id_storage];
+        $parentId = $this->id_directory;
+        $maxDepth = 100;
+
+        while ($parentId !== null && $maxDepth-- > 0) {
+            if (in_array($parentId, $visited)) {
+                $this->addError($attribute, Module::t('Circular folder reference detected.'));
+                return;
+            }
+            $visited[] = $parentId;
+            $parent = self::findOne(['id_storage' => $parentId, 'type' => self::TYPE_DIRECTORY]);
+            $parentId = $parent ? $parent->id_directory : null;
+        }
+    }
+
     public function attributeLabels()
     {
         return [
             'id_storage' => Module::t('Id Storage'),
+            'type' => Module::t('Type'),
             'name' => Module::t('Name'),
             'thumbnail' => Module::t('Thumbnail'),
             'title' => Module::t('Title'),
@@ -175,13 +230,238 @@ class Storage extends \yii\db\ActiveRecord
         ];
     }
 
+    // ─── Directory-related relationships (self-referencing) ─────
+
+    /**
+     * Parent directory (Storage record with type = 'directory').
+     * @return \yii\db\ActiveQuery
+     */
+    public function getParentDirectory()
+    {
+        return $this->hasOne(self::class, ['id_storage' => 'id_directory']);
+    }
+
+    /**
+     * All direct children (files + subdirectories) inside this directory.
+     * @return \yii\db\ActiveQuery
+     */
+    public function getChildren()
+    {
+        return $this->hasMany(self::class, ['id_directory' => 'id_storage']);
+    }
+
+    /**
+     * Direct child directories only.
+     * @return \yii\db\ActiveQuery
+     */
+    public function getChildDirectories()
+    {
+        return $this->getChildren()->andWhere(['type' => self::TYPE_DIRECTORY]);
+    }
+
+    /**
+     * Direct child files only.
+     * @return \yii\db\ActiveQuery
+     */
+    public function getChildFiles()
+    {
+        return $this->getChildren()->andWhere(['type' => self::TYPE_FILE]);
+    }
+
+    /**
+     * Helper: is this a directory?
+     * @return bool
+     */
+    public function isDirectory()
+    {
+        return $this->type === self::TYPE_DIRECTORY;
+    }
+
+    /**
+     * Helper: is this a file?
+     * @return bool
+     */
+    public function isFile()
+    {
+        return $this->type === self::TYPE_FILE;
+    }
+
+    /**
+     * Alias for id_directory (backward compat with old StorageDirectory.id_parent)
+     * @return int|null
+     */
+    public function getIdParent()
+    {
+        return $this->id_directory;
+    }
+
+    /**
+     * Get all child items count (files + subdirectories) recursively
+     * @return int
+     */
+    public function getChildItemsCount()
+    {
+        $count = 0;
+
+        // Count direct children files
+        $count += self::find()->where(['id_directory' => $this->id_storage, 'type' => self::TYPE_FILE])->count();
+
+        // Count subdirectories and their contents recursively
+        $subdirectories = self::find()->where(['id_directory' => $this->id_storage, 'type' => self::TYPE_DIRECTORY])->all();
+        foreach ($subdirectories as $subdir) {
+            $count++; // Count the subdirectory itself
+            $count += $subdir->getChildItemsCount();
+        }
+
+        return $count;
+    }
+
+    /**
+     * Check if directory is shared with a specific user
+     * Also checks parent directories (hierarchical)
+     * @param int $id_user User ID
+     * @param string $requiredPermission Required permission level
+     * @return bool
+     */
+    public function isDirectorySharedWith($id_user, $requiredPermission = StorageShare::PERMISSION_VIEW)
+    {
+        if ($this->type !== self::TYPE_DIRECTORY) {
+            return false;
+        }
+        return StorageShare::hasAccess($id_user, null, $this, $requiredPermission);
+    }
+
+    /**
+     * Check if current user can access this directory
+     * Considers: ownership, shares (including parent), workspace membership
+     * @param string $requiredPermission Required permission level
+     * @return bool
+     */
+    public function canAccessDirectory($requiredPermission = StorageShare::PERMISSION_VIEW)
+    {
+        if ($this->type !== self::TYPE_DIRECTORY) {
+            return false;
+        }
+
+        $userId = Yii::$app->user->id;
+
+        // Owner can always access
+        if ($this->id_user == $userId) {
+            return true;
+        }
+
+        // Check if shared with user (includes parent directories)
+        if ($this->isDirectorySharedWith($userId, $requiredPermission)) {
+            return true;
+        }
+
+        // Check workspace access
+        if (
+            isset($this->id_workspace) && $this->id_workspace &&
+            Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $this])
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Upload a folder (multiple files) creating directory entries in storage.
+     *
+     * @param \yii\web\UploadedFile[] $uploadedFiles
+     * @param int|null $initialParentId Parent storage id (directory type)
+     * @return bool
+     */
+    public function uploadFolder($uploadedFiles, $initialParentId = null)
+    {
+        if (empty($uploadedFiles)) {
+            $this->addError('file', Module::t('No files were uploaded'));
+            return false;
+        }
+
+        $userId = Yii::$app->user->id;
+        $workspaceId = $this->id_workspace ?? (Yii::$app->workspace->id ?? 1);
+
+        $directories = []; // relative path → new storage id
+        $success = true;
+
+        foreach ($uploadedFiles as $file) {
+            $fullPath = $file->fullPath ?? $file->name;
+            $pathParts = explode('/', $fullPath);
+            $fileName = array_pop($pathParts);
+            $currentPath = '';
+            $parentStorageId = $initialParentId;
+
+            foreach ($pathParts as $depth => $folderName) {
+                $currentPath = $depth === 0 ? $folderName : $currentPath . '/' . $folderName;
+
+                if (!isset($directories[$currentPath])) {
+                    $dir = new self();
+                    $dir->type = self::TYPE_DIRECTORY;
+                    $dir->name = $folderName;
+                    $dir->title = $folderName;
+                    $dir->mime_type = 0;
+                    $dir->id_workspace = $workspaceId;
+                    $dir->date_create = date('Y-m-d H:i:s');
+                    $dir->date_update = date('Y-m-d H:i:s');
+
+                    if ($depth === 0 && $initialParentId !== null) {
+                        $dir->id_directory = $initialParentId;
+                    } else {
+                        $dir->id_directory = $directories[dirname($currentPath)] ?? null;
+                    }
+
+                    if (!$dir->save()) {
+                        foreach ($dir->errors as $attribute => $errors) {
+                            foreach ($errors as $error) {
+                                $this->addError($attribute, $error);
+                            }
+                        }
+                        return false;
+                    }
+                    $directories[$currentPath] = $dir->id_storage;
+                }
+                $parentStorageId = $directories[$currentPath];
+            }
+
+            if (!empty($fileName)) {
+                $storage = new self();
+                $storage->type = self::TYPE_FILE;
+                $storage->title = pathinfo($fileName, PATHINFO_FILENAME);
+                $storage->name = $fileName;
+                $storage->id_directory = $parentStorageId;
+                $storage->id_user = $userId;
+                $storage->id_workspace = $workspaceId;
+                $storage->file = $file;
+
+                $mimeType = $storage->getMIMEType($fileName);
+                $storage->mime_type = self::MIME_TYPE[$mimeType] ?? count(self::MIME_TYPE);
+                $storage->hash_file = md5_file($file->tempName);
+                if (!$storage->upload()) {
+                    foreach ($storage->errors as $attribute => $errors) {
+                        foreach ($errors as $error) {
+                            $this->addError($attribute, $error);
+                        }
+                    }
+                    $success = false;
+                }
+            }
+        }
+
+        return $success;
+    }
+
     /**
      * (@inheritdoc)
      */
     public function upload()
     {
+        if (empty($this->type)) {
+            $this->type = self::TYPE_FILE;
+        }
+
         if (!$this->validate()) {
-            Yii::warning($this->getErrors(), __METHOD__);
             return false;
         }
 
@@ -220,7 +500,7 @@ class Storage extends \yii\db\ActiveRecord
         $mimeType = $this->getMIMEType($fullPath);
         $this->name = $filename;
         $this->mime_type = self::MIME_TYPE[$mimeType] ?? self::MIME_TYPE['other'];
-
+        $this->id_workspace = Yii::$app->workspace->id;
         if (!$this->save()) {
             return false;
         }
@@ -243,7 +523,6 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
-        Yii::warning('MIME type requested for file: ' . $filename . ' with extension: ' . $ext, __METHOD__);
         switch ($ext) {
             case 'zip':
                 return 'application/zip';
@@ -337,9 +616,69 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
+    public static function getMimeTypeList()
+    {
+        return array_flip(self::MIME_TYPE);
+    }
+
+    public static function getAccesses()
+    {
+        return [
+            self::ACCESS_PUBLIC => Module::t('Public'),
+            self::ACCESS_PRIVATE => Module::t('Private'),
+        ];
+    }
+
+     /**
+     * Get the URL for accessing the file
+     * @return string
+     */
     public function getFilePath()
     {
         return Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+    }
+
+    /**
+     * Get the file storage directory path (physical file system path)
+     * @return string
+     */
+    public static function getStorageDir()
+    {
+        return realpath(Yii::$app->basePath . '/../data');
+    }
+
+    /**
+     * Get full file path for a storage item (physical file system path)
+     * @param string|null $filename If null, uses $this->name
+     * @return string
+     */
+    public function getFullFilePath($filename = null)
+    {
+        if ($filename === null) {
+            $filename = $this->name;
+        }
+        return self::getStorageDir() . '/' . $filename;
+    }
+
+    /**
+     * Get full thumbnail file path (physical file system path)
+     * @return string|null
+     */
+    public function getThumbnailFullPath()
+    {
+        if (empty($this->thumbnail)) {
+            return null;
+        }
+        return self::getStorageDir() . '/' . $this->thumbnail;
+    }
+
+    /**
+     * Get default thumbnail file path based on current file name (physical file system path)
+     * @return string
+     */
+    public function getDefaultThumbnailFullPath()
+    {
+        return self::getStorageDir() . '/' . 'thumb_' . $this->name;
     }
 
     public function deleteFile()
@@ -429,6 +768,7 @@ class Storage extends \yii\db\ActiveRecord
     public function cloneStorage()
     {
         $newStorage = new Storage();
+        $newStorage->type = self::TYPE_FILE;
         $newStorage->title = $this->title;
         $newStorage->id_user = Yii::$app->user->id;
         $newStorage->mime_type = $this->mime_type;
@@ -457,9 +797,10 @@ class Storage extends \yii\db\ActiveRecord
         if (is_numeric($mimeType)) {
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
+
         $path = Yii::$app->basePath . '/../data/' . $this->name;
-        $thumbPath = Yii::$app->basePath . '/../data/' . $this->thumbnail;
         $iconPath = Yii::$app->view->getAssetManager()->getBundle(\portalium\storage\bundles\IconAsset::class)->baseUrl;
+
         if (file_exists($path)) {
             switch ($mimeType) {
                 case 'application/pdf':
@@ -489,32 +830,34 @@ class Storage extends \yii\db\ActiveRecord
                 case 'image/jpg':
                 case 'image/png':
                 case 'image/svg+xml':
-                    if (!empty($this->thumbnail) && file_exists($thumbPath)) {
-                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail;
+                    $thumbFullPath = $this->getThumbnailFullPath();
+                    $defaultThumbFullPath = $this->getDefaultThumbnailFullPath();
+                    
+                    if (!empty($this->thumbnail) && file_exists($thumbFullPath)) {
+                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                     } else {
                         $thumbName = 'thumb_' . $this->name;
-                        $thumbPathFull = Yii::$app->basePath . '/../data/' . $thumbName;
                         if (in_array($mimeType, self::THUMBNAIL_ALLOWED_MIMES)) {
                             try {
-                                if (!empty($this->thumbnail) && file_exists(Yii::$app->basePath . '/../data/' . $this->thumbnail)) {
-                                    $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail;
+                                if (!empty($this->thumbnail) && file_exists($thumbFullPath)) {
+                                    $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                                 } else {
-                                    if (!file_exists($thumbPathFull) && extension_loaded('imagick') && file_exists($path)) {
-                                        $this->generateThumbnail($path, $thumbPathFull, self::THUMBNAIL_DEFAULT_HEIGHT, self::THUMBNAIL_MAX_SIZE_KB);
+                                    if (!file_exists($defaultThumbFullPath) && extension_loaded('imagick') && file_exists($path)) {
+                                        $this->generateThumbnail($path, $defaultThumbFullPath, self::THUMBNAIL_DEFAULT_HEIGHT, self::THUMBNAIL_MAX_SIZE_KB);
                                         $this->thumbnail = $thumbName;
                                         $this->save(false);
                                     }
-                                    if (file_exists($thumbPathFull)) {
-                                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $thumbName;
+                                    if (file_exists($defaultThumbFullPath)) {
+                                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                                     } else {
-                                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+                                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                                     }
                                 }
                             } catch (\Throwable $e) {
-                                $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+                                $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                             }
                         } else {
-                            $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+                            $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                         }
                     }
                     return [
@@ -675,6 +1018,20 @@ class Storage extends \yii\db\ActiveRecord
         if (!extension_loaded('imagick')) {
             throw new \Exception("Imagick extension is not installed.");
         }
+        
+        if (!file_exists($sourcePath)) {
+            throw new \Exception("Source file does not exist: " . $sourcePath);
+        }
+
+        // Check write permissions on directory
+        $thumbDir = dirname($thumbPath);
+        if (!is_dir($thumbDir)) {
+            throw new \Exception("Thumbnail directory does not exist: " . $thumbDir);
+        }
+
+        if (!is_writable($thumbDir)) {
+            throw new \Exception("Thumbnail directory is not writable: " . $thumbDir);
+        }
 
         $originalSizeKB = filesize($sourcePath) / 1024;
 
@@ -684,20 +1041,24 @@ class Storage extends \yii\db\ActiveRecord
 
         try {
             $image = new \Imagick($sourcePath);
+
             $origWidth = $image->getImageWidth();
             $origHeight = $image->getImageHeight();
+
             if ($origHeight <= $height) {
                 return copy($sourcePath, $thumbPath);
             }
+
             $ratio = $origWidth / $origHeight;
             $width = intval($height * $ratio);
-
             $image->resizeImage($width, $height, \Imagick::FILTER_LANCZOS, 1);
 
             $quality = 85;
             $minQuality = 30;
+            $loopCount = 0;
 
             do {
+                $loopCount++;
                 $image->setImageCompressionQuality($quality);
 
                 $format = strtolower($image->getImageFormat());
@@ -713,7 +1074,12 @@ class Storage extends \yii\db\ActiveRecord
                 $fileSizeKB = strlen($imgData) / 1024;
 
                 if ($fileSizeKB <= $targetSizeKB || $quality <= $minQuality) {
-                    file_put_contents($thumbPath, $imgData);
+                    $writeResult = file_put_contents($thumbPath, $imgData);
+                    
+                    if ($writeResult === false) {
+                        throw new \Exception("Failed to write thumbnail file: " . $thumbPath);
+                    }
+                    
                     $image->clear();
                     $image->destroy();
                     return true;
@@ -727,6 +1093,8 @@ class Storage extends \yii\db\ActiveRecord
             return false;
         } catch (\ImagickException $e) {
             return false;
+        } catch (\Exception $e) {
+            throw $e;
         }
     }
 
@@ -741,7 +1109,6 @@ class Storage extends \yii\db\ActiveRecord
             $filePath = $dataPath . '/' . $storage->name;
 
             if (!file_exists($filePath)) {
-                Yii::warning("File not found for storage ID {$storage->id_storage}: {$storage->name}", __METHOD__);
                 continue;
             }
 
