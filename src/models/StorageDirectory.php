@@ -29,7 +29,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
 {
     public $type;
 
-     public function behaviors()
+    public function behaviors()
     {
         return [
             [
@@ -119,7 +119,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
         $userId = Yii::$app->user->id;
         $workspaceId = $this->id_workspace ?? 1;
-        
+
         // All file types are now accepted - no extension filtering needed
         $validFiles = $uploadedFiles;
 
@@ -172,7 +172,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
                 $mimeType = $storage->getMIMEType($fileName);
                 $storage->mime_type = Storage::MIME_TYPE[$mimeType] ?? count(Storage::MIME_TYPE);
-
+                $storage->hash_file = md5_file($file->tempName);
                 if (!$storage->upload()) {
                     foreach ($storage->errors as $attribute => $errors) {
                         foreach ($errors as $error) {
@@ -186,20 +186,11 @@ class StorageDirectory extends \yii\db\ActiveRecord
 
         return $success;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Gets query for [[StorageDirectories]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
     public function getStorageDirectories()
     {
         return $this->hasMany(StorageDirectory::class, ['id_parent' => 'id_directory']);
@@ -234,7 +225,8 @@ class StorageDirectory extends \yii\db\ActiveRecord
     {
         return $this->getShares()
             ->where(['is_active' => 1])
-            ->andWhere(['OR',
+            ->andWhere([
+                'OR',
                 ['expires_at' => null],
                 ['>', 'expires_at', date('Y-m-d H:i:s')]
             ]);
@@ -275,8 +267,10 @@ class StorageDirectory extends \yii\db\ActiveRecord
         }
 
         // Check workspace access (if directory has workspace field)
-        if (isset($this->id_workspace) && $this->id_workspace && 
-            Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $this])) {
+        if (
+            isset($this->id_workspace) && $this->id_workspace &&
+            Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $this])
+        ) {
             return true;
         }
 
@@ -291,18 +285,17 @@ class StorageDirectory extends \yii\db\ActiveRecord
     public function getChildItemsCount()
     {
         $count = 0;
-        
+
         // Count direct files
         $count += Storage::find()->where(['id_directory' => $this->id_directory])->count();
-        
+
         // Count subdirectories and their contents recursively
         $subdirectories = StorageDirectory::find()->where(['id_parent' => $this->id_directory])->all();
         foreach ($subdirectories as $subdir) {
             $count++; // Count the subdirectory itself
             $count += $subdir->getChildItemsCount(); // Recursively count its contents
         }
-        
+
         return $count;
     }
 }
-

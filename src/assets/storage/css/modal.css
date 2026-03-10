@@ -442,6 +442,12 @@
   background-color: #eaeaea;
 }
 
+.folder-item.active {
+  background-color: #d4edda;
+  border: 2px solid #28a745;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+}
+
 .folder-icon {
   display: inline-block;   
   font-size: 16px;         

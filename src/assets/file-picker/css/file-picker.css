@@ -1,0 +1,8 @@
+.file-picker-card:hover {
+    border-color: #6cbc2d;
+    cursor: pointer;
+}
+
+.file-picker-selected {
+    border-color: #6cbc2d !important;
+}
