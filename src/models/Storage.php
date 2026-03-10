@@ -7,9 +7,7 @@ use Yii;
 use portalium\storage\Module;
 use yii\helpers\ArrayHelper;
 use portalium\user\models\User;
-use yii\web\UploadedFile;
 use portalium\base\Event;
-use portalium\workspace\models\Workspace;
 use portalium\storage\models\StorageShare;
 
 /**
@@ -32,6 +30,10 @@ class Storage extends \yii\db\ActiveRecord
 
     const ACCESS_PUBLIC = 1;
     const ACCESS_PRIVATE = 0;
+
+    const IS_MODAL_TRUE = 1;
+    const IS_MODAL_FALSE = 0;
+    
     const MIME_TYPE = [
         'image/jpeg' => '0',
         'image/png' => '1',
@@ -151,7 +153,6 @@ class Storage extends \yii\db\ActiveRecord
     public function upload()
     {
         if (!$this->validate()) {
-            Yii::warning($this->getErrors(), __METHOD__);
             return false;
         }
 
@@ -190,7 +191,7 @@ class Storage extends \yii\db\ActiveRecord
         $mimeType = $this->getMIMEType($fullPath);
         $this->name = $filename;
         $this->mime_type = self::MIME_TYPE[$mimeType] ?? self::MIME_TYPE['other'];
-
+        $this->id_workspace = Yii::$app->workspace->id;
         if (!$this->save()) {
             return false;
         }
@@ -213,7 +214,6 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         $ext = strtolower(substr(strrchr($filename, '.'), 1));
-        Yii::warning('MIME type requested for file: ' . $filename . ' with extension: ' . $ext, __METHOD__);
         switch ($ext) {
             case 'zip':
                 return 'application/zip';
@@ -307,9 +307,69 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
+    public static function getMimeTypeList()
+    {
+        return array_flip(self::MIME_TYPE);
+    }
+
+    public static function getAccesses()
+    {
+        return [
+            self::ACCESS_PUBLIC => Module::t('Public'),
+            self::ACCESS_PRIVATE => Module::t('Private'),
+        ];
+    }
+
+     /**
+     * Get the URL for accessing the file
+     * @return string
+     */
     public function getFilePath()
     {
         return Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+    }
+
+    /**
+     * Get the file storage directory path (physical file system path)
+     * @return string
+     */
+    public static function getStorageDir()
+    {
+        return realpath(Yii::$app->basePath . '/../data');
+    }
+
+    /**
+     * Get full file path for a storage item (physical file system path)
+     * @param string|null $filename If null, uses $this->name
+     * @return string
+     */
+    public function getFullFilePath($filename = null)
+    {
+        if ($filename === null) {
+            $filename = $this->name;
+        }
+        return self::getStorageDir() . '/' . $filename;
+    }
+
+    /**
+     * Get full thumbnail file path (physical file system path)
+     * @return string|null
+     */
+    public function getThumbnailFullPath()
+    {
+        if (empty($this->thumbnail)) {
+            return null;
+        }
+        return self::getStorageDir() . '/' . $this->thumbnail;
+    }
+
+    /**
+     * Get default thumbnail file path based on current file name (physical file system path)
+     * @return string
+     */
+    public function getDefaultThumbnailFullPath()
+    {
+        return self::getStorageDir() . '/' . 'thumb_' . $this->name;
     }
 
     public function deleteFile()
@@ -427,9 +487,10 @@ class Storage extends \yii\db\ActiveRecord
         if (is_numeric($mimeType)) {
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
+
         $path = Yii::$app->basePath . '/../data/' . $this->name;
-        $thumbPath = Yii::$app->basePath . '/../data/' . $this->thumbnail;
         $iconPath = Yii::$app->view->getAssetManager()->getBundle(\portalium\storage\bundles\IconAsset::class)->baseUrl;
+
         if (file_exists($path)) {
             switch ($mimeType) {
                 case 'application/pdf':
@@ -459,32 +520,34 @@ class Storage extends \yii\db\ActiveRecord
                 case 'image/jpg':
                 case 'image/png':
                 case 'image/svg+xml':
-                    if (!empty($this->thumbnail) && file_exists($thumbPath)) {
-                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail;
+                    $thumbFullPath = $this->getThumbnailFullPath();
+                    $defaultThumbFullPath = $this->getDefaultThumbnailFullPath();
+                    
+                    if (!empty($this->thumbnail) && file_exists($thumbFullPath)) {
+                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                     } else {
                         $thumbName = 'thumb_' . $this->name;
-                        $thumbPathFull = Yii::$app->basePath . '/../data/' . $thumbName;
                         if (in_array($mimeType, self::THUMBNAIL_ALLOWED_MIMES)) {
                             try {
-                                if (!empty($this->thumbnail) && file_exists(Yii::$app->basePath . '/../data/' . $this->thumbnail)) {
-                                    $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->thumbnail;
+                                if (!empty($this->thumbnail) && file_exists($thumbFullPath)) {
+                                    $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                                 } else {
-                                    if (!file_exists($thumbPathFull) && extension_loaded('imagick') && file_exists($path)) {
-                                        $this->generateThumbnail($path, $thumbPathFull, self::THUMBNAIL_DEFAULT_HEIGHT, self::THUMBNAIL_MAX_SIZE_KB);
+                                    if (!file_exists($defaultThumbFullPath) && extension_loaded('imagick') && file_exists($path)) {
+                                        $this->generateThumbnail($path, $defaultThumbFullPath, self::THUMBNAIL_DEFAULT_HEIGHT, self::THUMBNAIL_MAX_SIZE_KB);
                                         $this->thumbnail = $thumbName;
                                         $this->save(false);
                                     }
-                                    if (file_exists($thumbPathFull)) {
-                                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $thumbName;
+                                    if (file_exists($defaultThumbFullPath)) {
+                                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                                     } else {
-                                        $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+                                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                                     }
                                 }
                             } catch (\Throwable $e) {
-                                $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+                                $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                             }
                         } else {
-                            $url = Yii::$app->urlManager->baseUrl . '/data/' . $this->name;
+                            $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
                         }
                     }
                     return [
@@ -645,6 +708,20 @@ class Storage extends \yii\db\ActiveRecord
         if (!extension_loaded('imagick')) {
             throw new \Exception("Imagick extension is not installed.");
         }
+        
+        if (!file_exists($sourcePath)) {
+            throw new \Exception("Source file does not exist: " . $sourcePath);
+        }
+
+        // Check write permissions on directory
+        $thumbDir = dirname($thumbPath);
+        if (!is_dir($thumbDir)) {
+            throw new \Exception("Thumbnail directory does not exist: " . $thumbDir);
+        }
+
+        if (!is_writable($thumbDir)) {
+            throw new \Exception("Thumbnail directory is not writable: " . $thumbDir);
+        }
 
         $originalSizeKB = filesize($sourcePath) / 1024;
 
@@ -654,20 +731,24 @@ class Storage extends \yii\db\ActiveRecord
 
         try {
             $image = new \Imagick($sourcePath);
+
             $origWidth = $image->getImageWidth();
             $origHeight = $image->getImageHeight();
+
             if ($origHeight <= $height) {
                 return copy($sourcePath, $thumbPath);
             }
+
             $ratio = $origWidth / $origHeight;
             $width = intval($height * $ratio);
-
             $image->resizeImage($width, $height, \Imagick::FILTER_LANCZOS, 1);
 
             $quality = 85;
             $minQuality = 30;
+            $loopCount = 0;
 
             do {
+                $loopCount++;
                 $image->setImageCompressionQuality($quality);
 
                 $format = strtolower($image->getImageFormat());
@@ -683,7 +764,12 @@ class Storage extends \yii\db\ActiveRecord
                 $fileSizeKB = strlen($imgData) / 1024;
 
                 if ($fileSizeKB <= $targetSizeKB || $quality <= $minQuality) {
-                    file_put_contents($thumbPath, $imgData);
+                    $writeResult = file_put_contents($thumbPath, $imgData);
+                    
+                    if ($writeResult === false) {
+                        throw new \Exception("Failed to write thumbnail file: " . $thumbPath);
+                    }
+                    
                     $image->clear();
                     $image->destroy();
                     return true;
@@ -697,6 +783,8 @@ class Storage extends \yii\db\ActiveRecord
             return false;
         } catch (\ImagickException $e) {
             return false;
+        } catch (\Exception $e) {
+            throw $e;
         }
     }
 
@@ -711,7 +799,6 @@ class Storage extends \yii\db\ActiveRecord
             $filePath = $dataPath . '/' . $storage->name;
 
             if (!file_exists($filePath)) {
-                Yii::warning("File not found for storage ID {$storage->id_storage}: {$storage->name}", __METHOD__);
                 continue;
             }
 

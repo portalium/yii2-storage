@@ -283,7 +283,8 @@ echo Html::beginTag('div', [
       'directoryDataProvider' => $directoryDataProvider,
       'fileDataProvider' => $fileDataProvider,
       'isPicker' => $isPicker ?? false,
-      'actionId' => $actionId
+      'actionId' => $actionId,
+      'allowFolderSelection' => $allowFolderSelection ?? false,
     ]);
 
     Pjax::end();
