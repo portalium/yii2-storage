@@ -367,34 +367,49 @@ class DefaultController extends Controller
 
     public function actionUploadFile()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultUploadFile') && !\Yii::$app->workspace->can('storage', 'storageWebDefaultUploadFile')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
         $post = Yii::$app->request->post();
         $type = $post['Storage']['type'] ?? 'file';
         $model = ($type === 'folder') ? new StorageDirectory() : new Storage();
         $id_directory = Yii::$app->request->post('id_directory') ?: null;
         $model->id_directory = $id_directory;
+        $currentUserId = Yii::$app->user->id;
 
         if ($id_directory !== null) {
             $directoryModel = StorageDirectory::findOne($id_directory);
-            if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && 
-                !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) && 
-                !\Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel])) {
+
+            // Global + Own + Workspace permission check
+            $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultUploadFile') 
+                || \Yii::$app->user->can('storageWebDefaultUploadFileOwn', ['model' => $directoryModel]) 
+                || \Yii::$app->workspace->can('storage', 'storageWebDefaultUploadFile', ['model' => $directoryModel]);
+
+            // Share edit permission check
+            $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+                $currentUserId,
+                null,
+                $directoryModel,
+                \portalium\storage\models\StorageShare::PERMISSION_EDIT
+            );
+
+            if (!$hasGlobalPermission && !$hasSharePermission) {
+                throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+            }
+        } else {
+            if (!\Yii::$app->user->can('storageWebDefaultUploadFile') &&
+                !\Yii::$app->workspace->can('storage', 'storageWebDefaultUploadFile')) {
                 throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
             }
         }
 
         if (Yii::$app->request->isPost) {
             $model->load($post);
-            
+
             if (!empty($post['Storage']['allowedExtensions'])) {
                 $allowedExt = json_decode($post['Storage']['allowedExtensions'], true);
                 if (is_array($allowedExt)) {
                     $model->allowedExtensions = $allowedExt;
                 }
             }
-            
+
             $uploadedFiles = UploadedFile::getInstancesByName('Storage[file]');
             $success = false;
             if ($type === 'folder') {
@@ -412,30 +427,36 @@ class DefaultController extends Controller
                     $model->addError('file', Module::t('No files were uploaded'));
                 } else {
                     $model->file = $uploadedFiles[0];
-                if (!empty($post['Storage']['title'])) {
-                    $info = pathinfo(trim($post['Storage']['title']));
-                    $extension = isset($info['extension']) ? '.' . $info['extension'] : '';
+                    if (!empty($post['Storage']['title'])) {
+                        $info = pathinfo(trim($post['Storage']['title']));
+                        $extension = isset($info['extension']) ? '.' . $info['extension'] : '';
 
-                    $filename = $info['filename'];
+                        $filename = $info['filename'];
 
-                    if (preg_match('/^(.*)\((\d+)\)$/', $filename, $matches)) {
-                        $filename = $matches[1];
-                    }
-
-                    $currentUserId = Yii::$app->user->id;
-
-                    if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory, 'id_user' => $currentUserId])->exists()) {
-                        $model->title = $filename . $extension;
-                    } else {
-                        $counter = 1;
-                        $newTitle = "{$filename} ({$counter}){$extension}";
-                        while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory, 'id_user' => $currentUserId])->exists()) {
-                            $counter++;
-                            $newTitle = "{$filename} ({$counter}){$extension}";
+                        if (preg_match('/^(.*)\((\d+)\)$/', $filename, $matches)) {
+                            $filename = $matches[1];
                         }
-                        $model->title = $newTitle;
+
+                        if (!Storage::find()->where([
+                            'title' => $filename . $extension, 
+                            'id_directory' => $id_directory, 
+                            'id_user' => $currentUserId
+                        ])->exists()) {
+                            $model->title = $filename . $extension;
+                        } else {
+                            $counter = 1;
+                            $newTitle = "{$filename} ({$counter}){$extension}";
+                            while (Storage::find()->where([
+                                'title' => $newTitle, 
+                                'id_directory' => $id_directory, 
+                                'id_user' => $currentUserId
+                            ])->exists()) {
+                                $counter++;
+                                $newTitle = "{$filename} ({$counter}){$extension}";
+                            }
+                            $model->title = $newTitle;
+                        }
                     }
-                }
 
                     $success = $model->upload();
                 }
@@ -452,7 +473,7 @@ class DefaultController extends Controller
             'model' => $model,
         ]);
     }
-
+    
     public function actionDownloadFile()
     {
         $id = Yii::$app->request->post('id');
@@ -795,30 +816,10 @@ class DefaultController extends Controller
             return;
         }
 
-               $file = Storage::findOne($fileId);
+        $file = Storage::findOne($fileId);
 
-        $isOwnFile = $file && $file->id_user == \Yii::$app->user->id;
-
-        // Global admin-level permission: can delete any file (admin role only)
-        $hasAdminPermission = \Yii::$app->user->can('storageWebDefaultDeleteFile')
-            || \Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFile', ['model' => $file]);
-
-        // Own file permission: only applies if the file actually belongs to this user
-        $hasOwnPermission = $isOwnFile
-            && \Yii::$app->user->can('storageWebDefaultDeleteFileOwn', ["model" => $file]);
-
-        // Share-based permission: need MANAGE level to delete a file shared by someone else
-        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
-            \Yii::$app->user->id, 
-            $file, 
-            null, 
-            \portalium\storage\models\StorageShare::PERMISSION_MANAGE
-        );
-
-        if (!$hasAdminPermission && !$hasOwnPermission && !$hasSharePermission) {
+        if (!\Yii::$app->user->can('storageWebDefaultDeleteFile') && !\Yii::$app->user->can('storageWebDefaultDeleteFileOwn', ["model" => $file]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFile', ['model' => $file])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
-
         }
 
         if (!Yii::$app->request->isPost) {
@@ -1314,16 +1315,9 @@ class DefaultController extends Controller
                 else {
                     $model->id_parent = $id_directory;
                     $directoryModel = StorageDirectory::findOne($id_directory);
-                    $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultManageDirectory') || 
-                        \Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) || 
-                        \Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel]);
-                    $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
-                        \Yii::$app->user->id,
-                        null,
-                        $directoryModel,
-                        \portalium\storage\models\StorageShare::PERMISSION_MANAGE
-                    );
-                    if (!$hasGlobalPermission && !$hasSharePermission) {
+                    if (!\Yii::$app->user->can('storageWebDefaultManageDirectory') && 
+                        !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) && 
+                        !\Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel])) {
                         throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
                     }
                 }
