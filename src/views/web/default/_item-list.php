@@ -52,6 +52,9 @@ if ($id_directory !== null) {
     if (!empty($fileExtensionsParam)) {
         $backUrlParams['fileExtensions'] = $fileExtensionsParam;
     }
+    if (!empty($allowFolderSelection)) {
+        $backUrlParams['allowFolderSelection'] = 1;
+    }
 
     echo Html::a(
         Html::tag('i', '', ['class' => 'fa fa-chevron-left']) . ' ',
@@ -83,6 +86,9 @@ if ($id_directory !== null) {
     if (!empty($fileExtensionsParam)) {
         $homeUrlParams['fileExtensions'] = $fileExtensionsParam;
     }
+    if (!empty($allowFolderSelection)) {
+        $homeUrlParams['allowFolderSelection'] = 1;
+    }
 
     echo Html::tag(
         'li',
@@ -98,6 +104,9 @@ if ($id_directory !== null) {
             $breadcrumbUrlParams = ['index', 'id_directory' => $item['id'], 'isPicker' => $isPicker];
             if (!empty($fileExtensionsParam)) {
                 $breadcrumbUrlParams['fileExtensions'] = $fileExtensionsParam;
+            }
+            if (!empty($allowFolderSelection)) {
+                $breadcrumbUrlParams['allowFolderSelection'] = 1;
             }
 
             echo Html::tag(
@@ -142,6 +151,7 @@ foreach ($directories as $model) {
         'class' => 'folder-item d-flex align-items-center',
         'data-id' => $folderId,
         'ondblclick' => "if (!(event.target.closest('.more-options'))) { openFolder($folderId, event, '" . $fileExtensionsParam . "'); }",
+        'onclick' => "if (!(event.target.closest('.more-options')) && window.allowFolderSelection && window.isPicker) { handleFolderCardClick(event, $folderId); }",
     ]);
 
     $content .= Html::tag('i', '', [
@@ -611,6 +621,11 @@ echo Html::endTag('div'); // end of container-fluid
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
 $this->registerJsVar('currentFileExtensions', $fileExtensionsParam);
 $this->registerJsVar('actionId', $actionId);
+$this->registerJsVar('allowFolderSelection', isset($allowFolderSelection) && $allowFolderSelection ? 1 : 0);
+
+// Also set allowFolderSelection via inline script so PJAX re-loads pick it up immediately
+$allowFolderSelectionInt = (isset($allowFolderSelection) && $allowFolderSelection) ? 1 : 0;
+echo Html::script("window.allowFolderSelection = " . $allowFolderSelectionInt . ";");
 
 $this->registerJsVar('translations', [
     'fileSelected' => Module::t('file selected'),

@@ -67,12 +67,16 @@ Yii::$app->view->registerCss("
 ");
 
 $allowedExtensionsJson = isset($allowedExtensions) ? json_encode($allowedExtensions) : '[]';
+$allowFolderSelectionBool = !empty($allowFolderSelection);
 
 Modal::begin([
     'title' => Module::t('Select File'),
     'id' => 'file-picker-modal',
     'size' => Modal::SIZE_LARGE,
-    'options' => ['data-allowed-extensions' => $allowedExtensionsJson],
+    'options' => [
+        'data-allowed-extensions' => $allowedExtensionsJson,
+        'data-allow-folder-selection' => $allowFolderSelectionBool ? '1' : '0',
+    ],
     'footer' =>
         Html::button(Module::t('Close'), [
             'class' => 'btn btn-danger filepicker-close',
@@ -87,10 +91,8 @@ Modal::begin([
 echo $this->render('@portalium/storage/views/web/default/index', [
     'fileDataProvider' => $dataProvider,
     'directoryDataProvider' => $directoryDataProvider,
-    //'directories' => $directories,
-    //'files'  => $files,
-    //'pagination'  => $pagination,
     'isPicker' => true,
+    'allowFolderSelection' => isset($allowFolderSelection) ? $allowFolderSelection : false,
 ]);
 
 Modal::end();
