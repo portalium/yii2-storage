@@ -52,6 +52,9 @@ if ($id_directory !== null) {
     if (!empty($fileExtensionsParam)) {
         $backUrlParams['fileExtensions'] = $fileExtensionsParam;
     }
+    if (!empty($allowFolderSelection)) {
+        $backUrlParams['allowFolderSelection'] = 1;
+    }
 
     echo Html::a(
         Html::tag('i', '', ['class' => 'fa fa-chevron-left']) . ' ',
@@ -83,6 +86,9 @@ if ($id_directory !== null) {
     if (!empty($fileExtensionsParam)) {
         $homeUrlParams['fileExtensions'] = $fileExtensionsParam;
     }
+    if (!empty($allowFolderSelection)) {
+        $homeUrlParams['allowFolderSelection'] = 1;
+    }
 
     echo Html::tag(
         'li',
@@ -98,6 +104,9 @@ if ($id_directory !== null) {
             $breadcrumbUrlParams = ['index', 'id_directory' => $item['id'], 'isPicker' => $isPicker];
             if (!empty($fileExtensionsParam)) {
                 $breadcrumbUrlParams['fileExtensions'] = $fileExtensionsParam;
+            }
+            if (!empty($allowFolderSelection)) {
+                $breadcrumbUrlParams['allowFolderSelection'] = 1;
             }
 
             echo Html::tag(
@@ -142,6 +151,7 @@ foreach ($directories as $model) {
         'class' => 'folder-item d-flex align-items-center',
         'data-id' => $folderId,
         'ondblclick' => "if (!(event.target.closest('.more-options'))) { openFolder($folderId, event, '" . $fileExtensionsParam . "'); }",
+        'onclick' => "if (!(event.target.closest('.more-options')) && window.allowFolderSelection && window.isPicker) { handleFolderCardClick(event, $folderId); }",
     ]);
 
     $content .= Html::tag('i', '', [
@@ -445,8 +455,9 @@ echo ListView::widget([
 
         $content .= Html::tag('i','',['class'=> $model->getIconClass() . ' file-icon']);
         $title = $model->title ?: 'Başlık yok';
-        $titleAttrs = ['class' => 'file-title ' . ($isPicker ? 'picker' : 'normal'), 'data-title' => $title];
-        $content .= Html::tag('span', Html::encode($title), $titleAttrs);
+        $content .= Html::tag('span', Html::encode($title), [
+            'class' => 'file-title ' . ($isPicker ? 'picker' : 'normal')
+        ]);
 
         $content .= Html::tag(
             'span',
@@ -610,6 +621,11 @@ echo Html::endTag('div'); // end of container-fluid
 $this->registerJsVar('isPicker', $isPicker ? 1 : 0);
 $this->registerJsVar('currentFileExtensions', $fileExtensionsParam);
 $this->registerJsVar('actionId', $actionId);
+$this->registerJsVar('allowFolderSelection', isset($allowFolderSelection) && $allowFolderSelection ? 1 : 0);
+
+// Also set allowFolderSelection via inline script so PJAX re-loads pick it up immediately
+$allowFolderSelectionInt = (isset($allowFolderSelection) && $allowFolderSelection) ? 1 : 0;
+echo Html::script("window.allowFolderSelection = " . $allowFolderSelectionInt . ";");
 
 $this->registerJsVar('translations', [
     'fileSelected' => Module::t('file selected'),
@@ -864,32 +880,5 @@ window.bulkDeleteFiles = function() {
     localStorage.setItem('fileListOpen', isOpen);
     icon.toggleClass('fa-caret-down fa-caret-right');
 });
-
-// File title tooltip
-(function() {
-    var tooltip = document.getElementById('file-title-tooltip');
-    if (!tooltip) {
-        tooltip = document.createElement('div');
-        tooltip.id = 'file-title-tooltip';
-        tooltip.style.cssText = 'position:fixed;background:#333;color:#fff;padding:5px 8px;border-radius:4px;font-size:11px;white-space:nowrap;z-index:9999;pointer-events:none;opacity:0;transition:opacity 0.2s ease;';
-        document.body.appendChild(tooltip);
-    }
-
-    \$(document).on('mouseenter', '.file-title[data-title]', function() {
-        if (this.scrollWidth <= this.offsetWidth) return;
-        var title = \$(this).attr('data-title');
-        tooltip.textContent = title;
-        tooltip.style.opacity = '1';
-        var rect = this.getBoundingClientRect();
-        var left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2;
-        var top = rect.top - tooltip.offsetHeight - 6;
-        if (left < 4) left = 4;
-        if (left + tooltip.offsetWidth > window.innerWidth - 4) left = window.innerWidth - tooltip.offsetWidth - 4;
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = top + 'px';
-    }).on('mouseleave', '.file-title[data-title]', function() {
-        tooltip.style.opacity = '0';
-    });
-})();
 
 JS);

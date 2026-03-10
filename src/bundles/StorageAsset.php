@@ -9,13 +9,13 @@ class StorageAsset extends AssetBundle
     public $sourcePath = '@vendor/portalium/yii2-storage/src/assets/';
 
     public $css = [
-        'modal.css',
-        'css/share-modal.css',
+        'storage/css/modal.css',
+        'share-modal/css/share-modal.css',
     ];
     public $js = [
-        'storage.js',
-        'storageActions.js',
-        'js/share-modal.js',
+        'storage/js/storage.js',
+        'storage/js/storageActions.js',
+        'share-modal/js/share-modal.js',
     ];
     public $publishOptions = [
         'forceCopy' => YII_DEBUG
