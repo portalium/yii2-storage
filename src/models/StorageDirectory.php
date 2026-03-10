@@ -2,240 +2,127 @@
 
 namespace portalium\storage\models;
 
-use portalium\helpers\FileHelper;
-use portalium\storage\Module;
 use Yii;
-use portalium\storage\models\Storage;
-use portalium\storage\models\StorageShare;
-use yii\web\UploadedFile;
-use portalium\user\models\User;
 
 /**
- * This is the model class for table "{{%storage_storage_directory}}".
+ * StorageDirectory — backward-compatibility wrapper.
  *
- * @property int $id_directory
- * @property int|null $id_parent
- * @property string $id_user
- * @property int|null $id_workspace
- * @property string $name
- * @property string $date_create
- * @property string $date_update
+ * After the directory-merge migration, directories live in the same
+ * `storage_storage` table with `type = 'directory'`.
  *
- * @property StorageDirectory $parent
- * @property StorageDirectory[] $storageDirectories
- * @property Storage[] $storageStorages
+ * This class extends Storage and adds a default scope so that queries
+ * built through StorageDirectory automatically filter to directories.
+ *
+ * Legacy properties are mapped:
+ *   id_directory  → id_storage
+ *   id_parent     → id_directory  (self-referencing in storage table)
+ *   name          → name / title
+ *
+ * @deprecated Use Storage model with type=directory directly.
+ *
+ * @property int $id_directory Alias for id_storage
+ * @property int|null $id_parent Alias for id_directory
  */
-class StorageDirectory extends \yii\db\ActiveRecord
+class StorageDirectory extends Storage
 {
-    public $type;
-
-    public function behaviors()
+    /**
+     * {@inheritdoc}
+     */
+    public function init()
     {
-        return [
-            [
-                'class' => \yii\behaviors\AttributeBehavior::className(),
-                'attributes' => [
-                    \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_user',
-                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_user',
-                ],
-                'value' => function ($event) {
-                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_INSERT) {
-                        return Yii::$app->user->id;
-                    }
-                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE) {
-                        return $this->getOldAttribute('id_user');
-                    }
-                },
-            ],
-            [
-                'class' => \yii\behaviors\AttributeBehavior::className(),
-                'attributes' => [
-                    \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_workspace',
-                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_workspace',
-                ],
-                'value' => function ($event) {
-                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_INSERT) {
-                        return Yii::$app->workspace->id ?? null;
-                    }
-                    if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE) {
-                        return $this->getOldAttribute('id_workspace');
-                    }
-                },
-            ],
-        ];
+        parent::init();
+        // Auto-set type for new records
+        if ($this->isNewRecord) {
+            $this->type = self::TYPE_DIRECTORY;
+            $this->mime_type = 0;
+        }
     }
 
     /**
      * {@inheritdoc}
+     * Default scope: only directories.
      */
-    public static function tableName()
+    public static function find()
     {
-        return '{{%storage_storage_directory}}';
+        return parent::find()->andWhere(['type' => self::TYPE_DIRECTORY]);
+    }
+
+    // ─── Legacy property aliases ────────────────────────────
+
+    /**
+     * Get id_directory (alias for id_storage)
+     * @return int|null
+     */
+    public function getIdDirectory()
+    {
+        return $this->id_storage;
     }
 
     /**
-     * {@inheritdoc}
+     * Get id_parent (alias for id_directory / parent storage id)
+     * @return int|null
      */
-    public function rules()
+    public function getId_parent()
     {
-        return [
-            [['id_parent', 'id_workspace'], 'default', 'value' => null],
-            [['id_parent', 'id_workspace'], 'integer'],
-            [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
-            [['name'], 'required'],
-            [['date_create', 'date_update', 'id_parent'], 'safe'],
-            [['name'], 'string', 'max' => 256],
-            [['id_parent'], 'exist', 'skipOnError' => true, 'targetClass' => StorageDirectory::class, 'targetAttribute' => ['id_parent' => 'id_directory']],
-        ];
+        return $this->getAttribute('id_directory');
     }
 
     /**
-     * {@inheritdoc}
+     * Set id_parent (alias for id_directory)
+     * @param int|null $value
      */
-    public function attributeLabels()
+    public function setId_parent($value)
     {
-        return [
-            'id_directory' => 'Id Directory',
-            'id_parent' => 'Id Parent',
-            'id_user' => Module::t('Id User'),
-            'id_workspace' => Module::t('Workspace'),
-            'name' => 'Name',
-            'date_create' => 'Date Create',
-            'date_update' => 'Date Update',
-        ];
+        $this->setAttribute('id_directory', $value);
     }
+
+    // ─── Legacy relation aliases ────────────────────────────
+
     /**
      * Gets query for [[Parent]].
-     *
      * @return \yii\db\ActiveQuery
      */
     public function getParent()
     {
-        return $this->hasOne(StorageDirectory::class, ['id_directory' => 'id_parent']);
+        return $this->hasOne(self::class, ['id_storage' => 'id_directory']);
     }
 
     /**
-     * Gets query for [[StorageDirectories]].
-     *
-     * @return true
-     */
-
-
-
-    public function uploadFolder($uploadedFiles, $initialParentId = null)
-    {
-        if (empty($uploadedFiles)) {
-            $this->addError('file', Module::t('No files were uploaded'));
-            return false;
-        }
-
-        $userId = Yii::$app->user->id;
-        $workspaceId = $this->id_workspace ?? 1;
-
-        // All file types are now accepted - no extension filtering needed
-        $validFiles = $uploadedFiles;
-
-        $directories = [];
-        $success = true;
-
-        foreach ($validFiles as $file) {
-            $fullPath = $file->fullPath ?? $file->name;
-            $pathParts = explode('/', $fullPath);
-
-            $fileName = array_pop($pathParts);
-            $currentPath = '';
-            $parentDirectoryId = $initialParentId;
-
-            foreach ($pathParts as $depth => $folderName) {
-                $currentPath = $depth === 0 ? $folderName : $currentPath . '/' . $folderName;
-
-                if (!isset($directories[$currentPath])) {
-                    $dir = new StorageDirectory();
-                    $dir->name = $folderName;
-
-                    if ($depth === 0 && $initialParentId !== null) {
-                        $dir->id_parent = $initialParentId;
-                    } else {
-                        $dir->id_parent = $directories[dirname($currentPath)] ?? null;
-                    }
-
-                    if (!$dir->save()) {
-                        foreach ($dir->errors as $attribute => $errors) {
-                            foreach ($errors as $error) {
-                                $this->addError($attribute, $error);
-                            }
-                        }
-                        return false;
-                    }
-                    $directories[$currentPath] = $dir->id_directory;
-                }
-                $parentDirectoryId = $directories[$currentPath];
-            }
-
-            if (!empty($fileName)) {
-                $storage = new Storage();
-                $storage->title = pathinfo($fileName, PATHINFO_FILENAME);
-                $storage->name = $fileName;
-                $storage->id_directory = $parentDirectoryId;
-                $storage->id_user = $userId;
-                $storage->id_workspace = $workspaceId;
-                $storage->file = $file;
-                $storage->type = 'file';
-
-                $mimeType = $storage->getMIMEType($fileName);
-                $storage->mime_type = Storage::MIME_TYPE[$mimeType] ?? count(Storage::MIME_TYPE);
-                $storage->hash_file = md5_file($file->tempName);
-                if (!$storage->upload()) {
-                    foreach ($storage->errors as $attribute => $errors) {
-                        foreach ($errors as $error) {
-                            $this->addError($attribute, $error);
-                        }
-                    }
-                    $success = false;
-                }
-            }
-        }
-
-        return $success;
-    }
-    /**
-     * Gets query for [[StorageDirectories]].
-     *
+     * Gets query for subdirectories.
      * @return \yii\db\ActiveQuery
      */
     public function getStorageDirectories()
     {
-        return $this->hasMany(StorageDirectory::class, ['id_parent' => 'id_directory']);
+        return $this->hasMany(self::class, ['id_directory' => 'id_storage'])
+            ->andWhere(['type' => self::TYPE_DIRECTORY]);
     }
 
     /**
-     * Gets query for [[StorageStorages]].
-     *
+     * Gets query for files in this directory.
      * @return \yii\db\ActiveQuery
      */
     public function getStorageStorages()
     {
-        return $this->hasMany(Storage::class, ['id_directory' => 'id_directory']);
+        return $this->hasMany(Storage::class, ['id_directory' => 'id_storage'])
+            ->andWhere(['type' => self::TYPE_FILE]);
     }
 
     /**
      * Gets query for [[Shares]].
-     *
      * @return \yii\db\ActiveQuery
      */
-    public function getShares()
+    public function getDirectoryShares()
     {
-        return $this->hasMany(StorageShare::class, ['id_directory' => 'id_directory']);
+        return $this->hasMany(StorageShare::class, ['id_directory' => 'id_storage']);
     }
 
     /**
      * Gets active shares for this directory
-     *
      * @return \yii\db\ActiveQuery
      */
-    public function getActiveShares()
+    public function getActiveDirectoryShares()
     {
-        return $this->getShares()
+        return $this->getDirectoryShares()
             ->where(['is_active' => 1])
             ->andWhere([
                 'OR',
@@ -266,48 +153,17 @@ class StorageDirectory extends \yii\db\ActiveRecord
      */
     public function canAccess($requiredPermission = StorageShare::PERMISSION_VIEW)
     {
-        $userId = Yii::$app->user->id;
-
-        // Owner can always access
-        if ($this->id_user == $userId) {
-            return true;
-        }
-
-        // Check if shared with user (includes parent directories)
-        if ($this->isSharedWith($userId, $requiredPermission)) {
-            return true;
-        }
-
-        // Check workspace access (if directory has workspace field)
-        if (
-            isset($this->id_workspace) && $this->id_workspace &&
-            Yii::$app->workspace->can('storage', 'storageWebDefaultIndex', ['model' => $this])
-        ) {
-            return true;
-        }
-
-        return false;
+        return $this->canAccessDirectory($requiredPermission);
     }
 
     /**
-     * Get all child items count (files + subdirectories) recursively
-     *
-     * @return int
+     * Upload folder — delegate to Storage::uploadFolder()
      */
-    public function getChildItemsCount()
+    public function uploadFolder($uploadedFiles, $initialParentId = null)
     {
-        $count = 0;
-
-        // Count direct files
-        $count += Storage::find()->where(['id_directory' => $this->id_directory])->count();
-
-        // Count subdirectories and their contents recursively
-        $subdirectories = StorageDirectory::find()->where(['id_parent' => $this->id_directory])->all();
-        foreach ($subdirectories as $subdir) {
-            $count++; // Count the subdirectory itself
-            $count += $subdir->getChildItemsCount(); // Recursively count its contents
-        }
-
-        return $count;
+        $storage = new Storage();
+        $storage->type = self::TYPE_DIRECTORY;
+        $storage->id_workspace = $this->id_workspace ?? (Yii::$app->workspace->id ?? 1);
+        return $storage->uploadFolder($uploadedFiles, $initialParentId);
     }
 }

@@ -6,7 +6,7 @@ use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Modal;
 
 /* @var $this yii\web\View */
-/* @var $model portalium\storage\models\StorageDirectory */
+/* @var $model portalium\storage\models\Storage */
 /* @var $form yii\widgets\ActiveForm */
 
 Modal::begin([

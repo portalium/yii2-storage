@@ -6,7 +6,7 @@ use portalium\theme\widgets\Button;
 use portalium\theme\widgets\Modal;
 use yii\helpers\Html;
 
-/* @var $model portalium\storage\models\StorageDirectory */
+/* @var $model portalium\storage\models\Storage */
 
 if (isset($model)) {
     Modal::begin([
@@ -30,7 +30,7 @@ if (isset($model)) {
                 'class' => 'btn btn-success',
                 'id' => 'renameFolderButton',
                 'type' => 'button',
-                "data-id" => $model->id_directory
+                "data-id" => $model->id_storage
             ],
         ]),
         'dialogOptions' => ['class' => 'modal-dialog-centered']

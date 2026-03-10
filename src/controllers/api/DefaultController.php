@@ -246,7 +246,7 @@ class DefaultController extends RestActiveController
 
         // Check directory permission if uploading to a specific directory
         if ($id_directory !== null) {
-            $directoryModel = \portalium\storage\models\StorageDirectory::findOne($id_directory);
+            $directoryModel = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
             if ($directoryModel) {
                 // Check global permissions for directory
                 $hasGlobalDirPermission = \Yii::$app->user->can('storageApiDefaultManageDirectory')
@@ -325,108 +325,17 @@ class DefaultController extends RestActiveController
 
     public function actionGetFile($id)
     {
-        $file = Storage::findOne($id);
+        $model = Storage::findOne($id);
 
-        if (!$file) {
+        if (!$model) {
             throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
         }
 
-        // type=thumb → serve thumbnail; anything else → serve original
-        $requestedThumb = Yii::$app->request->get('type') === 'thumb';
-
-        $storagePath = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path');
-
-        // Resolve the actual path to serve
-        if ($requestedThumb) {
-            $thumbPath = $storagePath . '/thumb_' . $file->name;
-            $servePath = file_exists($thumbPath) ? $thumbPath : ($storagePath . '/' . $file->name);
-        } else {
-            $servePath = $storagePath . '/' . $file->name;
-        }
-
-        $serveTitle = $requestedThumb ? ('thumb_' . $file->title) : $file->title;
-
-        // Public files can be downloaded by anyone (including guests)
-        if ($file->access == Storage::ACCESS_PUBLIC) {
-            if (file_exists($servePath)) {
-                return Yii::$app->response->sendFile($servePath, $serveTitle . '.' . pathinfo($servePath, PATHINFO_EXTENSION));
-            } else {
-                throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
-            }
-        }
-
-        // Check global permissions
-        $hasGlobalPermission = \Yii::$app->user->can('storageApiDefaultGetFile')
-            || \Yii::$app->user->can('storageApiDefaultGetFileOwn', ['model' => $file])
-            || \Yii::$app->workspace->can('storage', 'storageApiDefaultGetFile', ['model' => $file]);
-
-        // Check share permissions - VIEW permission is enough for download
-        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
-            \Yii::$app->user->id,
-            $file,
-            null,
-            \portalium\storage\models\StorageShare::PERMISSION_VIEW
-        );
-
-        $appModel = App::find()->where(['api_key' => Yii::$app->request->get('access-token')])->one();
-        
-        if (!$hasGlobalPermission && !$hasSharePermission && $appModel === null) {
-           throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to access this file.'));
-        }
-
-        if (file_exists($servePath)) {
-            return Yii::$app->response->sendFile($servePath, $serveTitle . '.' . pathinfo($servePath, PATHINFO_EXTENSION));
-        } else {
-            throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
-        }
-    }
-
-    /**
-     * Download an entire folder as a ZIP archive.
-     *
-     * GET /api/storage/default/download-folder?id=<id_directory>
-     */
-    public function actionDownloadFolder($id)
-    {
-        $folder = \portalium\storage\models\StorageDirectory::findOne(['id_directory' => $id]);
-
-        if (!$folder) {
-            throw new NotFoundHttpException(Module::t('Folder not found!'));
-        }
-
-        $hasGlobalPermission = \Yii::$app->user->can('storageApiDefaultDownloadFile')
-            || \Yii::$app->workspace->can('storage', 'storageApiDefaultDownloadFile', ['model' => $folder]);
-
-        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
-            \Yii::$app->user->id,
-            null,
-            $folder,
-            \portalium\storage\models\StorageShare::PERMISSION_VIEW
-        );
-
-        $isOwner = $folder->id_user === \Yii::$app->user->id;
-
-        $appModel = App::find()->where(['api_key' => Yii::$app->request->get('access-token')])->one();
-
-        if (!$hasGlobalPermission && !$hasSharePermission && !$isOwner && $appModel === null) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to access this folder.'));
-        }
-
-        $storagePath = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path');
-
-        try {
-            $tmpZip = \portalium\storage\helpers\StorageZipHelper::buildZip($folder, $storagePath);
-        } catch (\RuntimeException $e) {
-            throw new \yii\web\ServerErrorHttpException($e->getMessage());
-        }
-
-        $zipName = preg_replace('/[^\w\-.]/', '_', $folder->name) . '.zip';
-
-        Yii::$app->response->on(\yii\base\Event::class, function () use ($tmpZip) {
-            @unlink($tmpZip);
-        });
-
-        return Yii::$app->response->sendFile($tmpZip, $zipName, ['mimeType' => 'application/zip', 'inline' => false]);
+        return \portalium\storage\helpers\StorageFileServer::serve($model, [
+            'thumb'      => Yii::$app->request->get('type') === 'thumb',
+            'permPrefix' => 'storageApiDefault',
+            'appToken'   => Yii::$app->request->get('access-token'),
+        ]);
     }
 
     protected function findModel($id)

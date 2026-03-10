@@ -226,21 +226,29 @@ if (!window.handleFilePickerClick) {
 // Modal supporter functions
 if (!window.updateFileCard) {
     window.updateFileCard = function(id_storage) {
+        // Clear all active states first
         $('.file-card.active').removeClass('active');
         $('.file-card input[type="checkbox"]').prop('checked', false);
+        $('.folder-item.active').removeClass('active');
+
         if (!id_storage) return;
 
-        let el;
+        // Try to activate as a folder first, then fall back to file
+        const activateOne = function(id) {
+            let folderEl = $('#file-picker-modal .folder-item[data-id=' + id + ']');
+            if (folderEl.length) {
+                folderEl.addClass('active');
+                return;
+            }
+            let fileEl = $('#file-picker-modal .file-card[data-id=' + id + ']');
+            fileEl.addClass('active');
+            fileEl.find('input[type="checkbox"]').prop('checked', true);
+        };
+
         if (Array.isArray(id_storage)) {
-            id_storage.forEach(id => {
-                el = $('#file-picker-modal .file-card[data-id=' + id + ']');
-                el.addClass('active');
-                el.find('input[type="checkbox"]').prop('checked', true);
-            });
+            id_storage.forEach(id => activateOne(id));
         } else {
-            el = $('#file-picker-modal .file-card[data-id=' + id_storage + ']');
-            el.addClass('active');
-            el.find('input[type="checkbox"]').prop('checked', true);
+            activateOne(id_storage);
         }
     };
 }

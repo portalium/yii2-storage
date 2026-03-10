@@ -1,6 +1,6 @@
 <?php
 
-use portalium\storage\models\StorageDirectory;
+use portalium\storage\models\Storage;
 use portalium\storage\Module;
 use portalium\theme\widgets\Html;
 use portalium\theme\widgets\Dropdown;
@@ -37,14 +37,14 @@ if (!is_array($fileExtensions)) {
 $fileExtensionsParam = !empty($fileExtensions) ? implode(',', $fileExtensions) : '';
 
 if ($id_directory !== null) {
-    $parentDirectory = StorageDirectory::findOne($id_directory);
+    $parentDirectory = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
 }
 
 echo Html::beginTag('div', ['class' => 'container-fluid mt-3']);
 
 
 if ($id_directory !== null) {
-    $parentId = $parentDirectory && $parentDirectory->id_parent ? $parentDirectory->id_parent : null;
+    $parentId = $parentDirectory && $parentDirectory->id_directory ? $parentDirectory->id_directory : null;
     $backUrlParams = [$actionId, 'isPicker' => $isPicker];
     if ($parentId) {
         $backUrlParams['id_directory'] = $parentId;
@@ -68,14 +68,14 @@ if ($id_directory !== null) {
     while ($currentDir !== null) {
         array_unshift($pathItems, [
             'name' => $currentDir->name,
-            'id' => $currentDir->id_directory
+            'id' => $currentDir->id_storage
         ]);
 
-        if ($currentDir->id_parent === null) {
+        if ($currentDir->id_directory === null) {
             break;
         }
 
-        $currentDir = StorageDirectory::findOne($currentDir->id_parent);
+        $currentDir = Storage::findOne(['id_storage' => $currentDir->id_directory, 'type' => Storage::TYPE_DIRECTORY]);
     }
 
     echo Html::beginTag('nav', ['class' => 'ml-3 d-inline-block']);
@@ -138,8 +138,8 @@ echo Html::beginTag('div', ['class' => 'row g-3', 'id' => 'folder-list']);
 }
 
 foreach ($directories as $model) {
-    /** @var \portalium\storage\models\StorageDirectory $model */
-    $folderId = $model->id_directory;
+    /** @var \portalium\storage\models\Storage $model */
+    $folderId = $model->id_storage;
     $folderName = Html::encode($model->name);
 
     $content = Html::beginTag('div', [
@@ -357,8 +357,27 @@ $sortDirection = Yii::$app->request->get('sortDirection', 'desc');
 // Get selected file id in file picker
 $selectedFileId = Yii::$app->request->get('selectedFileId', null);
 
+// Determine whether the selected item is a directory or a file so we can
+// pin it to the top of the correct list.
+$selectedIsDirectory = false;
+if ($isPicker && $selectedFileId) {
+    $selectedModel = \portalium\storage\models\Storage::findOne($selectedFileId);
+    if ($selectedModel && $selectedModel->isDirectory()) {
+        $selectedIsDirectory = true;
+    }
+}
+
+// Pin selected directory to the top of the directory list
+if ($directoryDataProvider && $directoryDataProvider->query && $isPicker && $selectedFileId && $selectedIsDirectory) {
+    $directoryDataProvider->query->orderBy([
+        new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),
+        'id_storage' => ($sortDirection === 'desc') ? SORT_DESC : SORT_ASC,
+    ]);
+}
+
 if ($fileDataProvider && $fileDataProvider->query) {
-    if ($isPicker && $selectedFileId) {
+    // Only pin to the top of the file list when the selected item is actually a file
+    if ($isPicker && $selectedFileId && !$selectedIsDirectory) {
         if ($sortField === 'name') {
             $fileDataProvider->query->orderBy([
                 new \yii\db\Expression("CASE WHEN id_storage = :selectedId THEN 0 ELSE 1 END", [':selectedId' => $selectedFileId]),

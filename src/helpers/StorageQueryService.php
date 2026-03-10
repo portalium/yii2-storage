@@ -197,6 +197,9 @@ class StorageQueryService
     /**
      * Apply share-aware visibility conditions to a **directory** query.
      *
+     * Since directories are now stored in the storage table, this method
+     * references {{%storage_storage}} instead of the old directory table.
+     *
      * The resulting WHERE covers:
      *  1. Own directories
      *  2. Directories shared directly with user
@@ -213,11 +216,11 @@ class StorageQueryService
     {
         $query->andWhere([
             'or',
-            ['{{%storage_storage_directory}}.id_user' => $userId],
-            ['in', '{{%storage_storage_directory}}.id_directory', self::directoryIdsSharedWithUser($userId)],
-            ['in', '{{%storage_storage_directory}}.id_directory', self::directoryIdsSharedWithWorkspaces($workspaceIds)],
-            ['in', '{{%storage_storage_directory}}.id_user', self::fullStorageOwnerIdsForUser($userId)],
-            ['in', '{{%storage_storage_directory}}.id_user', self::fullStorageOwnerIdsForWorkspaces($workspaceIds)],
+            ['{{%storage_storage}}.id_user' => $userId],
+            ['in', '{{%storage_storage}}.id_storage', self::directoryIdsSharedWithUser($userId)],
+            ['in', '{{%storage_storage}}.id_storage', self::directoryIdsSharedWithWorkspaces($workspaceIds)],
+            ['in', '{{%storage_storage}}.id_user', self::fullStorageOwnerIdsForUser($userId)],
+            ['in', '{{%storage_storage}}.id_user', self::fullStorageOwnerIdsForWorkspaces($workspaceIds)],
         ]);
 
         return $query;

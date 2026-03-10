@@ -4,7 +4,6 @@ namespace portalium\storage\helpers;
 
 use Yii;
 use portalium\storage\models\Storage;
-use portalium\storage\models\StorageDirectory;
 use portalium\storage\models\StorageShare;
 use portalium\workspace\models\WorkspaceUser;
 
@@ -73,7 +72,7 @@ class StoragePermissionHelper
      */
     private static function canManageDirectoryShare($id_user, $share)
     {
-        $directory = StorageDirectory::findOne($share->id_directory);
+        $directory = Storage::findOne(['id_storage' => $share->id_directory, 'type' => Storage::TYPE_DIRECTORY]);
         if (!$directory) {
             return false;
         }
@@ -140,13 +139,13 @@ class StoragePermissionHelper
      * Only checks direct directory shares, NOT full storage shares
      * 
      * @param int $id_user User ID
-     * @param StorageDirectory $directory Directory model
+     * @param Storage $directory Directory model (Storage with type=directory)
      * @return bool
      */
     private static function hasExactManagePermissionForDirectory($id_user, $directory)
     {
         $userWorkspaceIds = self::getUserWorkspaceIds($id_user);
-        $directoryIds = StorageShare::getParentDirectoryIds($directory->id_directory);
+        $directoryIds = StorageShare::getParentDirectoryIds($directory->id_storage);
         
         return StorageShare::find()
             ->where(['is_active' => 1])
@@ -208,7 +207,7 @@ class StoragePermissionHelper
      * Check if user can create a share for a directory
      * 
      * @param int $id_user User ID
-     * @param StorageDirectory $directory Directory model
+     * @param Storage $directory Directory model (Storage with type=directory)
      * @param string $globalPermissionOwn Global RBAC Own permission
      * @param string $workspacePermission Workspace permission
      * @return bool
@@ -265,7 +264,7 @@ class StoragePermissionHelper
      * Check if user can view shares for a directory
      * 
      * @param int $id_user User ID
-     * @param StorageDirectory $directory Directory model
+     * @param Storage $directory Directory model (Storage with type=directory)
      * @param string $globalPermission Global RBAC permission
      * @param string $globalPermissionOwn Global RBAC Own permission
      * @param string $workspacePermission Workspace permission

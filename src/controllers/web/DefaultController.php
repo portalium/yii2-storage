@@ -2,7 +2,6 @@
 
 namespace portalium\storage\controllers\web;
 
-use portalium\storage\models\StorageDirectory;
 use portalium\storage\Module;
 use portalium\web\Controller;
 use portalium\storage\models\Storage;
@@ -80,9 +79,10 @@ class DefaultController extends Controller
 
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
 
-        $directoryQuery = StorageDirectory::find()
-            ->andWhere(['id_parent' => $id_directory])
-            ->orderBy(['id_directory' => SORT_DESC]);
+        $directoryQuery = Storage::find()
+            ->where(['type' => Storage::TYPE_DIRECTORY])
+            ->andWhere(['id_directory' => $id_directory])
+            ->orderBy(['id_storage' => SORT_DESC]);
 
         if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
             StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
@@ -150,9 +150,10 @@ class DefaultController extends Controller
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
 
 
-        $directoryQuery = StorageDirectory::find()
-            ->andWhere(['id_parent' => $id_directory])
-            ->orderBy(['id_directory' => SORT_DESC]);
+        $directoryQuery = Storage::find()
+            ->where(['type' => Storage::TYPE_DIRECTORY])
+            ->andWhere(['id_directory' => $id_directory])
+            ->orderBy(['id_storage' => SORT_DESC]);
 
         $directoryDataProvider = new ActiveDataProvider([
             'query' => $directoryQuery,
@@ -197,13 +198,16 @@ class DefaultController extends Controller
     {
         $post = Yii::$app->request->post();
         $type = $post['Storage']['type'] ?? 'file';
-        $model = ($type === 'folder') ? new StorageDirectory() : new Storage();
+        $model = new Storage();
+        if ($type === 'folder') {
+            $model->type = Storage::TYPE_DIRECTORY;
+        }
         $id_directory = Yii::$app->request->post('id_directory') ?: null;
         $model->id_directory = $id_directory;
         $currentUserId = Yii::$app->user->id;
 
         if ($id_directory !== null) {
-            $directoryModel = StorageDirectory::findOne($id_directory);
+            $directoryModel = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
             // Global + Own + Workspace permission check
             $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultUploadFile')
                 || \Yii::$app->user->can('storageWebDefaultUploadFileOwn', ['model' => $directoryModel])
@@ -585,7 +589,7 @@ class DefaultController extends Controller
      */
     public function actionShareDirectory($id)
     {
-        $directory = StorageDirectory::findOne($id);
+        $directory = Storage::findOne(['id_storage' => $id, 'type' => Storage::TYPE_DIRECTORY]);
         if (!$directory) {
             throw new \yii\web\NotFoundHttpException(Module::t('Folder not found!'));
         }
@@ -792,9 +796,10 @@ class DefaultController extends Controller
                 'defaultOrder' => ['id_storage' => SORT_DESC],
             ],
         ]);
-        $directoryQuery = StorageDirectory::find()
-            ->andWhere(['id_parent' => $id_directory])
-            ->orderBy(['id_directory' => SORT_DESC]);
+        $directoryQuery = Storage::find()
+            ->where(['type' => Storage::TYPE_DIRECTORY])
+            ->andWhere(['id_directory' => $id_directory])
+            ->orderBy(['id_storage' => SORT_DESC]);
 
         if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
             StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
@@ -807,9 +812,10 @@ class DefaultController extends Controller
             ],
         ]);
 
-        $dirAllQuery = StorageDirectory::find()
-            ->andWhere(['id_parent' => $id_directory])
-            ->orderBy(['id_directory' => SORT_DESC]);
+        $dirAllQuery = Storage::find()
+            ->where(['type' => Storage::TYPE_DIRECTORY])
+            ->andWhere(['id_directory' => $id_directory])
+            ->orderBy(['id_storage' => SORT_DESC]);
         if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
             StorageQueryService::applyDirectoryShareConditions($dirAllQuery, $id_user, $userWorkspaceIds);
         }
@@ -948,12 +954,12 @@ class DefaultController extends Controller
             'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
         ]);
 
-        $directoryQuery = \portalium\storage\models\StorageDirectory::find();
+        $directoryQuery = Storage::find()->where(['type' => Storage::TYPE_DIRECTORY]);
 
         if ($id_directory !== null) {
-            $directoryQuery->andWhere(['id_parent' => $id_directory]);
+            $directoryQuery->andWhere(['id_directory' => $id_directory]);
         } else {
-            $directoryQuery->andWhere(['id_parent' => null]);
+            $directoryQuery->andWhere(['id_directory' => null]);
         }
 
         if (!empty($q)) {
@@ -970,7 +976,7 @@ class DefaultController extends Controller
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
             'query' => $directoryQuery,
             'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE - 1],
-            'sort' => ['defaultOrder' => ['id_directory' => SORT_DESC]],
+            'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
         ]);
 
         return $this->renderPartial('_item-list', [
@@ -999,16 +1005,18 @@ class DefaultController extends Controller
         ) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        $model = new StorageDirectory();
+        $model = new Storage();
+        $model->type = Storage::TYPE_DIRECTORY;
+        $model->mime_type = 0;
 
         if (Yii::$app->request->isPost) {
             if ($model->load(Yii::$app->request->post())) {
                 $id_directory = Yii::$app->request->post('id_directory');
                 if ($id_directory === 'null' || $id_directory == 0)
-                    $model->id_parent = null;
+                    $model->id_directory = null;
                 else {
-                    $model->id_parent = $id_directory;
-                    $directoryModel = StorageDirectory::findOne($id_directory);
+                    $model->id_directory = $id_directory;
+                    $directoryModel = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
                     if (
                         !\Yii::$app->user->can('storageWebDefaultManageDirectory') &&
                         !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) &&
@@ -1022,8 +1030,9 @@ class DefaultController extends Controller
                 $name = $baseName;
                 $counter = 1;
 
-                while (StorageDirectory::find()
-                    ->where(['id_parent' => $model->id_parent, 'name' => $name])
+                while (Storage::find()
+                    ->where(['type' => Storage::TYPE_DIRECTORY])
+                    ->andWhere(['id_directory' => $model->id_directory, 'name' => $name])
                     ->exists()
                 ) {
                     $name = $baseName . ' (' . $counter . ')';
@@ -1061,7 +1070,7 @@ class DefaultController extends Controller
      */
     public function actionRenameFolder($id)
     {
-        $model = StorageDirectory::findOne(['id_directory' => $id]);
+        $model = Storage::findOne(['id_storage' => $id, 'type' => Storage::TYPE_DIRECTORY]);
 
         $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultRenameFolder')
             || \Yii::$app->user->can('storageWebDefaultRenameFolderOwn', ["model" => $model])
@@ -1089,9 +1098,10 @@ class DefaultController extends Controller
                     $baseName = $model->name;
                     $name = $baseName;
                     $counter = 1;
-                    while (StorageDirectory::find()
-                        ->where(['name' => $name, 'id_parent' => $model->id_parent])
-                        ->andWhere(['<>', 'id_directory', $id])
+                    while (Storage::find()
+                        ->where(['type' => Storage::TYPE_DIRECTORY])
+                        ->andWhere(['name' => $name, 'id_directory' => $model->id_directory])
+                        ->andWhere(['<>', 'id_storage', $id])
                         ->exists()
                     ) {
                         $name = $baseName . ' (' . $counter . ')';
@@ -1124,7 +1134,7 @@ class DefaultController extends Controller
      */
     public function actionDeleteFolder($id, $id_directory = null)
     {
-        $folder = StorageDirectory::findOne(['id_directory' => $id]);
+        $folder = Storage::findOne(['id_storage' => $id, 'type' => Storage::TYPE_DIRECTORY]);
 
         $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultDeleteFolder')
             || \Yii::$app->user->can('storageWebDefaultDeleteFolderOwn', ["model" => $folder])
@@ -1160,7 +1170,7 @@ class DefaultController extends Controller
      * Checks user permissions before deletion. Deletes all subfolders,
      * files, and the folder itself.
      *
-     * @param StorageDirectory $folder The folder to delete
+     * @param Storage $folder The folder to delete (type=directory)
      * @throws \yii\web\ForbiddenHttpException If user lacks delete permission
      */
     protected function deleteFolderRecursive($folder)
@@ -1168,12 +1178,12 @@ class DefaultController extends Controller
         if (!\Yii::$app->user->can('storageWebDefaultDeleteFolderRecursive') && !\Yii::$app->user->can('storageWebDefaultDeleteFolderRecursiveOwn', ["model" => $folder]) && !\Yii::$app->workspace->can('storage', 'storageWebDefaultDeleteFolderRecursive', ['model' => $folder])) {
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
-        $subFolders = StorageDirectory::findAll(['id_parent' => $folder->id_directory]);
+        $subFolders = Storage::findAll(['id_directory' => $folder->id_storage, 'type' => Storage::TYPE_DIRECTORY]);
         foreach ($subFolders as $subFolder) {
             $this->deleteFolderRecursive($subFolder);
         }
 
-        $files = Storage::findAll(['id_directory' => $folder->id_directory]);
+        $files = Storage::findAll(['id_directory' => $folder->id_storage, 'type' => Storage::TYPE_FILE]);
         foreach ($files as $file) {
             $filePath = Yii::getAlias('@app') . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $file->name;
             if (file_exists($filePath))
@@ -1239,134 +1249,31 @@ class DefaultController extends Controller
      */
     public function actionGetFile($id = null, $file_name = null, $access_token = null)
     {
-        $file = null;
-
-        $requestedThumb = Yii::$app->request->get('type') === 'thumb';
-
         if ($id !== null) {
-            try {
-                $file = $this->findModel($id);
-            } catch (\Exception $e) {
-                $file = null;
-            }
+            $model = Storage::findOne($id);
+        } elseif ($file_name !== null) {
+            $model = Storage::findOne(['name' => $file_name]);
+        } else {
+            $model = null;
         }
 
-        if ($file === null && $file_name !== null) {
-            $file = Storage::findOne(['name' => $file_name]);
-        }
-
-        if ($file === null) {
+        if ($model === null) {
             Yii::$app->response->statusCode = 404;
             Yii::$app->response->content = Module::t('The requested file does not exist.');
             return Yii::$app->response;
         }
 
-        if ($file->access == Storage::ACCESS_PRIVATE && !Yii::$app->user->can('storageWebDefaultGetFile', ['model' => $file]) && !Yii::$app->workspace->can('storage', 'storageWebDefaultGetFile', ['model' => $file])) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
-
-        $storagePath = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path');
-
-        if ($requestedThumb) {
-            $thumbPath = $storagePath . '/thumb_' . $file->name;
-            $servePath = file_exists($thumbPath) ? $thumbPath : ($storagePath . '/' . $file->name);
-        } else {
-            $servePath = $storagePath . '/' . $file->name;
-        }
-
-        $path = $servePath;
-
-        if (file_exists($path)) {
-            $fileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mimeType = finfo_file($finfo, $path);
-            finfo_close($finfo);
-
-            $response = Yii::$app->response;
-            $serveTitle = $requestedThumb ? ('thumb_' . $file->title) : $file->title;
-
-            if ($mimeType === 'application/pdf') {
-                $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-                $response->headers->set('Content-Security-Policy', "frame-ancestors 'self'");
-                $response->headers->set('Content-Disposition', 'inline; filename="' . $serveTitle . '.pdf"');
-                $response->headers->set('Cache-Control', 'public, max-age=3600');
-
-                return $response->sendFile($path, $serveTitle . '.pdf');
-            }
-
-            if (strpos($mimeType, 'image/') === 0) {
-                $response->headers->set('Access-Control-Allow-Origin', '*');
-                $response->headers->set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-                $response->headers->set('Cross-Origin-Resource-Policy', 'cross-origin');
-            }
-
-            return $response->sendFile($path, $serveTitle . '.' . $fileExtension);
-        } else {
-            Yii::$app->response->statusCode = 404;
-            Yii::$app->response->content = Module::t('The requested file does not exist.');
-            return Yii::$app->response;
-        }
+        return \portalium\storage\helpers\StorageFileServer::serve($model, [
+            'thumb'      => Yii::$app->request->get('type') === 'thumb',
+            'permPrefix' => 'storageWebDefault',
+        ]);
     }
 
     /**
      * Generates missing thumbnails for stored files.
-     *
-     * This action triggers the thumbnail generation process for any files
-     * that are missing their thumbnail images.
-     *
-     * @return void
-     */
-    public function actionGenerateMissingThumbnails()
     {
         $updated = Storage::generateMissingThumbnails();
         return;
-    }
-
-    /**
-     * Download an entire folder as a ZIP archive.
-     *
-     * GET /storage/default/download-folder?id=<id_directory>
-     */
-    public function actionDownloadFolder($id)
-    {
-        $folder = StorageDirectory::findOne(['id_directory' => $id]);
-
-        if (!$folder) {
-            throw new \yii\web\NotFoundHttpException(Module::t('Folder not found!'));
-        }
-
-        $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultDownloadFile')
-            || \Yii::$app->workspace->can('storage', 'storageWebDefaultDownloadFile', ['model' => $folder]);
-
-        $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
-            \Yii::$app->user->id,
-            null,
-            $folder,
-            \portalium\storage\models\StorageShare::PERMISSION_VIEW
-        );
-
-        $isOwner = $folder->id_user === \Yii::$app->user->id;
-
-        if (!$hasGlobalPermission && !$hasSharePermission && !$isOwner) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
-
-        $storagePath = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path');
-
-        try {
-            $tmpZip = \portalium\storage\helpers\StorageZipHelper::buildZip($folder, $storagePath);
-        } catch (\RuntimeException $e) {
-            throw new \yii\web\ServerErrorHttpException($e->getMessage());
-        }
-
-        $zipName = preg_replace('/[^\w\-.]/', '_', $folder->name) . '.zip';
-
-        Yii::$app->response->on(\yii\base\Event::class, function () use ($tmpZip) {
-            @unlink($tmpZip);
-        });
-
-        return Yii::$app->response->sendFile($tmpZip, $zipName, ['mimeType' => 'application/zip', 'inline' => false]);
     }
 
     /**
@@ -1437,7 +1344,7 @@ class DefaultController extends Controller
                 return ['success' => false, 'message' => Module::t('You are not allowed to share this file.')];
             }
         } elseif ($id_directory) {
-            $directory = StorageDirectory::findOne($id_directory);
+            $directory = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
             if (!$directory) {
                 return ['success' => false, 'message' => Module::t('Folder not found!')];
             }
@@ -1562,7 +1469,7 @@ class DefaultController extends Controller
             }
             $shares = \portalium\storage\models\StorageShare::getShares($storage)->all();
         } elseif ($id_directory) {
-            $directory = StorageDirectory::findOne($id_directory);
+            $directory = Storage::findOne(['id_storage' => $id_directory, 'type' => Storage::TYPE_DIRECTORY]);
             if (!$directory) {
                 return ['success' => false, 'message' => Module::t('Folder not found!')];
             }
@@ -1704,7 +1611,8 @@ class DefaultController extends Controller
         $directoryShares = \portalium\storage\models\StorageShare::find()
             ->joinWith('directory')
             ->where(['is_active' => 1])
-            ->andWhere(['{{%storage_storage_directory}}.id_user' => $userId])
+            ->andWhere(['{{%storage_storage}}.id_user' => $userId])
+            ->andWhere(['{{%storage_storage}}.type' => Storage::TYPE_DIRECTORY])
             ->andWhere(['IS NOT', '{{%' . Module::$tablePrefix . 'storage_share}}.id_directory', null])
             ->all();
 

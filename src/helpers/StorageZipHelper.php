@@ -3,7 +3,6 @@
 namespace portalium\storage\helpers;
 
 use portalium\storage\models\Storage;
-use portalium\storage\models\StorageDirectory;
 use ZipArchive;
 
 /**
@@ -16,12 +15,12 @@ class StorageZipHelper
      *
      * Caller is responsible for deleting the temp file after sending.
      *
-     * @param StorageDirectory $folder       Root folder to zip
-     * @param string           $storagePath  Absolute path to the storage base directory
+     * @param Storage $folder        Root folder (Storage with type=directory) to zip
+     * @param string  $storagePath   Absolute path to the storage base directory
      * @return string  Path to the created temp ZIP file
      * @throws \RuntimeException  When ZipArchive is unavailable or creation fails
      */
-    public static function buildZip(StorageDirectory $folder, $storagePath)
+    public static function buildZip(Storage $folder, $storagePath)
     {
         if (!class_exists('ZipArchive')) {
             throw new \RuntimeException('ZipArchive extension is not available on this server.');
@@ -44,12 +43,12 @@ class StorageZipHelper
     /**
      * Recursively add a folder's contents to the open ZipArchive.
      *
-     * @param \ZipArchive      $zip         Open archive
-     * @param StorageDirectory $folder      Current folder being processed
-     * @param string           $storagePath Absolute storage base path
-     * @param string           $zipPrefix   Path inside the ZIP for this folder's contents
+     * @param \ZipArchive $zip         Open archive
+     * @param Storage     $folder      Current folder being processed (type=directory)
+     * @param string      $storagePath Absolute storage base path
+     * @param string      $zipPrefix   Path inside the ZIP for this folder's contents
      */
-    private static function addFolderToZip(ZipArchive $zip, StorageDirectory $folder, $storagePath, $zipPrefix)
+    private static function addFolderToZip(ZipArchive $zip, Storage $folder, $storagePath, $zipPrefix)
     {
         $folderZipPath = $zipPrefix . $folder->name . '/';
 
@@ -57,7 +56,9 @@ class StorageZipHelper
         $zip->addEmptyDir($folderZipPath);
 
         // Add files in this directory
-        $files = Storage::findAll(['id_directory' => $folder->id_directory]);
+        $files = Storage::find()
+            ->where(['id_directory' => $folder->id_storage, 'type' => Storage::TYPE_FILE])
+            ->all();
         foreach ($files as $file) {
             $filePath = $storagePath . '/' . $file->name;
             if (file_exists($filePath)) {
@@ -70,7 +71,9 @@ class StorageZipHelper
         }
 
         // Recurse into sub-folders
-        $subFolders = StorageDirectory::findAll(['id_parent' => $folder->id_directory]);
+        $subFolders = Storage::find()
+            ->where(['id_directory' => $folder->id_storage, 'type' => Storage::TYPE_DIRECTORY])
+            ->all();
         foreach ($subFolders as $subFolder) {
             self::addFolderToZip($zip, $subFolder, $storagePath, $folderZipPath);
         }
