@@ -9,7 +9,7 @@ use yii\web\AssetBundle;
  */
 class ShareModalAsset extends AssetBundle
 {
-    public $sourcePath = '@vendor/portalium/yii2-storage/src/assets';
+    public $sourcePath = '@vendor/portalium/yii2-storage/src/assets/share-modal';
     
     public $css = [
         'css/share-modal.css',

@@ -148,7 +148,7 @@ window.openFilePreview = function(url, attributesRaw) {
     var iconClass = attributes.icon_class_php || 'fa fa-file'; 
     var mime_type = attributes.mime_type;
     var fileId = attributes.id_storage;
-    url = '/data/'+attributes.name;
+    url = '/storage/default/get-file?id=' + fileId;
     
     if (fileId) {
         $.ajax({
