@@ -195,42 +195,50 @@ class DefaultController extends Controller
      */
     public function actionUploadFile()
     {
-        if (!\Yii::$app->user->can('storageWebDefaultUploadFile') && !\Yii::$app->workspace->can('storage', 'storageWebDefaultUploadFile')) {
-            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-        }
         $post = Yii::$app->request->post();
         $type = $post['Storage']['type'] ?? 'file';
         $model = ($type === 'folder') ? new StorageDirectory() : new Storage();
         $id_directory = Yii::$app->request->post('id_directory') ?: null;
         $model->id_directory = $id_directory;
+        $currentUserId = Yii::$app->user->id;
 
         if ($id_directory !== null) {
             $directoryModel = StorageDirectory::findOne($id_directory);
-            if (
-                !\Yii::$app->user->can('storageWebDefaultManageDirectory') &&
-                !\Yii::$app->user->can('storageWebDefaultManageDirectoryOwn', ['model' => $directoryModel]) &&
-                !\Yii::$app->workspace->can('storage', 'storageWebDefaultManageDirectory', ['model' => $directoryModel])
-            ) {
+            // Global + Own + Workspace permission check
+            $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultUploadFile')
+                || \Yii::$app->user->can('storageWebDefaultUploadFileOwn', ['model' => $directoryModel])
+                || \Yii::$app->workspace->can('storage', 'storageWebDefaultUploadFile', ['model' => $directoryModel]);
+
+            // Share edit permission check
+            $hasSharePermission = \portalium\storage\models\StorageShare::hasAccess(
+                $currentUserId,
+                null,
+                $directoryModel,
+                \portalium\storage\models\StorageShare::PERMISSION_EDIT
+            );
+
+            if (!$hasGlobalPermission && !$hasSharePermission)
                 throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
-            }
-        }
+        } else if (
+            !\Yii::$app->user->can('storageWebDefaultUploadFile') &&
+            !\Yii::$app->workspace->can('storage', 'storageWebDefaultUploadFile')
+        )
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
 
         if (Yii::$app->request->isPost) {
             $model->load($post);
-
             if (!empty($post['Storage']['allowedExtensions'])) {
                 $allowedExt = json_decode($post['Storage']['allowedExtensions'], true);
-                if (is_array($allowedExt)) {
+                if (is_array($allowedExt))
                     $model->allowedExtensions = $allowedExt;
-                }
             }
 
             $uploadedFiles = UploadedFile::getInstancesByName('Storage[file]');
             $success = false;
             if ($type === 'folder') {
-                if (empty($uploadedFiles)) {
+                if (empty($uploadedFiles))
                     $model->addError('file', Module::t('No files were uploaded'));
-                } else {
+                else {
                     if (empty($model->name)) {
                         $firstFile = $uploadedFiles[0];
                         $model->name = explode('/', $firstFile->name)[0] ?? 'Uploaded Folder';
@@ -252,23 +260,45 @@ class DefaultController extends Controller
                             $filename = $matches[1];
                         }
 
-                        if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory])->exists()) {
+                        if (!Storage::find()->where([
+                            'title' => $filename . $extension,
+                            'id_directory' => $id_directory,
+                            'id_user' => $currentUserId
+                        ])->exists()) {
                             $model->title = $filename . $extension;
                         } else {
                             $counter = 1;
                             $newTitle = "{$filename} ({$counter}){$extension}";
-                            while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory])->exists()) {
+                            while (Storage::find()->where([
+                                'title' => $newTitle,
+                                'id_directory' => $id_directory,
+                                'id_user' => $currentUserId
+                            ])->exists()) {
                                 $counter++;
                                 $newTitle = "{$filename} ({$counter}){$extension}";
                             }
                             $model->title = $newTitle;
                         }
                     }
-                    $hash_file = md5_file($model->file->tempName);
-                    $model->hash_file = $hash_file;
-                    $success = $model->upload();
+
+
+                    if (!Storage::find()->where(['title' => $filename . $extension, 'id_directory' => $id_directory])->exists())
+                        $model->title = $filename . $extension;
+                    else {
+                        $counter = 1;
+                        $newTitle = "{$filename} ({$counter}){$extension}";
+                        while (Storage::find()->where(['title' => $newTitle, 'id_directory' => $id_directory])->exists()) {
+                            $counter++;
+                            $newTitle = "{$filename} ({$counter}){$extension}";
+                        }
+                        $model->title = $newTitle;
+                    }
                 }
+                $hash_file = md5_file($model->file->tempName);
+                $model->hash_file = $hash_file;
+                $success = $model->upload();
             }
+
             if (Yii::$app->request->isAjax) {
                 Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
                 return $success
@@ -281,6 +311,7 @@ class DefaultController extends Controller
             'model' => $model,
         ]);
     }
+
 
     /**
      * Handles the download of a storage file.
@@ -1438,23 +1469,22 @@ class DefaultController extends Controller
         if ($share->save()) {
             $generatedLink = '';
             if ($shared_with_type === \portalium\storage\models\StorageShare::TYPE_LINK) {
-            
+
                 $generatedLink = \yii\helpers\Url::to(['/storage/default/view-share', 'id' => $share->id_share], true);
             }
 
             return [
-                'success' => true, 
-                'message' => Module::t('Share created successfully!'), 
+                'success' => true,
+                'message' => Module::t('Share created successfully!'),
                 'share' => $share,
-                'link' => $generatedLink 
+                'link' => $generatedLink
             ];
-        }
         } else {
             return ['success' => false, 'message' => Module::t('Failed to create share!'), 'errors' => $share->errors];
         }
     }
 
-    
+
     /**
      * View a shared item via link
      */
@@ -1472,7 +1502,7 @@ class DefaultController extends Controller
             if (!$file) {
                 throw new NotFoundHttpException(Module::t('The requested file does not exist.'));
             }
-            
+
             // Log access
             $file->access_count = ($file->access_count ?? 0) + 1;
             $file->date_last_access = date('Y-m-d H:i:s');
@@ -1483,7 +1513,7 @@ class DefaultController extends Controller
             if (file_exists($path)) {
                 $response = Yii::$app->response;
                 $fileExtension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                
+
                 if (in_array($file->mime_type, ['application/pdf', 'image/jpeg', 'image/png', 'image/gif'])) {
                     $response->headers->set('Content-Disposition', 'inline; filename="' . $file->title . '.' . $fileExtension . '"');
                 } else {
@@ -1493,7 +1523,7 @@ class DefaultController extends Controller
             }
             throw new NotFoundHttpException(Module::t('File not found on disk.'));
         }
-        
+
         // For directory or full storage, redirect to index with specific parameters or render a custom view
         // Since we are creating a generic view for shared folders, we'll render a simple view or redirect
         // For now, redirect to login if guest, or to storage index with a flash message
@@ -1501,14 +1531,14 @@ class DefaultController extends Controller
             Yii::$app->user->setReturnUrl(['/storage/default/view-share', 'id' => $id]);
             return $this->redirect(['/site/auth/login']);
         }
-        
+
         if ($share->id_directory) {
             return $this->redirect(['/storage/default/index', 'id_directory' => $share->id_directory]);
         }
-        
+
         return $this->redirect(['/storage/default/index']);
     }
-    
+
 
     /**
      * Get all shares for a file, directory, or user storage
