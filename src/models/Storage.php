@@ -88,7 +88,7 @@ class Storage extends \yii\db\ActiveRecord
     {
         return [
             [
-                'class' => \yii\behaviors\AttributeBehavior::class,
+                'class' => \yii\behaviors\AttributeBehavior::className(),
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_user',
                     \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_user',
@@ -103,7 +103,7 @@ class Storage extends \yii\db\ActiveRecord
                 },
             ],
             [
-                'class' => \yii\behaviors\AttributeBehavior::class,
+                'class' => \yii\behaviors\AttributeBehavior::className(),
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_workspace',
                     \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_workspace',
@@ -118,7 +118,7 @@ class Storage extends \yii\db\ActiveRecord
                 },
             ],
             [
-                'class' => \yii\behaviors\AttributeBehavior::class,
+                'class' => \yii\behaviors\AttributeBehavior::className(),
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_directory',
                 ],

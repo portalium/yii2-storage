@@ -33,7 +33,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
     {
         return [
             [
-                'class' => \yii\behaviors\AttributeBehavior::class,
+                'class' => \yii\behaviors\AttributeBehavior::className(),
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_user',
                     \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_user',
@@ -48,7 +48,7 @@ class StorageDirectory extends \yii\db\ActiveRecord
                 },
             ],
             [
-                'class' => \yii\behaviors\AttributeBehavior::class,
+                'class' => \yii\behaviors\AttributeBehavior::className(),
                 'attributes' => [
                     \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => 'id_workspace',
                     \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_workspace',
@@ -60,15 +60,6 @@ class StorageDirectory extends \yii\db\ActiveRecord
                     if ($event->name === \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE) {
                         return $this->getOldAttribute('id_workspace');
                     }
-                },
-            ],
-            [
-                'class' => \yii\behaviors\AttributeBehavior::class,
-                'attributes' => [
-                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => 'id_directory',
-                ],
-                'value' => function ($event) {
-                    return $this->getOldAttribute('id_directory');
                 },
             ],
         ];

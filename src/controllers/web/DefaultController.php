@@ -1053,11 +1053,7 @@ class DefaultController extends Controller
         }
         if (Yii::$app->request->post()) {
             $oldName = $model->name;
-            $post = Yii::$app->request->post('StorageDirectory', []);
-            unset($post['id_user'], $post['id_workspace'], $post['id_directory']);
-            $model->name = $post['name'] ?? $model->name;
-
-            if ($model->validate()) {
+            if ($model->load(Yii::$app->request->post()) && $model->validate()) {
                 if ($oldName !== $model->name) {
                     $baseName = $model->name;
                     $name = $baseName;
