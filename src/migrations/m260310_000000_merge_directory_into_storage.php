@@ -29,41 +29,16 @@ class m260310_000000_merge_directory_into_storage extends Migration
         $directoryTable  = '{{%' . Module::$tablePrefix . 'storage_directory}}';
         $shareTable      = '{{%' . Module::$tablePrefix . 'storage_share}}';
 
-        // ───────────────────────────────────────────────────────
-        // 1. Add `type` column to storage table
-        // ───────────────────────────────────────────────────────
-        $this->addColumn($storageTable, 'type', $this->string(20)->notNull()->defaultValue('file')->after('id_storage'));
+        $this->addColumn($storageTable, 'type', $this->string(20)->notNull()->defaultValue('file')->after('id_storage'));        $this->update($storageTable, ['type' => 'file']);
 
-        // Mark all existing records as 'file'
-        $this->update($storageTable, ['type' => 'file']);
-
-        // ───────────────────────────────────────────────────────
-        // 2. Drop old FK: storage.id_directory → storage_directory.id_directory
-        // ───────────────────────────────────────────────────────
         $this->dropForeignKey('{{%fk-' . Module::$tablePrefix . 'storage-id_directory}}', $storageTable);
 
-        // ───────────────────────────────────────────────────────
-        // 3. Drop old FK: storage_share.id_directory → storage_directory.id_directory
-        // ───────────────────────────────────────────────────────
         try {
             $this->dropForeignKey('fk_storage_share_directory', $shareTable);
         } catch (\Exception $e) {
-            // FK may not exist
-        }
-
-        // ───────────────────────────────────────────────────────
-        // 4. Transfer directory records into storage table
-        //    We build a mapping: old id_directory → new id_storage
-        // ───────────────────────────────────────────────────────
-        // First pass: insert directories that have no parent (root folders)
-        // Then iterate until all directories are migrated (handle tree depth)
-
-        $allDirectories = $this->db->createCommand("SELECT * FROM {$directoryTable} ORDER BY id_parent ASC, id_directory ASC")->queryAll();
-
-        // Build parent → children map and detect root nodes
-        $directoryMap = []; // old id_directory → new id_storage
+        }        $allDirectories = $this->db->createCommand("SELECT * FROM {$directoryTable} ORDER BY id_parent ASC, id_directory ASC")->queryAll();        $directoryMap = [];
         $pending = $allDirectories;
-        $maxIterations = 100; // safety guard for deeply nested trees
+        $maxIterations = 100;
         $iteration = 0;
 
         while (!empty($pending) && $iteration < $maxIterations) {
@@ -71,21 +46,18 @@ class m260310_000000_merge_directory_into_storage extends Migration
             $remaining = [];
 
             foreach ($pending as $dir) {
-                $oldParentId = $dir['id_parent'];
-
-                // If parent is null (root) or parent already migrated, we can insert
-                if ($oldParentId === null || isset($directoryMap[$oldParentId])) {
+                $oldParentId = $dir['id_parent'];                if ($oldParentId === null || isset($directoryMap[$oldParentId])) {
                     $newParentId = ($oldParentId === null) ? null : ($directoryMap[$oldParentId] ?? null);
 
                     $this->insert($storageTable, [
                         'type'         => 'directory',
-                        'name'         => $dir['name'],    // directory name as storage name
-                        'title'        => $dir['name'],    // directory name as title
+                        'name'         => $dir['name'],
+                        'title'        => $dir['name'],
                         'id_user'      => $dir['id_user'],
-                        'mime_type'    => 0,               // N/A for directories
-                        'id_directory' => $newParentId,    // parent directory (now a storage row)
+                        'mime_type'    => 0,
+                        'id_directory' => $newParentId,
                         'id_workspace' => $dir['id_workspace'] ?? null,
-                        'access'       => 1,               // default access
+                        'access'       => 1,
                         'date_create'  => $dir['date_create'],
                         'date_update'  => $dir['date_update'],
                     ]);
@@ -93,14 +65,11 @@ class m260310_000000_merge_directory_into_storage extends Migration
                     $newId = $this->db->getLastInsertID();
                     $directoryMap[$dir['id_directory']] = $newId;
                 } else {
-                    // Parent not yet migrated, try later
+
                     $remaining[] = $dir;
                 }
-            }
+            }            if (count($remaining) === count($pending)) {
 
-            // If nothing was migrated in this iteration, there's a problem (orphaned records)
-            if (count($remaining) === count($pending)) {
-                // Orphaned directories — insert them with null parent
                 foreach ($remaining as $dir) {
                     $this->insert($storageTable, [
                         'type'         => 'directory',
@@ -123,9 +92,6 @@ class m260310_000000_merge_directory_into_storage extends Migration
             $pending = $remaining;
         }
 
-        // ───────────────────────────────────────────────────────
-        // 5. Update file records: old id_directory → new id_storage
-        // ───────────────────────────────────────────────────────
         foreach ($directoryMap as $oldDirId => $newStorageId) {
             $this->update(
                 $storageTable,
@@ -133,12 +99,6 @@ class m260310_000000_merge_directory_into_storage extends Migration
                 ['id_directory' => $oldDirId, 'type' => 'file']
             );
         }
-
-        // ───────────────────────────────────────────────────────
-        // 6. Update share records: old id_directory → new id_storage reference
-        //    The share table's id_directory column used to point to storage_directory.
-        //    Now it should point to the new storage IDs.
-        // ───────────────────────────────────────────────────────
         foreach ($directoryMap as $oldDirId => $newStorageId) {
             $this->update(
                 $shareTable,
@@ -147,9 +107,6 @@ class m260310_000000_merge_directory_into_storage extends Migration
             );
         }
 
-        // ───────────────────────────────────────────────────────
-        // 7. Add self-referencing FK: storage.id_directory → storage.id_storage
-        // ───────────────────────────────────────────────────────
         $this->addForeignKey(
             '{{%fk-' . Module::$tablePrefix . 'storage-id_directory}}',
             $storageTable,
@@ -159,9 +116,6 @@ class m260310_000000_merge_directory_into_storage extends Migration
             'SET NULL'
         );
 
-        // ───────────────────────────────────────────────────────
-        // 8. Add FK: storage_share.id_directory → storage.id_storage
-        // ───────────────────────────────────────────────────────
         $this->addForeignKey(
             'fk_storage_share_directory',
             $shareTable,
@@ -172,14 +126,13 @@ class m260310_000000_merge_directory_into_storage extends Migration
             'CASCADE'
         );
 
-        // ───────────────────────────────────────────────────────
-        // 9. Add index on type for fast filtering
-        // ───────────────────────────────────────────────────────
         $this->createIndex(
             '{{%idx-' . Module::$tablePrefix . 'storage-type}}',
             $storageTable,
             'type'
         );
+
+        $this->dropTable($directoryTable);
     }
 
     public function safeDown()
