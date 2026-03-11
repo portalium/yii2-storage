@@ -11,8 +11,8 @@ class m250121_120002_storage_rule_rbac extends Migration
         $rule = new OwnRule();
         if (!$auth->getRule($rule->name)) {
             $auth->add($rule);
-        } 
-        
+        }
+
         $role = Yii::$app->setting->getValue('site::admin_role');
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $user = $auth->getRole('user');
@@ -37,30 +37,12 @@ class m250121_120002_storage_rule_rbac extends Migration
         ];
 
         foreach ($permissions as $permissionKey) {
-            $permissionOwn = $auth->getPermission($permissionKey . 'Own');
-            if (!$permissionOwn) {
-                $permissionOwn = $auth->createPermission($permissionKey . 'Own');
-                $permissionOwn->description = ucfirst(preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey . 'Own'));
-                $permissionOwn->ruleName = $rule->name;
-                $auth->add($permissionOwn);
-            }
-
-            if ($admin && !$auth->hasChild($admin, $permissionOwn)) {
-                $auth->addChild($admin, $permissionOwn);
-            }
-            if ($user && !$auth->hasChild($user, $permissionOwn)) {
-                $auth->addChild($user, $permissionOwn);
-            }
-
             $permission = $auth->getPermission($permissionKey);
             if (!$permission) {
                 $permission = $auth->createPermission($permissionKey);
-                $permission->description = ucfirst(preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey));
+                $permission->description = preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey);
+                $permission->description = ucfirst($permission->description);
                 $auth->add($permission);
-            }
-
-            if (!$auth->hasChild($permissionOwn, $permission)) {
-                $auth->addChild($permissionOwn, $permission);
             }
         }
     }
@@ -89,9 +71,9 @@ class m250121_120002_storage_rule_rbac extends Migration
         ];
 
         foreach ($permissions as $permissionKey) {
-            $permissionOwn = $auth->getPermission($permissionKey . 'Own');
-            if ($permissionOwn) {
-                $auth->remove($permissionOwn);
+            $permission = $auth->getPermission($permissionKey);
+            if ($permission) {
+                $auth->remove($permission);
             }
         }
     }
