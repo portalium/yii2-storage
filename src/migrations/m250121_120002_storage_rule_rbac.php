@@ -10,8 +10,9 @@ class m250121_120002_storage_rule_rbac extends Migration
         $auth = Yii::$app->authManager;
         $rule = new OwnRule();
         if (!$auth->getRule($rule->name)) {
-        $auth->add($rule);
+            $auth->add($rule);
         } 
+        
         $role = Yii::$app->setting->getValue('site::admin_role');
         $admin = (isset($role) && $role != '') ? $auth->getRole($role) : $auth->getRole('admin');
         $user = $auth->getRole('user');
@@ -36,30 +37,30 @@ class m250121_120002_storage_rule_rbac extends Migration
         ];
 
         foreach ($permissions as $permissionKey) {
-            $permissionOwn = $auth->createPermission($permissionKey . 'Own');
-            $description = preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey . 'Own');
-            $permissionOwn->description = ucfirst($description);
-            $permissionOwn->ruleName = $rule->name;
-            $auth->add($permissionOwn);
-            $auth->addChild($admin, $permissionOwn);
-            
-            if ($user) {
+            $permissionOwn = $auth->getPermission($permissionKey . 'Own');
+            if (!$permissionOwn) {
+                $permissionOwn = $auth->createPermission($permissionKey . 'Own');
+                $permissionOwn->description = ucfirst(preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey . 'Own'));
+                $permissionOwn->ruleName = $rule->name;
+                $auth->add($permissionOwn);
+            }
+
+            if ($admin && !$auth->hasChild($admin, $permissionOwn)) {
+                $auth->addChild($admin, $permissionOwn);
+            }
+            if ($user && !$auth->hasChild($user, $permissionOwn)) {
                 $auth->addChild($user, $permissionOwn);
             }
-            
+
             $permission = $auth->getPermission($permissionKey);
             if (!$permission) {
                 $permission = $auth->createPermission($permissionKey);
-                $permission->description = preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey);
-                $permission->description = ucfirst($permission->description);
+                $permission->description = ucfirst(preg_replace('/([a-z])([A-Z])/', '$1 $2', $permissionKey));
                 $auth->add($permission);
             }
-            try {            $auth->addChild($permissionOwn, $permission);
 
-                //code...
-            } catch (\Throwable $th) {
-                
-                //throw $th;
+            if (!$auth->hasChild($permissionOwn, $permission)) {
+                $auth->addChild($permissionOwn, $permission);
             }
         }
     }
