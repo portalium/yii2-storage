@@ -140,6 +140,16 @@ class Storage extends \yii\db\ActiveRecord
                     return $this->getOldAttribute('id_directory');
                 },
             ],
+            [
+                'class' => \yii\behaviors\AttributeBehavior::className(),
+                'attributes' => [
+                    \yii\db\ActiveRecord::EVENT_BEFORE_VALIDATE => 'title',
+                ],
+                'value' => function ($event) {
+                    return $this->type === self::TYPE_DIRECTORY ? $this->name : $this->title;
+                },
+            ],
+            
         ];
     }
 

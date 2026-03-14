@@ -259,7 +259,7 @@ echo Html::endTag('div'); // folders-section
 echo Html::beginTag('div', [
     'id' => 'bulk-action-toolbar',
     'class' => 'bulk-action-toolbar d-none',
-    'style' => 'background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 15px; z-index: 999; margin-bottom: 20px;'
+    'style' => 'background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 15px; margin-bottom: 20px;'
 ]);
 
 echo Html::beginTag('div', ['class' => 'd-flex align-items-center justify-content-between']);
