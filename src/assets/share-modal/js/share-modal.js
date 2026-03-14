@@ -3,7 +3,7 @@
  * Handles file/directory/storage sharing functionality
  */
 
-(function() {
+(function () {
     'use strict';
 
     let shareToastInstance = null;
@@ -11,12 +11,12 @@
     /**
      * Show toast notification
      */
-    window.showShareToast = function(message, success = true) {
+    window.showShareToast = function (message, success = true) {
         const toastEl = document.getElementById('shareToast');
         const toastBody = document.getElementById('shareToastBody');
-        
+
         if (!toastEl || !toastBody) return;
-        
+
         toastBody.textContent = message;
 
         toastEl.classList.remove('text-bg-success', 'text-bg-danger');
@@ -34,7 +34,7 @@
     /**
      * Create a new share
      */
-    window.createShare = function(type) {
+    window.createShare = function (type) {
         console.log('Creating share of type:', type);
         const config = window.shareConfig;
         if (!config) return;
@@ -75,7 +75,7 @@
                 data.expires_at = expiry;
             }
         }
-
+        data.shareType = config.shareType;
         $.ajax({
             url: config.urls.createShare,
             type: 'POST',
@@ -83,10 +83,10 @@
             headers: {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
-                     if (response.link) {  
-                         window.generatedShareLink = response.link;
+                    if (response.link) {
+                        window.generatedShareLink = response.link;
                     }
                     showShareToast(config.messages.shareCreated);
                     refreshSharesList();
@@ -97,7 +97,7 @@
                     showShareToast(response.message || config.messages.error, false);
                 }
             },
-            error: function() {
+            error: function () {
                 showShareToast(config.messages.error, false);
             }
         });
@@ -106,7 +106,7 @@
     /**
      * Revoke a share
      */
-    window.revokeShare = function(shareId) {
+    window.revokeShare = function (shareId) {
         const config = window.shareConfig;
         if (!config) return;
 
@@ -116,23 +116,23 @@
             headers: {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     showShareToast(config.messages.shareRevoked);
                     const element = document.querySelector('[data-share-id="' + shareId + '"]');
                     if (element) element.remove();
-                    
+
                     // Check if no shares left
                     if (document.querySelectorAll('#sharesList [data-share-id]').length === 0) {
                         const noSharesMsg = config.messages.noSharesYet || 'No shares yet';
-                        document.getElementById('sharesList').innerHTML = 
+                        document.getElementById('sharesList').innerHTML =
                             '<div class="text-muted text-center py-3"><i class="fa fa-info-circle me-1"></i> ' + noSharesMsg + '</div>';
                     }
                 } else {
                     showShareToast(response.message || config.messages.error, false);
                 }
             },
-            error: function() {
+            error: function () {
                 showShareToast(config.messages.error, false);
             }
         });
@@ -141,7 +141,7 @@
     /**
      * Update share permission level
      */
-    window.updateSharePermission = function(shareId, permission) {
+    window.updateSharePermission = function (shareId, permission) {
         const config = window.shareConfig;
         if (!config) return;
 
@@ -154,14 +154,14 @@
             headers: {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     showShareToast(config.messages.permissionUpdated);
                 } else {
                     showShareToast(response.message || config.messages.error, false);
                 }
             },
-            error: function() {
+            error: function () {
                 showShareToast(config.messages.error, false);
             }
         });
@@ -170,7 +170,7 @@
     /**
      * Refresh shares list
      */
-    window.refreshSharesList = function() {
+    window.refreshSharesList = function () {
         const config = window.shareConfig;
         if (!config) return;
 
@@ -183,7 +183,7 @@
             url: config.urls.getShares,
             type: 'GET',
             data: params,
-            success: function(response) {
+            success: function (response) {
                 if (response.success && response.html) {
                     // Update only the shares list, not the entire page
                     const sharesList = document.getElementById('sharesList');
@@ -192,7 +192,7 @@
                     }
                 }
             },
-            error: function() {
+            error: function () {
                 console.error('Failed to refresh shares list');
             }
         });
@@ -201,7 +201,7 @@
     /**
      * Update access UI (public/private)
      */
-    window.updateAccessUI = function(level) {
+    window.updateAccessUI = function (level) {
         const accessText = document.getElementById('access-text');
         const accessDesc = document.getElementById('access-desc');
         const accessIcon = document.getElementById('access-icon');
@@ -223,7 +223,7 @@
     /**
      * Set access level (public/private)
      */
-    window.setAccessLevel = function(level) {
+    window.setAccessLevel = function (level) {
         const config = window.shareConfig;
         if (!config) return;
 
@@ -239,7 +239,7 @@
             headers: {
                 'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     const statusText = level === 'public' ? config.messages.public : config.messages.restricted;
                     const msg = config.messages.accessChanged.replace('{status}', statusText);
@@ -248,7 +248,7 @@
                     showShareToast(config.messages.error, false);
                 }
             },
-            error: function() {
+            error: function () {
                 showShareToast(config.messages.error, false);
             }
         });
@@ -257,27 +257,27 @@
     /**
      * Handle copy link button
      */
-    window.handleCopyLink = function(btn) {
+    window.handleCopyLink = function (btn) {
         var linkToCopy = window.generatedShareLink || '';
         if (!linkToCopy) {
             showShareToast('Please generate a link first', false);
             return;
         }
 
-          //275-2280 yeni eklendi
-           function onCopied() {
+        //275-2280 yeni eklendi
+        function onCopied() {
             var original = btn.innerHTML;
             btn.innerHTML = '<i class="fa fa-check me-2"></i>' + (btn.dataset.copied || 'Copied!');
             btn.classList.remove('btn-outline-secondary');
             btn.classList.add('btn-success');
 
 
-            setTimeout(function() {
+            setTimeout(function () {
                 btn.innerHTML = original;
                 btn.classList.remove('btn-success');
                 btn.classList.add('btn-outline-secondary');
             }, 2000);
-      
+
         }
 
         // Modern API (HTTPS / localhost)
@@ -295,7 +295,7 @@
             ta.style.position = 'fixed';
             ta.style.left = '-9999px';
             ta.style.top = '-9999px';
-             btn.parentNode.appendChild(ta);
+            btn.parentNode.appendChild(ta);
             ta.focus();
             ta.select();
             try {
@@ -303,9 +303,9 @@
                 onCopied();
             } catch (e) {
                 showShareToast('Failed to copy link', false);
-            } finally { 
-                
-                btn.parentNode.removeChild(ta); 
+            } finally {
+
+                btn.parentNode.removeChild(ta);
             }
         }
     };

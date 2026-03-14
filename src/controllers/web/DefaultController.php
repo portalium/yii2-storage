@@ -1329,10 +1329,16 @@ class DefaultController extends Controller
         $id_storage = Yii::$app->request->post('id_storage');
         $id_directory = Yii::$app->request->post('id_directory');
         $id_user_owner = Yii::$app->request->post('id_user_owner');
+        $shareType = Yii::$app->request->post('shareType');
         $shared_with_type = Yii::$app->request->post('shared_with_type');
         $id_shared_with = Yii::$app->request->post('id_shared_with');
         $permission_level = Yii::$app->request->post('permission_level', \portalium\storage\models\StorageShare::PERMISSION_VIEW);
         $expires_at = Yii::$app->request->post('expires_at');
+
+        if ($shareType === 'directory' && empty($id_directory) && !empty($id_storage)) {
+            $id_directory = $id_storage;
+            $id_storage = null;
+        }
 
         if ($id_storage) {
             $storage = Storage::findOne($id_storage);
