@@ -197,16 +197,15 @@ foreach ($directories as $model) {
         ];
     }
     
-    /* Move - requires Edit permission
+    // Move - requires Edit permission
     if ($hasEditPermission) {
         $dropdownItems[] = [
             'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
             'url' => '#',
             'encode' => false,
-            'linkOptions' => ['onclick' => 'openMoveFolderModal(' . $folderId . ')'],
+            'linkOptions' => ['onclick' => 'openMoveModal([' . $folderId . '])'],
         ];
     }
-    */
     
     // Share - requires Manage permission
     if ($hasManagePermission) {
@@ -281,6 +280,15 @@ echo Html::button(
         'class' => 'btn btn-success btn-sm',
         'id' => 'bulk-download-btn',
         'onclick' => 'bulkDownloadFiles()',
+    ]
+);
+
+echo Html::button(
+    Html::tag('i', '', ['class' => 'fa fa-arrows-alt me-2']) . Module::t('Move Selected'),
+    [
+        'class' => 'btn btn-warning btn-sm',
+        'id' => 'bulk-move-btn',
+        'onclick' => 'bulkMoveFiles()',
     ]
 );
 
@@ -558,15 +566,15 @@ echo ListView::widget([
             ];
         }
         
-        /* Move - requires Edit permission
+        // Move - requires Edit permission
         if ($hasEditPermission) {
             $fileDropdownItems[] = [
                 'label' => Html::tag('i', '', ['class' => 'fa fa-arrows-alt']) . ' ' . Module::t('Move'),
                 'url' => '#',
                 'encode' => false,
+                'linkOptions' => ['onclick' => 'openMoveModal([' . $model->id_storage . '])'],
             ];
         }
-        */
         
         // Share - requires Manage permission
         if ($hasManagePermission) {

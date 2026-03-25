@@ -23,6 +23,7 @@ class FilePicker extends InputWidget
     public $attributes = ['id_storage'];
     public $isPicker = true;
     public $allowFolderSelection = false;
+    public $showPreview = true;
 
     public function init(): void
     {
@@ -36,6 +37,7 @@ class FilePicker extends InputWidget
         $this->allowedExtensions = $this->options['allowedExtensions'] ?? $this->allowedExtensions;
         $this->isPicker = $this->options['isPicker'] ?? $this->isPicker;
         $this->allowFolderSelection = $this->options['allowFolderSelection'] ?? $this->allowFolderSelection;
+        $this->showPreview = $this->options['showPreview'] ?? $this->showPreview;
 
         if (isset($this->options['attributes'])) {
             $this->attributes = $this->options['attributes'];
@@ -116,11 +118,13 @@ class FilePicker extends InputWidget
             'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ', ' . json_encode($this->allowedExtensions ?? []) . ', ' . ($this->allowFolderSelection ? 'true' : 'false') . ')'
         ]);
 
-        echo Html::button('<span class="btn-text">' . Module::t('Preview File') . '</span>', [
-            'class' => 'btn btn-primary ms-2',
-            'onclick' => 'previewSelectedFile(this)',
-            'style' => 'margin-right: 5px;'
-        ]);
+        if ($this->showPreview) {
+            echo Html::button('<span class="btn-text">' . Module::t('Preview File') . '</span>', [
+                'class' => 'btn btn-primary ms-2',
+                'onclick' => 'previewSelectedFile(this)',
+                'style' => 'margin-right: 5px;'
+            ]);
+        }
 
         $modalHtml = $this->render('@portalium/storage/views/web/default/_filePreviewModal');
 

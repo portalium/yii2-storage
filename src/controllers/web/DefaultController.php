@@ -68,7 +68,7 @@ class DefaultController extends Controller
     public function beforeAction($action)
     {
         // Disable CSRF validation for specific actions triggered from shared views
-        if (in_array($action->id, ['create-share', 'copy-file', 'update-share-permission', 'revoke-share', 'delete-file', 'delete-folder'])) {
+        if (in_array($action->id, ['create-share', 'copy-file', 'update-share-permission', 'revoke-share', 'delete-file', 'delete-folder', 'move-items'])) {
             $this->enableCsrfValidation = false;
         }
         return parent::beforeAction($action);
@@ -1164,7 +1164,7 @@ class DefaultController extends Controller
                 }
 
                 $model->name = $name;
-
+                $model->title = $baseName;
                 if ($model->save()) {
                     Yii::$app->session->setFlash('success', Module::t('Folder created successfully!'));
                 } else {
@@ -1433,6 +1433,187 @@ class DefaultController extends Controller
         }
 
         return ['success' => true];
+    }
+
+    /**
+     * Renders the move-items modal with a directory tree.
+     *
+     * @return string Rendered partial view
+     * @throws \yii\web\ForbiddenHttpException
+     */
+    public function actionMoveModal()
+    {
+        if (!\Yii::$app->user->can('storageWebDefaultMoveItems') && !\Yii::$app->workspace->can('storage', 'storageWebDefaultMoveItems')) {
+            throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
+        }
+
+        $ids = Yii::$app->request->get('ids', []);
+        if (!is_array($ids)) {
+            $ids = [$ids];
+        }
+        $ids = array_filter(array_map('intval', $ids));
+
+        $excludeIds = [];
+        foreach ($ids as $id) {
+            $item = Storage::findOne($id);
+            if ($item && $item->type === Storage::TYPE_DIRECTORY) {
+                $excludeIds = array_merge($excludeIds, $this->getAllDescendantDirectoryIds($id));
+            }
+            $excludeIds[] = $id;
+        }
+
+        $id_user = Yii::$app->user->id;
+        $userWorkspaceIds = StorageQueryService::getUserWorkspaceIds($id_user);
+        $directoryTree = $this->buildDirectoryTree(null, $excludeIds, $id_user, $userWorkspaceIds);
+
+        return $this->renderPartial('_move-modal', [
+            'ids' => $ids,
+            'directoryTree' => $directoryTree,
+        ]);
+    }
+
+    /**
+     * Moves one or more files/directories to a target directory.
+     *
+     * @return array JSON response
+     * @throws \yii\web\ForbiddenHttpException
+     */
+    public function actionMoveItems()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        if (!Yii::$app->request->isPost) {
+            return ['success' => false, 'message' => Module::t('Only POST requests are accepted.')];
+        }
+
+        $ids = Yii::$app->request->post('ids', []);
+        if (!is_array($ids)) {
+            $ids = [$ids];
+        }
+        $ids = array_filter(array_map('intval', $ids));
+
+        if (empty($ids)) {
+            return ['success' => false, 'message' => Module::t('No items selected.')];
+        }
+
+        $targetDirectoryId = Yii::$app->request->post('target_directory');
+        if ($targetDirectoryId === '' || $targetDirectoryId === 'null' || $targetDirectoryId === null) {
+            $targetDirectoryId = null;
+        } else {
+            $targetDirectoryId = (int)$targetDirectoryId;
+        }
+
+        if ($targetDirectoryId !== null) {
+            $targetDir = Storage::findOne(['id_storage' => $targetDirectoryId, 'type' => Storage::TYPE_DIRECTORY]);
+            if (!$targetDir) {
+                return ['success' => false, 'message' => Module::t('Target directory not found.')];
+            }
+        }
+
+        $movedCount = 0;
+        $errors = [];
+
+        foreach ($ids as $id) {
+            $item = Storage::findOne($id);
+            if (!$item) {
+                $errors[] = Module::t('Item not found.');
+                continue;
+            }
+
+            $hasPermission = \Yii::$app->user->can('storageWebDefaultMoveItems')
+                || \Yii::$app->user->can('storageWebDefaultMoveItemsOwn', ['model' => $item])
+                || \Yii::$app->workspace->can('storage', 'storageWebDefaultMoveItems', ['model' => $item]);
+
+            if (!$hasPermission) {
+                $errors[] = Module::t('No permission to move: {name}', ['name' => $item->title ?: $item->name]);
+                continue;
+            }
+
+            if ($item->type === Storage::TYPE_DIRECTORY && $targetDirectoryId !== null) {
+                if ((int)$targetDirectoryId === (int)$item->id_storage) {
+                    $errors[] = Module::t('Cannot move a folder into itself.');
+                    continue;
+                }
+                $descendantIds = $this->getAllDescendantDirectoryIds($item->id_storage);
+                if (in_array($targetDirectoryId, $descendantIds)) {
+                    $errors[] = Module::t('Cannot move "{name}" into its own subfolder.', ['name' => $item->name]);
+                    continue;
+                }
+            }
+
+            if ($item->id_directory == $targetDirectoryId) {
+                continue;
+            }
+
+            Storage::updateAll(['id_directory' => $targetDirectoryId], ['id_storage' => $item->id_storage]);
+            $movedCount++;
+        }
+
+        if ($movedCount > 0) {
+            Yii::$app->session->setFlash('success', Module::t('{count} item(s) moved successfully.', ['count' => $movedCount]));
+            return ['success' => true, 'movedCount' => $movedCount];
+        }
+
+        $errorMsg = !empty($errors) ? implode(' ', $errors) : Module::t('No items were moved.');
+        return ['success' => false, 'message' => $errorMsg];
+    }
+
+    /**
+     * Returns all descendant directory IDs (recursively) for a given directory.
+     *
+     * @param int $directoryId
+     * @return array
+     */
+    private function getAllDescendantDirectoryIds($directoryId)
+    {
+        $ids = [];
+        $children = Storage::find()
+            ->select(['id_storage'])
+            ->where(['id_directory' => $directoryId, 'type' => Storage::TYPE_DIRECTORY])
+            ->column();
+
+        foreach ($children as $childId) {
+            $ids[] = (int)$childId;
+            $ids = array_merge($ids, $this->getAllDescendantDirectoryIds($childId));
+        }
+        return $ids;
+    }
+
+    /**
+     * Builds a flat directory tree for the move modal.
+     *
+     * @param int|null $parentId
+     * @param array $excludeIds
+     * @param int $id_user
+     * @param array $userWorkspaceIds
+     * @param int $level
+     * @return array
+     */
+    private function buildDirectoryTree($parentId, $excludeIds, $id_user, $userWorkspaceIds, $level = 0)
+    {
+        $query = Storage::find()
+            ->where(['type' => Storage::TYPE_DIRECTORY])
+            ->andWhere(['id_directory' => $parentId])
+            ->orderBy(['name' => SORT_ASC]);
+
+        if (!Yii::$app->user->can('storageWebDefaultManage')) {
+            StorageQueryService::applyDirectoryShareConditions($query, $id_user, $userWorkspaceIds);
+        }
+
+        if (!empty($excludeIds)) {
+            $query->andWhere(['not in', 'id_storage', $excludeIds]);
+        }
+
+        $dirs = $query->all();
+        $result = [];
+
+        foreach ($dirs as $dir) {
+            $result[] = ['model' => $dir, 'level' => $level];
+            $children = $this->buildDirectoryTree($dir->id_storage, $excludeIds, $id_user, $userWorkspaceIds, $level + 1);
+            $result = array_merge($result, $children);
+        }
+
+        return $result;
     }
 
     /**

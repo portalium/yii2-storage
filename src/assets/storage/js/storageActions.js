@@ -1191,3 +1191,74 @@ window.downloadFile = downloadFile;
 window.copyFile = copyFile;
 window.deleteFile = deleteFile;
 window.deleteFolder = deleteFolder;
+
+// MOVE FUNCTIONS
+
+function openMoveModal(ids) {
+  if (event) event.preventDefault();
+  if (!Array.isArray(ids)) ids = [ids];
+
+  var url = "/storage/default/move-modal?" + ids.map(function (id) { return "ids[]=" + id; }).join("&");
+
+  $.ajax({
+    url: url,
+    type: "GET",
+    success: function (response) {
+      $(".modal[id='moveItemsModal']").remove();
+      $("#move-items-pjax").html(response);
+      setTimeout(function () {
+        if ($("#moveItemsModal").length) {
+          showModal("moveItemsModal");
+        }
+      }, 100);
+    },
+    error: function (e) {
+      console.error("Error loading move modal:", e);
+    },
+  });
+}
+
+function bulkMoveFiles() {
+  if (typeof window.selectedFiles === "undefined" || window.selectedFiles.size === 0) return;
+  var ids = Array.from(window.selectedFiles);
+  openMoveModal(ids);
+}
+
+function selectMoveTarget(el, targetId) {
+  $(".move-dir-item").removeClass("active");
+  $(el).addClass("active");
+  $("#moveTargetDirectory").val(targetId);
+}
+
+$(document)
+  .off("click", "#confirmMoveBtn")
+  .on("click", "#confirmMoveBtn", function (e) {
+    e.preventDefault();
+
+    var ids = $(this).data("ids");
+    var targetDirectory = $("#moveTargetDirectory").val();
+
+    $.ajax({
+      url: "/storage/default/move-items",
+      type: "POST",
+      data: {
+        ids: ids,
+        target_directory: targetDirectory !== "" ? targetDirectory : "null",
+      },
+      headers: {
+        "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
+      },
+      dataType: "json",
+      complete: function () {
+        hideModal("moveItemsModal");
+        refreshCurrentView();
+        if (typeof window.clearBulkSelection === "function") {
+          window.clearBulkSelection();
+        }
+      },
+    });
+  });
+
+window.openMoveModal = openMoveModal;
+window.bulkMoveFiles = bulkMoveFiles;
+window.selectMoveTarget = selectMoveTarget;

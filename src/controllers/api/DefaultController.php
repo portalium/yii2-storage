@@ -97,8 +97,6 @@ class DefaultController extends RestActiveController
                     throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to create this storage.'));
                 break;
             case 'upload':
-                if (!Yii::$app->user->can('storageApiDefaultUpload'))
-                    throw new \yii\web\ForbiddenHttpException(Module::t('You do not have permission to upload files.'));
                 break;
             default:
                 if (

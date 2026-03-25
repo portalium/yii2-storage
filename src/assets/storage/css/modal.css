@@ -967,3 +967,31 @@
     opacity: 0;
   }
 }
+
+.move-directory-tree {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 4px 0;
+}
+
+.move-dir-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+  font-size: 14px;
+}
+
+.move-dir-item:hover {
+  background-color: #f0f4ff;
+}
+
+.move-dir-item.active {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+  font-weight: 500;
+}
