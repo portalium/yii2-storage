@@ -44,13 +44,8 @@ function setViewMode(mode) {
     applyViewModeClasses(mode);
 }
 
-<<<<<<< develop-v3-yakup
-window.openFilePreview = function (url, attributesRaw) {
-    if (!url) return console.warn('data-url bulunamadı');
-=======
 window.openFilePreview = function(url, attributesRaw) {
     if (!url) return console.warn('data-url not found');
->>>>>>> develop-v3
 
     var attributes = {};
     if (attributesRaw) {
@@ -64,13 +59,8 @@ window.openFilePreview = function(url, attributesRaw) {
         catch (err) { console.warn('data-attributes could not be parsed.', err); }
     }
 
-<<<<<<< develop-v3-yakup
-    var title = attributes.title || 'Başlık yok';
-    var iconClass = attributes.icon_class_php || 'fa fa-file';
-=======
     var title = attributes.title || 'No Title';
     var iconClass = attributes.icon_class_php || 'fa fa-file'; 
->>>>>>> develop-v3
     var mime_type = attributes.mime_type;
     var fileId = attributes.id_storage;
     var shareToken = attributes.share_token;
@@ -248,4 +238,6 @@ $(document).on('show.bs.modal', '#file-preview-modal', function () {
 $(document).on('hidden.bs.modal', '#file-preview-modal', function () {
     $(this).css('z-index', '');
     $('#filePreviewContent').html('');
+
+    $('.modal-backdrop').css('z-index', '');
 });
