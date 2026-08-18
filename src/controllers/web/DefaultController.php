@@ -956,7 +956,7 @@ class DefaultController extends Controller
         $pagination = $dataProvider->getPagination();
 
         ob_start();
-        echo $this->renderAjax('@portalium/storage/widgets/views/_picker-modal', [
+        echo $this->renderPartial('@portalium/storage/widgets/views/_picker-modal', [
             'dataProvider' => $dataProvider,
             'directoryDataProvider' => $directoryDataProvider,
             'directories' => $directories,

@@ -10,6 +10,9 @@ use portalium\theme\widgets\Html;
 use portalium\theme\widgets\InputWidget;
 use portalium\data\ActiveDataProvider;
 
+use portalium\storage\bundles\StorageAsset;
+use portalium\storage\bundles\IconAsset;
+
 
 class FilePicker extends InputWidget
 {
@@ -136,6 +139,10 @@ class FilePicker extends InputWidget
 
             $this->view->registerJs($js, \yii\web\View::POS_END);
         }
+
+        // Register assets needed by the modal content
+        StorageAsset::register($this->view);
+        IconAsset::register($this->view);
 
         $this->registerJsScript();
     }
