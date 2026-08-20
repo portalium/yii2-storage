@@ -80,8 +80,8 @@ window.openFilePreview = function(url, attributesRaw) {
             success: function (response) {
                 console.log('Access tracked:', response);
             },
-            error: function (xhr, status, error) {
-                console.error('Access tracking failed:', error);
+            error: function (xhr, status, err) {
+                console.error('Access tracking failed:', err);
             }
         });
     }
@@ -100,63 +100,115 @@ window.openFilePreview = function(url, attributesRaw) {
     loadingContent += '</div>';
     $('#filePreviewContent').html(loadingContent);
 
-    $('#file-preview-modal').modal('show');
+    function showFileMissingError() {
+        var modalId = 'file-missing-modal';
+        var existing = document.getElementById(modalId);
+        if (existing) { bootstrap.Modal.getInstance(existing).hide(); existing.remove(); }
 
-    var content = '';
-    if (mime_type == 2) {
-        content = '<div class="file-preview-container">';
-        content += '<div class="pdf-viewer-container">';
-        content += '<embed src="' + url + '#toolbar=1&navpanes=1&scrollbar=1" ';
-        content += 'type="application/pdf" class="pdf-container" ';
-        content += 'onload="$(\'#filePreviewContent .loading-spinner\').removeClass(\'show\')" ';
-        content += 'onerror="fallbackToPdfJs(\'' + url + '\', \'' + title + '\')">';
-        content += '</embed>';
-        content += '</div>';
-        content += '</div>';
-
-        setTimeout(function () {
-            $('#filePreviewContent .loading-spinner').removeClass('show');
-        }, 500);
-
-    } else if ([0, 1, 17, 25].includes(parseInt(mime_type))) {
-        content = '<div class="file-preview text-center">';
-        content += '<img src="' + url + '" alt="' + title + '" ';
-        content += 'class="file-icon img-fluid" ';
-        content += 'style="max-width:100%;max-height:70vh;" ';
-        content += 'onload="$(\'#filePreviewContent .loading-spinner\').removeClass(\'show\')" ';
-        content += 'onerror="handlePreviewError(\'Failed to load image.\')"/>';
-        content += '</div>';
-
-    } else if ([9, 11, 12, 13].includes(parseInt(mime_type))) {
-        content = '<div class="file-preview text-center">';
-        content += '<video controls autoplay style="max-width:100%;max-height:70vh;" ';
-        content += 'oncanplay="$(\'#filePreviewContent .loading-spinner\').removeClass(\'show\')" ';
-        content += 'onerror="handlePreviewError(\'Failed to load video.\')">';
-        content += '<source src="' + url + '" type="video/mp4">';
-        content += 'Your browser does not support the video tag.';
-        content += '</video>';
-        content += '</div>';
-
-    } else {
-        content = '<div class="file-preview text-center">';
-        content += '<div class="alert alert-info">';
-        content += '<i class="fa fa-info-circle fa-3x mb-3"></i>';
-        content += '<h5>Preview Not Supported</h5>';
-        content += '<p>Preview is not available for this file type.</p>';
-        content += '<a href="' + url + '" target="_blank" class="btn btn-primary">';
-        content += '<i class="fa fa-download me-1"></i>Download File';
-        content += '</a>';
-        content += '</div>';
-        content += '</div>';
-
-        setTimeout(function () {
-            $('#filePreviewContent .loading-spinner').removeClass('show');
-        }, 100);
+        var el = document.createElement('div');
+        el.id = modalId;
+        el.className = 'modal fade';
+        el.setAttribute('tabindex', '-1');
+        el.innerHTML =
+            '<div class="modal-dialog modal-dialog-centered modal-sm">' +
+                '<div class="modal-content">' +
+                    '<div class="bg-danger text-white d-flex justify-content-end modal-header">' +
+                        '<h5 class="modal-title" style="margin-left:0 !important;">Error</h5>' +
+                        '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' +
+                    '</div>' +
+                    '<div class="modal-body">' +
+                        '<div>The file you\'re looking for could not be found.</div>' +
+                    '</div>' +
+                    '<div class="modal-footer">' +
+                        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(el);
+        var modal = new bootstrap.Modal(el);
+        modal.show();
+        el.addEventListener('hidden.bs.modal', function () { el.remove(); });
     }
 
-    setTimeout(function () {
-        $('#filePreviewContent').html(content);
-    }, 200);
+    function renderContent() {
+        $('#file-preview-modal').modal('show');
+        var content = '';
+        if (mime_type == 2) {
+            content = '<div class="file-preview-container">';
+            content += '<div class="pdf-viewer-container">';
+            content += '<embed src="' + url + '#toolbar=1&navpanes=1&scrollbar=1" ';
+            content += 'type="application/pdf" class="pdf-container" ';
+            content += 'onload="$(\'#filePreviewContent .loading-spinner\').removeClass(\'show\')" ';
+            content += 'onerror="fallbackToPdfJs(\'' + url + '\', \'' + title + '\')">';
+            content += '</embed>';
+            content += '</div>';
+            content += '</div>';
+
+            setTimeout(function () {
+                $('#filePreviewContent .loading-spinner').removeClass('show');
+            }, 500);
+
+        } else if ([0, 1, 17, 25].includes(parseInt(mime_type))) {
+            content = '<div class="file-preview text-center">';
+            content += '<img src="' + url + '" alt="' + title + '" ';
+            content += 'class="file-icon img-fluid" ';
+            content += 'style="max-width:100%;max-height:70vh;" ';
+            content += 'onload="$(\'#filePreviewContent .loading-spinner\').removeClass(\'show\')" ';
+            content += 'onerror="handlePreviewError(\'Failed to load image.\')"/>';
+            content += '</div>';
+
+        } else if ([9, 11, 12, 13].includes(parseInt(mime_type))) {
+            content = '<div class="file-preview text-center">';
+            content += '<video controls autoplay style="max-width:100%;max-height:70vh;" ';
+            content += 'oncanplay="$(\'#filePreviewContent .loading-spinner\').removeClass(\'show\')" ';
+            content += 'onerror="handlePreviewError(\'Failed to load video.\')">';
+            content += '<source src="' + url + '" type="video/mp4" onerror="handlePreviewError(\'Failed to load video.\')">';
+            content += 'Your browser does not support the video tag.';
+            content += '</video>';
+            content += '</div>';
+
+        } else {
+            content = '<div class="file-preview text-center">';
+            content += '<div class="alert alert-info">';
+            content += '<i class="fa fa-info-circle fa-3x mb-3"></i>';
+            content += '<h5>Preview Not Supported</h5>';
+            content += '<p>Preview is not available for this file type.</p>';
+            content += '<a href="' + url + '" target="_blank" class="btn btn-primary">';
+            content += '<i class="fa fa-download me-1"></i>Download File';
+            content += '</a>';
+            content += '</div>';
+            content += '</div>';
+
+            setTimeout(function () {
+                $('#filePreviewContent .loading-spinner').removeClass('show');
+            }, 100);
+        }
+
+        setTimeout(function () {
+            $('#filePreviewContent').html(content);
+        }, 200);
+    }
+
+    if (fileId && !shareToken) {
+        $.ajax({
+            url: '/storage/default/get-file-attributes',
+            type: 'GET',
+            data: { id: fileId },
+            dataType: 'json',
+            success: function(response) {
+                if (response && response.error === 'file_missing') {
+                    showFileMissingError();
+                } else {
+                    renderContent();
+                }
+            },
+            error: function() {
+                showFileMissingError();
+            }
+        });
+    } else {
+        renderContent();
+    }
 }
 
 function handleMultipleFilePreview(files) {
@@ -211,7 +263,6 @@ $(document).on('dblclick', '.file-preview, .file-header', function (e) {
 });
 
 $(document).on('show.bs.modal', '#file-preview-modal', function () {
-    var defaultBackdropZ = 1040;
     var defaultModalZ = 1050;
 
     var maxZ = 0;

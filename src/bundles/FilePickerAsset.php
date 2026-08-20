@@ -9,10 +9,17 @@ class FilePickerAsset extends AssetBundle
     public $css = [
         'css/file-picker.css',  
     ];
+    public $js = [
+        'js/file-picker.js',
+    ];
     public $depends = [
-        'yii\web\JqueryAsset',  
+        'yii\web\JqueryAsset',
+        'portalium\storage\bundles\StorageAsset',
     ];
     public $cssOptions = [
+        'appendTimestamp' => true,
+    ];
+    public $jsOptions = [
         'appendTimestamp' => true,
     ];
 }

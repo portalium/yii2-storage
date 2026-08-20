@@ -73,6 +73,8 @@ class StorageFileServer
             @unlink($tmpZip);
         });
 
+        Yii::$app->session->close();
+
         return Yii::$app->response->sendFile($tmpZip, $zipName, [
             'mimeType' => 'application/zip',
             'inline'   => false,
@@ -137,6 +139,7 @@ class StorageFileServer
             $response->headers->set('Content-Security-Policy', "frame-ancestors 'self'");
             $response->headers->set('Content-Disposition', 'inline; filename="' . $serveTitle . '.pdf"');
             $response->headers->set('Cache-Control', 'public, max-age=3600');
+            Yii::$app->session->close();
             return $response->sendFile($servePath, $serveTitle . '.pdf');
         }
 
@@ -146,6 +149,7 @@ class StorageFileServer
             $response->headers->set('Cross-Origin-Resource-Policy', 'cross-origin');
         }
 
+        Yii::$app->session->close();
         return $response->sendFile($servePath, $serveTitle . '.' . $ext);
     }
 
