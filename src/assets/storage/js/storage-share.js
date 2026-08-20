@@ -44,7 +44,6 @@ function setViewMode(mode) {
     applyViewModeClasses(mode);
 }
 
-
 window.openFilePreview = function(url, attributesRaw) {
     if (!url) return console.warn('data-url not found');
 
@@ -61,8 +60,7 @@ window.openFilePreview = function(url, attributesRaw) {
     }
 
     var title = attributes.title || 'No Title';
-    var iconClass = attributes.icon_class_php || 'fa fa-file';
-
+    var iconClass = attributes.icon_class_php || 'fa fa-file'; 
     var mime_type = attributes.mime_type;
     var fileId = attributes.id_storage;
     var shareToken = attributes.share_token;
@@ -291,4 +289,6 @@ $(document).on('show.bs.modal', '#file-preview-modal', function () {
 $(document).on('hidden.bs.modal', '#file-preview-modal', function () {
     $(this).css('z-index', '');
     $('#filePreviewContent').html('');
+
+    $('.modal-backdrop').css('z-index', '');
 });
