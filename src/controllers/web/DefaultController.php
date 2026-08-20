@@ -353,7 +353,7 @@ class DefaultController extends Controller
      */
     public function actionDownloadFile()
     {
-        $id = Yii::$app->request->post('id');
+        $id = Yii::$app->request->get('id') ?? Yii::$app->request->post('id');
         $file = Storage::findOne($id);
 
         $hasGlobalPermission = \Yii::$app->user->can('storageWebDefaultDownloadFile')
@@ -877,6 +877,9 @@ class DefaultController extends Controller
             throw new \yii\web\ForbiddenHttpException(Module::t('You are not allowed to access this page.'));
         }
 
+        // set memory
+        ini_set('memory_limit', '256M');
+
         $id_directory = Yii::$app->request->get('id_directory');
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
         $allowedExtensions = Yii::$app->request->get('allowedExtensions', []);
@@ -894,6 +897,25 @@ class DefaultController extends Controller
             $allowedExtensions = [];
         }
 
+        $selectedFileId = Yii::$app->request->get('selectedFileId');
+        $selectedIds = [];
+        if (!empty($selectedFileId)) {
+            $decoded = json_decode($selectedFileId, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $item) {
+                    if (is_array($item) && isset($item['id_storage']) && is_numeric($item['id_storage'])) {
+                        $selectedIds[] = (int)$item['id_storage'];
+                    } elseif (is_numeric($item)) {
+                        $selectedIds[] = (int)$item;
+                    }
+                }
+            } elseif (is_numeric($decoded)) {
+                $selectedIds[] = (int)$decoded;
+            } elseif (is_numeric($selectedFileId)) {
+                $selectedIds[] = (int)$selectedFileId;
+            }
+        }
+
         $id_user = Yii::$app->user->id;
         $userWorkspaceIds = StorageQueryService::getUserWorkspaceIds($id_user);
 
@@ -904,6 +926,19 @@ class DefaultController extends Controller
 
         if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManage')) {
             StorageQueryService::applyFileShareConditions($query, $id_user, $userWorkspaceIds);
+        }
+
+        if (!empty($selectedIds)) {
+            $params = [];
+            $placeholders = [];
+            foreach (array_values($selectedIds) as $i => $selectedId) {
+                $placeholders[] = ':selId' . $i;
+                $params[':selId' . $i] = $selectedId;
+            }
+            $query->orderBy(new \yii\db\Expression(
+                'CASE WHEN id_storage IN (' . implode(',', $placeholders) . ') THEN 0 ELSE 1 END, id_storage DESC',
+                $params
+            ));
         }
 
         $searchModel = new StorageSearch();
@@ -1047,12 +1082,12 @@ class DefaultController extends Controller
 
         $q = Yii::$app->request->get('q', '');
         $id_directory = Yii::$app->request->get('id_directory');
-        $isPicker = Yii::$app->request->get('isPicker', false);
+        $isPicker = (bool) Yii::$app->request->get('isPicker', false);
         $fileExtensions = Yii::$app->request->get('fileExtensions', []);
         $fileExtensions = StorageQueryService::normalizeFileExtensions($fileExtensions);
 
         $id_user = Yii::$app->user->id;
-        $fileQuery = Storage::find();
+        $fileQuery = Storage::find()->andWhere(['type' => Storage::TYPE_FILE]);
 
         if (!empty($q)) {
             $fileQuery->andFilterWhere(['like', 'title', $q]);
@@ -1063,10 +1098,7 @@ class DefaultController extends Controller
 
         $userWorkspaceIds = StorageQueryService::getUserWorkspaceIds($id_user);
 
-        if (
-            !\Yii::$app->user->can('storageWebDefaultIndex') &&
-            !\Yii::$app->workspace->can('storage', 'storageWebDefaultIndex')
-        ) {
+        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManage')) {
             StorageQueryService::applyFileShareConditions($fileQuery, $id_user, $userWorkspaceIds);
         }
 
@@ -1090,10 +1122,7 @@ class DefaultController extends Controller
             $directoryQuery->andFilterWhere(['like', 'name', $q]);
         }
 
-        if (
-            !\Yii::$app->user->can('storageWebDefaultIndex') &&
-            !\Yii::$app->workspace->can('storage', 'storageWebDefaultIndex')
-        ) {
+        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
             StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
         }
 
@@ -1647,6 +1676,11 @@ class DefaultController extends Controller
 
         if (!$hasGlobalPermission && !$hasSharePermission) {
             return ['error' => 'You are not allowed to access this file'];
+        }
+
+        $storagePath = Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path');
+        if (!file_exists($storagePath . '/' . $file->name)) {
+            return ['error' => 'file_missing'];
         }
 
         return [

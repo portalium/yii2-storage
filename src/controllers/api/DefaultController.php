@@ -14,6 +14,13 @@ class DefaultController extends RestActiveController
 {
     public $modelClass = 'portalium\storage\models\Storage';
 
+    protected function verbs()
+    {
+        $verbs = parent::verbs();
+        $verbs['update'] = ['PUT', 'PATCH', 'POST'];
+        return $verbs;
+    }
+
     public function actions()
     {
         $actions = parent::actions();
@@ -180,6 +187,46 @@ class DefaultController extends RestActiveController
 
         // Load and validate request data
         $model->load(\Yii::$app->request->getBodyParams(), '');
+
+        // Handle file upload if a new file is provided
+        $uploadedFile = \yii\web\UploadedFile::getInstanceByName('file');
+        if ($uploadedFile) {
+            $path = realpath(Yii::$app->basePath . '/../data');
+            $filename = md5(rand()) . '.' . $uploadedFile->extension;
+            $hash = md5_file($uploadedFile->tempName);
+
+            if ($uploadedFile->saveAs($path . '/' . $filename)) {
+                // Remove old file
+                $oldFilePath = $path . '/' . $model->name;
+                if ($model->name && file_exists($oldFilePath)) {
+                    @unlink($oldFilePath);
+                }
+                if ($model->thumbnail) {
+                    $oldThumbPath = $path . '/' . $model->thumbnail;
+                    if (file_exists($oldThumbPath)) {
+                        @unlink($oldThumbPath);
+                    }
+                }
+
+                $model->name = $filename;
+                $model->hash_file = $hash;
+
+                try {
+                    $model->mime_type = Storage::MIME_TYPE[$model->getMIMEType($path . '/' . $filename)];
+                } catch (\Throwable $th) {
+                    $model->mime_type = Storage::MIME_TYPE['video/mpeg'];
+                }
+
+                if (in_array(strtolower($uploadedFile->extension), ['jpg', 'jpeg', 'png'])) {
+                    $thumbName = 'thumb_' . $filename;
+                    $thumbPath = $path . '/' . $thumbName;
+                    $model->thumbnail = $model->generateThumbnail($path . '/' . $filename, $thumbPath) ? $thumbName : null;
+                } else {
+                    $model->thumbnail = null;
+                }
+            }
+        }
+
         if ($model->save()) {
             return $model;
         }

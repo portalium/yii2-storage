@@ -14,7 +14,12 @@ class Module extends \portalium\base\Module
             'controller' => [
                 'storage/default',
             ],
-            'pluralize' => false
+            'pluralize' => false,
+            'extraPatterns' => [
+                'POST upload' => 'upload',
+                'POST get-file' => 'get-file',
+                'POST {id}' => 'update',
+            ],
         ],
     ];
     public static $tablePrefix = 'storage_';
