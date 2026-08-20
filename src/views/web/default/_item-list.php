@@ -19,6 +19,17 @@ $actionId = $actionId ?? 'index';
 
 $bundle = \portalium\storage\bundles\IconAsset::register($this);
 
+$viewMode = Yii::$app->request->get('viewMode');
+if (!$viewMode) {
+    // Görünüm tercihi tarayıcıda JS ile yazılıyor (document.cookie), yani
+    // imzasız. enableCookieValidation açık olduğu için Yii bu cookie'yi
+    // doğrulayamayıp yok sayar ve hep 'grid' döner; sayfa önce grid basılıp
+    // sonra JS ile list'e çevrildiği için yenilemede göz kırpması olur.
+    // Tercih hassas bir veri olmadığından ham cookie'den okunuyor.
+    $rawViewMode = $_COOKIE['viewMode'] ?? null;
+    $viewMode = in_array($rawViewMode, ['grid', 'list'], true) ? $rawViewMode : 'grid';
+}
+
 $id_directory = Yii::$app->request->get('id_directory');
 $parentDirectory = null;
 $token = Yii::$app->request->get('token');// YENİ EKLENDİ 
@@ -126,7 +137,7 @@ if ($id_directory !== null) {
 }
 
 
-echo Html::beginTag('div', ['class' => 'folders-section mb-4', 'id' => 'folders-section']);
+echo Html::beginTag('div', ['class' => 'folders-section ' . $viewMode . '-view mb-4', 'id' => 'folders-section']);
 
 $directories = $directoryDataProvider->models;
 
@@ -314,7 +325,7 @@ echo Html::endTag('div');
 echo Html::endTag('div');
 echo Html::endTag('div'); // bulk-action-toolbar
 
-echo Html::beginTag('div', ['class' => 'files-section', 'id' => 'files-section']);
+echo Html::beginTag('div', ['class' => 'files-section ' . $viewMode . '-view', 'id' => 'files-section']);
 
 if ($fileDataProvider->getTotalCount() > 0) {
     echo Html::tag('h3', 
@@ -351,11 +362,6 @@ if ($fileDataProvider->getTotalCount() > 0) {
     $header .= Html::endTag('div'); // .file-card
 
     echo $header;
-}
-
-$viewMode = Yii::$app->request->get('viewMode');
-if (!$viewMode) {
-    $viewMode = Yii::$app->request->cookies->getValue('viewMode', 'grid');
 }
 
 $listViewOptions = ['id' => 'file-list'];
