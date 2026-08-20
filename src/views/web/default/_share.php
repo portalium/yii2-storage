@@ -64,7 +64,7 @@ $permissionLevels = [
     StorageShare::PERMISSION_MANAGE => Module::t('Manage'),
 ];
 
-$accessText = $access === 'public' ? Module::t('Public') : Module::t('Restricted');
+$accessText = $access === 'public' ? Module::t('Anyone with the link') : Module::t('Restricted');
 $accessDesc = $access === 'public'
     ? Module::t('Anyone with the link can view the content')
     : Module::t('Only people with access can open it using this link');
@@ -93,7 +93,7 @@ $shareConfigJson = json_encode([
         'error' => Module::t('An error occurred'),
         'selectUser' => Module::t('Select user'),
         'selectWorkspace' => Module::t('Select workspace'),
-        'public' => Module::t('Public'),
+        'public' => Module::t('Anyone with the link'),
         'restricted' => Module::t('Restricted'),
         'noSharesYet' => Module::t('No shares yet'),
         'generateFirst' => Module::t('Please generate a link first'),
@@ -487,7 +487,7 @@ Modal::begin([
                 <?= Html::button(
                     Html::tag('span', $accessText, [
                         'id' => 'access-text',
-                        'data-public' => Module::t('Public'),
+                        'data-public' => Module::t('Anyone with the link'),
                         'data-private' => Module::t('Restricted')
                     ]) . ' ' . Html::tag('i', '', ['class' => 'fa fa-caret-down ms-1']),
                     [
@@ -510,9 +510,9 @@ Modal::begin([
                             ['class' => 'dropdown-item', 'onclick' => "setAccessLevel('private'); return false;"]
                         )
                     ) ?>
-                    <?= Html::tag('li', 
+                    <?= Html::tag('li',
                         Html::a(
-                            Html::tag('i', '', ['class' => 'fa fa-globe me-2']) . ' ' . Module::t('Public'),
+                            Html::tag('i', '', ['class' => 'fa fa-globe me-2']) . ' ' . Module::t('Anyone with the link'),
                             '#',
                             ['class' => 'dropdown-item', 'onclick' => "setAccessLevel('public'); return false;"]
                         )

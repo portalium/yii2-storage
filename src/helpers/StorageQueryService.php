@@ -182,6 +182,7 @@ class StorageQueryService
     {
         $query->andWhere([
             'or',
+            ['in', '{{%storage_storage}}.id_workspace', $workspaceIds],
             ['{{%storage_storage}}.id_user' => $userId],
             ['in', '{{%storage_storage}}.id_storage', self::storageIdsSharedWithUser($userId)],
             ['in', '{{%storage_storage}}.id_storage', self::storageIdsSharedWithWorkspaces($workspaceIds)],
@@ -216,6 +217,7 @@ class StorageQueryService
     {
         $query->andWhere([
             'or',
+            ['in', '{{%storage_storage}}.id_workspace', $workspaceIds],
             ['{{%storage_storage}}.id_user' => $userId],
             ['in', '{{%storage_storage}}.id_storage', self::directoryIdsSharedWithUser($userId)],
             ['in', '{{%storage_storage}}.id_storage', self::directoryIdsSharedWithWorkspaces($workspaceIds)],

@@ -34,7 +34,6 @@ function showModal(modalId, timeout = 200) {
 }
 
 function hideModal(modalId) {
-  console.log("Hiding modal:", modalId);
   const modalEl = document.getElementById(modalId);
   if (modalEl) {
     const modalInstance = bootstrap.Modal.getInstance(modalEl);
@@ -98,7 +97,6 @@ function returnToMainPage() {
       replace: false,
       timeout: 10000,
       complete: function () {
-        console.log("Returned to homepage, pagination restored.");
       },
     })
     .done(function () {
@@ -107,7 +105,9 @@ function returnToMainPage() {
 }
 
 window.handleFileCardClick = function (event, id_storage) {
-  console.log('handleFileCardClick called', { event, id_storage, isPicker: window.isPicker });
+  if (event && $(event.target).closest('.file-more-options, [id^="context-menu-"], .custom-dropdown-menu').length) {
+    return;
+  }
 
   if (event && event.ctrlKey) {
     event.preventDefault();
@@ -238,6 +238,169 @@ window.openFolder = function (id_directory, event) {
   });
 };
 
+var _uploadPanelItems = {};
+
+function _getOrCreateUploadPanel() {
+  var panel = document.getElementById("upload-progress-panel");
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "upload-progress-panel";
+    panel.innerHTML =
+      '<div id="upload-progress-header">' +
+        '<span class="upload-panel-title"><i class="fa fa-cloud-upload-alt"></i> Uploading</span>' +
+        '<button id="upload-progress-toggle" title="Collapse/Expand"><i class="fa fa-chevron-down"></i></button>' +
+      '</div>' +
+      '<div id="upload-progress-body"></div>';
+    document.body.appendChild(panel);
+
+    document.getElementById("upload-progress-toggle").addEventListener("click", function () {
+      var body = document.getElementById("upload-progress-body");
+      var icon = this.querySelector("i");
+      body.classList.toggle("collapsed");
+      icon.classList.toggle("fa-chevron-down");
+      icon.classList.toggle("fa-chevron-up");
+    });
+  }
+  panel.classList.remove("hidden");
+  return panel;
+}
+
+function _addUploadItem(id, filename) {
+  _getOrCreateUploadPanel();
+  var body = document.getElementById("upload-progress-body");
+  var item = document.createElement("div");
+  item.className = "upload-progress-item";
+  item.id = "upi-" + id;
+  item.innerHTML =
+    '<div class="up-header">' +
+      '<div class="up-filename" title="' + filename + '">' + filename + '</div>' +
+      '<button class="up-cancel-btn" title="Cancel" data-item-id="' + id + '"><i class="fa fa-times"></i></button>' +
+    '</div>' +
+    '<div class="up-meta"><span class="up-speed">0 KB/s</span><span class="up-eta">Waiting...</span></div>' +
+    '<div class="progress"><div class="progress-bar" style="width:0%"></div></div>';
+  body.appendChild(item);
+  _uploadPanelItems[id] = { startTime: Date.now(), loaded: 0, xhr: null };
+
+  item.querySelector(".up-cancel-btn").addEventListener("click", function () {
+    var state = _uploadPanelItems[id];
+    if (state && state.xhr) {
+      state.xhr.abort();
+    }
+  });
+}
+
+function _updateUploadItem(id, loaded, total) {
+  var item = document.getElementById("upi-" + id);
+  if (!item) return;
+  var state = _uploadPanelItems[id];
+  var pct = total > 0 ? Math.round((loaded / total) * 100) : 0;
+  var bar = item.querySelector(".progress-bar");
+  bar.style.width = pct + "%";
+
+  var elapsed = (Date.now() - state.startTime) / 1000;
+  var speedBps = elapsed > 0 ? loaded / elapsed : 0;
+  var remaining = speedBps > 0 && total > loaded ? (total - loaded) / speedBps : 0;
+
+  var speedText = speedBps > 1048576
+    ? (speedBps / 1048576).toFixed(1) + " MB/s"
+    : (speedBps / 1024).toFixed(0) + " KB/s";
+
+  var etaText;
+  if (remaining > 3600) {
+    etaText = Math.round(remaining / 3600) + " hr left";
+  } else if (remaining > 60) {
+    etaText = Math.round(remaining / 60) + " min left";
+  } else if (remaining > 0) {
+    etaText = Math.round(remaining) + " sec left";
+  } else {
+    etaText = "Almost done...";
+  }
+
+  item.querySelector(".up-speed").textContent = speedText;
+  item.querySelector(".up-eta").textContent = pct + "% \u2014 " + etaText;
+}
+
+function _finishUploadItem(id, success, cancelled) {
+  var item = document.getElementById("upi-" + id);
+  if (!item) return;
+  var cancelBtn = item.querySelector(".up-cancel-btn");
+  if (cancelBtn) cancelBtn.style.display = "none";
+  var bar = item.querySelector(".progress-bar");
+  var meta = item.querySelector(".up-meta");
+  if (cancelled) {
+    bar.style.width = "100%";
+    bar.classList.add("bg-secondary");
+    meta.innerHTML = '<span class="up-status-cancelled">Cancelled</span>';
+  } else if (success) {
+    bar.style.width = "100%";
+    bar.classList.add("bg-success");
+    meta.innerHTML = '<span class="up-status-done">Done</span>';
+  } else {
+    bar.style.width = "100%";
+    bar.classList.add("bg-danger");
+    meta.innerHTML = '<span class="up-status-error">Failed</span>';
+  }
+  delete _uploadPanelItems[id];
+
+  setTimeout(function () {
+    if (Object.keys(_uploadPanelItems).length === 0) {
+      var header = document.getElementById("upload-progress-header");
+      if (header) {
+        header.querySelector(".upload-panel-title").innerHTML =
+          '<i class="fa fa-check-circle" style="color:#198754"></i> Upload complete';
+      }
+      setTimeout(function () {
+        var panel = document.getElementById("upload-progress-panel");
+        if (panel) panel.classList.add("hidden");
+        _uploadPanelItems = {};
+        var body = document.getElementById("upload-progress-body");
+        if (body) body.innerHTML = "";
+        var hdr = document.getElementById("upload-progress-header");
+        if (hdr) hdr.querySelector(".upload-panel-title").innerHTML =
+          '<i class="fa fa-cloud-upload-alt"></i> Uploading';
+      }, 2500);
+    }
+  }, 400);
+}
+
+function _uploadFileXhr(formData, itemId, onSuccess, onError) {
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/storage/default/upload-file", true);
+  xhr.setRequestHeader("X-CSRF-Token", $('meta[name="csrf-token"]').attr("content"));
+
+  if (_uploadPanelItems[itemId]) {
+    _uploadPanelItems[itemId].xhr = xhr;
+  }
+
+  xhr.upload.addEventListener("progress", function (e) {
+    if (e.lengthComputable) {
+      _updateUploadItem(itemId, e.loaded, e.total);
+    }
+  });
+
+  xhr.addEventListener("load", function () {
+    if (xhr.status >= 200 && xhr.status < 300) {
+      _finishUploadItem(itemId, true, false);
+      onSuccess();
+    } else {
+      _finishUploadItem(itemId, false, false);
+      onError();
+    }
+  });
+
+  xhr.addEventListener("error", function () {
+    _finishUploadItem(itemId, false, false);
+    onError();
+  });
+
+  xhr.addEventListener("abort", function () {
+    _finishUploadItem(itemId, false, true);
+    onError();
+  });
+
+  xhr.send(formData);
+}
+
 function uploadFileMenu(event) {
   event.preventDefault();
   const newDropdownBtn = $("#newDropdownBtn");
@@ -260,7 +423,6 @@ function uploadFileMenu(event) {
     if (allowedExtStr) {
       try {
         allowedExtensions = JSON.parse(allowedExtStr);
-        console.log('uploadFileMenu - allowedExtensions:', allowedExtensions);
       } catch (e) {
         console.error('Failed to parse allowedExtensions:', e);
       }
@@ -272,7 +434,6 @@ function uploadFileMenu(event) {
       return '.' + ext.replace(/^\./, '');
     }).join(',');
     fileInput.setAttribute('accept', acceptValue);
-    console.log('File input accept attribute set to:', acceptValue);
   }
 
   document.body.appendChild(fileInput);
@@ -282,15 +443,21 @@ function uploadFileMenu(event) {
       newDropdownBtn.addClass("btn-loading");
       const files = Array.from(fileInput.files);
 
+      var header = document.getElementById("upload-progress-header");
+      if (header) {
+        header.querySelector(".upload-panel-title").innerHTML =
+          '<i class="fa fa-cloud-upload-alt"></i> Uploading';
+      }
+
       let completed = 0;
-      files.forEach((file) => {
+      files.forEach(function (file, idx) {
+        const itemId = "f-" + Date.now() + "-" + idx;
+        _addUploadItem(itemId, file.name);
+
         const formData = new FormData();
         formData.append("Storage[file]", file);
         formData.append("Storage[title]", file.name);
-        formData.append(
-          "id_directory",
-          window.currentDirectoryId ? window.currentDirectoryId : ""
-        );
+        formData.append("id_directory", window.currentDirectoryId ? window.currentDirectoryId : "");
 
         if (allowedExtensions && allowedExtensions.length > 0) {
           formData.append("Storage[allowedExtensions]", JSON.stringify(allowedExtensions));
@@ -300,44 +467,35 @@ function uploadFileMenu(event) {
           formData.append("isPicker", "1");
         }
 
-        $.ajax({
-          url: "/storage/default/upload-file",
-          type: "POST",
-          data: formData,
-          contentType: false,
-          processData: false,
-          headers: {
-            "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
-          },
-          success: function () {
-            completed++;
-            if (completed === files.length) {
-              if (window.isSearching) {
-                const searchValue = $("#searchFileInput").val().trim();
-                if (searchValue) {
-                  performSearch(searchValue);
-                  newDropdownBtn.removeClass("btn-loading");
-                  return;
-                }
+        _uploadFileXhr(formData, itemId, function () {
+          completed++;
+          if (completed === files.length) {
+            if (window.isSearching) {
+              const searchValue = $("#searchFileInput").val().trim();
+              if (searchValue) {
+                performSearch(searchValue);
+                newDropdownBtn.removeClass("btn-loading");
+                return;
               }
-
-              const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
-              $.pjax
-                .reload({
-                  container: "#list-item-pjax",
-                  url: reloadUrl,
-                  replace: false,
-                  push: false,
-                })
-                .done(function () {
-                  newDropdownBtn.removeClass("btn-loading");
-                });
             }
-          },
-          error: function (xhr) {
-            newDropdownBtn.removeClass("btn-loading");
-            console.error("Loading error:", xhr);
-          },
+            const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
+            $.pjax.reload({
+              container: "#list-item-pjax",
+              url: reloadUrl,
+              replace: false,
+              push: false,
+            }).done(function () {
+              newDropdownBtn.removeClass("btn-loading");
+            });
+          }
+        }, function () {
+          completed++;
+          newDropdownBtn.removeClass("btn-loading");
+          console.error("Upload error for file:", file.name);
+          if (completed === files.length) {
+            const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
+            $.pjax.reload({ container: "#list-item-pjax", url: reloadUrl, replace: false, push: false });
+          }
         });
       });
     }
@@ -367,56 +525,53 @@ function uploadFolderMenu(event) {
     if (fileInput.files.length > 0) {
       newDropdownBtn.addClass("btn-loading");
       const formData = new FormData();
+      const files = Array.from(fileInput.files);
 
-      Array.from(fileInput.files).forEach((file) => {
+      files.forEach(function (file) {
         formData.append("Storage[file][]", file);
       });
 
       formData.append("Storage[type]", "folder");
-      formData.append(
-        "id_directory",
-        window.currentDirectoryId ? window.currentDirectoryId : ""
-      );
+      formData.append("id_directory", window.currentDirectoryId ? window.currentDirectoryId : "");
 
       if (window.currentIsPicker) {
         formData.append("isPicker", "1");
       }
 
-      $.ajax({
-        url: "/storage/default/upload-file",
-        type: "POST",
-        data: formData,
-        contentType: false,
-        processData: false,
-        headers: {
-          "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
-        },
-        success: function () {
-          if (window.isSearching) {
-            const searchValue = $("#searchFileInput").val().trim();
-            if (searchValue) {
-              performSearch(searchValue);
-              newDropdownBtn.removeClass("btn-loading");
-              return;
-            }
-          }
+      var folderName = files.length > 0
+        ? (files[0].webkitRelativePath.split("/")[0] || "Folder")
+        : "Folder";
+      var itemId = "folder-" + Date.now();
 
-          const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
-          $.pjax
-            .reload({
-              container: "#list-item-pjax",
-              url: reloadUrl,
-              replace: false,
-              push: false,
-            })
-            .done(function () {
-              newDropdownBtn.removeClass("btn-loading");
-            });
-        },
-        error: function (xhr) {
+      var header = document.getElementById("upload-progress-header");
+      if (header) {
+        header.querySelector(".upload-panel-title").innerHTML =
+          '<i class="fa fa-cloud-upload-alt"></i> Uploading';
+      }
+
+      _addUploadItem(itemId, folderName + " (" + files.length + " files)");
+
+      _uploadFileXhr(formData, itemId, function () {
+        if (window.isSearching) {
+          const searchValue = $("#searchFileInput").val().trim();
+          if (searchValue) {
+            performSearch(searchValue);
+            newDropdownBtn.removeClass("btn-loading");
+            return;
+          }
+        }
+        const reloadUrl = window.lastListItemPjaxUrl || getBaseUrl();
+        $.pjax.reload({
+          container: "#list-item-pjax",
+          url: reloadUrl,
+          replace: false,
+          push: false,
+        }).done(function () {
           newDropdownBtn.removeClass("btn-loading");
-          console.error("Loading error:", xhr);
-        },
+        });
+      }, function () {
+        newDropdownBtn.removeClass("btn-loading");
+        console.error("Folder upload error.");
       });
     }
   });
@@ -631,38 +786,12 @@ function deleteFolder(id) {
 }
 
 function downloadFile(id) {
-  $.post({
-    url: "/storage/default/download-file",
-    data: {
-      id: id,
-      isPicker: window.currentIsPicker ? "1" : "0",
-    },
-    xhrFields: { responseType: "blob" },
-    headers: {
-      "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
-    },
-    success: function (data, status, xhr) {
-      const disposition = xhr.getResponseHeader("Content-Disposition");
-      if (disposition && disposition.indexOf("attachment") !== -1) {
-        const filename =
-          disposition.split("filename=")[1]?.replace(/["']/g, "") ||
-          "downloaded_file";
-        const blobUrl = URL.createObjectURL(data);
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = decodeURIComponent(filename);
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-      }
-
-      refreshCurrentView();
-    },
-    error: function () {
-      refreshCurrentView();
-    },
-  });
+  var a = document.createElement("a");
+  a.href = "/storage/default/download-file?id=" + encodeURIComponent(id);
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { document.body.removeChild(a); }, 200);
 }
 
 function refreshCurrentView() {
@@ -724,7 +853,6 @@ function performSearch(query) {
     finalUrl += "&allowFolderSelection=1";
   }
 
-  console.log("Search URL with extensions:", finalUrl);
 
   const container = isInWidgetContext() ? "#list-file-pjax" : "#list-item-pjax";
 
@@ -811,10 +939,8 @@ function bindSearchInput() {
 
       window.searchTimer = setTimeout(function () {
         if (q === "") {
-          console.log("Search box is empty, returning to homepage...");
           returnToMainPage();
         } else {
-          console.log("Performing search:", q);
           performSearch(q);
         }
       }, 500);
@@ -858,11 +984,10 @@ $(document)
 $(document).ready(function () {
   bindSearchInput();
   bindPageSizer();
-  console.log("Search binding initialized in storageactions.js");
 
   $(document).on('click.fileItem', '.file-item', function (event) {
     console.log('File item clicked in storageactions.js!', {
-      ctrlKey: event.ctrlKey,
+    ctrlKey: event.ctrlKey,
       target: event.target,
       this: this,
       id: $(this).closest('.file-card').data('id'),
@@ -873,13 +998,9 @@ $(document).ready(function () {
       event.stopPropagation();
 
       const id_storage = $(this).closest('.file-card').data('id');
-      console.log('Ctrl+Click detected! id_storage:', id_storage);
-      console.log('toggleBulkSelection exists?', typeof window.toggleBulkSelection);
 
       if (id_storage && typeof window.toggleBulkSelection === 'function') {
-        console.log('Calling toggleBulkSelection...');
         window.toggleBulkSelection(id_storage, event);
-        console.log('toggleBulkSelection called, selectedFiles:', Array.from(window.selectedFiles));
       } else {
         console.warn('toggleBulkSelection not available or id_storage missing');
       }
@@ -888,48 +1009,39 @@ $(document).ready(function () {
   });
 
   if (typeof window.restoreBulkSelection === 'function') {
-    console.log('Initial bulk selection restore in storageactions.js...');
     window.restoreBulkSelection();
   }
 });
 
 $(document).on("pjax:end", function () {
-  console.log("PJAX END - Rebinding events in storageactions.js");
   bindSearchInput();
   bindPageSizer();
-  console.log("Search binding refreshed after pjax");
 
   if (typeof window.updateFileCard === "function") {
     window.updateFileCard(window.selectedIdStorage);
   }
 
-  console.log("Re-binding file-item click handlers after pjax");
 
   $(document).off('click.fileItem').on('click.fileItem', '.file-item', function (event) {
-    console.log('File item clicked (post-pjax) in storageactions.js!', {
-      ctrlKey: event.ctrlKey,
-      target: event.target,
-      id: $(this).closest('.file-card').data('id'),
-    });
+    //   ctrlKey: event.ctrlKey,
+    //   target: event.target,
+    //   id: $(this).closest('.file-card').data('id'),
+    // });
 
     if (event.ctrlKey) {
       event.preventDefault();
       event.stopPropagation();
 
       const id_storage = $(this).closest('.file-card').data('id');
-      console.log('Ctrl+Click detected (post-pjax)! id_storage:', id_storage);
 
       if (id_storage && typeof window.toggleBulkSelection === 'function') {
-        console.log('Calling toggleBulkSelection...');
         window.toggleBulkSelection(id_storage, event);
-        console.log('After toggleBulkSelection, selectedFiles:', Array.from(window.selectedFiles));
       }
       return false;
     }
   });
 
   if (typeof window.restoreBulkSelection === 'function') {
-    console.log('Restoring bulk selection after pjax in storageactions.js...');
     window.restoreBulkSelection();
   }
 });
@@ -1046,17 +1158,69 @@ function openShareModal(id) {
   if (window.currentIsPicker) { url += "&isPicker=1"; }
   if (shareId) { url += "&id_share=" + shareId; }
 
+  var pickerEl = document.getElementById('file-picker-modal');
+  var reopenPicker = !!pickerEl;
+
+  if (reopenPicker) {
+    window._pickerStateBeforeShare = {
+      inputId: window.inputId,
+      selectedIdStorage: window.selectedIdStorage,
+      multiple: window.multiple,
+      isJson: window.isJson,
+      callbackName: window.callbackName,
+      attributes: window.currentAttributes ? window.currentAttributes.slice() : ['id_storage'],
+      allowedExtensions: window.allowedExtensions ? window.allowedExtensions.slice() : [],
+      allowFolderSelection: window.allowFolderSelection || false,
+    };
+    var pickerModal = bootstrap.Modal.getInstance(pickerEl);
+    if (pickerModal) {
+      pickerModal.hide();
+    } else {
+      // console.warn('[SHARE] No Bootstrap instance on picker, trying manual hide');
+      pickerEl.style.display = 'none';
+      pickerEl.classList.remove('show');
+      document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
+      document.body.classList.remove('modal-open');
+    }
+  }
+
   $.ajax({
     url: url,
     type: "GET",
     success: function (response) {
       $('.modal[id^="shareModal"]').remove();
-      $("#share-file-pjax").html(response);
+      if (reopenPicker) {
+        $('body').append(response);
+      } else {
+        $("#share-file-pjax").html(response);
+      }
       setTimeout(function () {
-        if ($("#shareModal").length) {
+        var shareModalEl = document.getElementById('shareModal');
+        if (shareModalEl) {
+          if (reopenPicker) {
+            shareModalEl.addEventListener('hidden.bs.modal', function() {
+              var state = window._pickerStateBeforeShare;
+              if (state) {
+                window._pickerStateBeforeShare = null;
+                setTimeout(function() {
+                  window.openFilePickerModal(
+                    state.inputId,
+                    state.selectedIdStorage,
+                    state.multiple,
+                    state.isJson,
+                    state.callbackName,
+                    true,
+                    state.attributes,
+                    state.allowedExtensions,
+                    state.allowFolderSelection
+                  );
+                }, 300);
+              }
+            }, { once: true });
+          }
           showModal("shareModal");
         } else {
-          refreshCurrentView();
+          if (!reopenPicker) refreshCurrentView();
         }
       }, 100);
     }
@@ -1191,3 +1355,74 @@ window.downloadFile = downloadFile;
 window.copyFile = copyFile;
 window.deleteFile = deleteFile;
 window.deleteFolder = deleteFolder;
+
+// MOVE FUNCTIONS
+
+function openMoveModal(ids) {
+  if (event) event.preventDefault();
+  if (!Array.isArray(ids)) ids = [ids];
+
+  var url = "/storage/default/move-modal?" + ids.map(function (id) { return "ids[]=" + id; }).join("&");
+
+  $.ajax({
+    url: url,
+    type: "GET",
+    success: function (response) {
+      $(".modal[id='moveItemsModal']").remove();
+      $("#move-items-pjax").html(response);
+      setTimeout(function () {
+        if ($("#moveItemsModal").length) {
+          showModal("moveItemsModal");
+        }
+      }, 100);
+    },
+    error: function (e) {
+      console.error("Error loading move modal:", e);
+    },
+  });
+}
+
+function bulkMoveFiles() {
+  if (typeof window.selectedFiles === "undefined" || window.selectedFiles.size === 0) return;
+  var ids = Array.from(window.selectedFiles);
+  openMoveModal(ids);
+}
+
+function selectMoveTarget(el, targetId) {
+  $(".move-dir-item").removeClass("active");
+  $(el).addClass("active");
+  $("#moveTargetDirectory").val(targetId);
+}
+
+$(document)
+  .off("click", "#confirmMoveBtn")
+  .on("click", "#confirmMoveBtn", function (e) {
+    e.preventDefault();
+
+    var ids = $(this).data("ids");
+    var targetDirectory = $("#moveTargetDirectory").val();
+
+    $.ajax({
+      url: "/storage/default/move-items",
+      type: "POST",
+      data: {
+        ids: ids,
+        target_directory: targetDirectory !== "" ? targetDirectory : "null",
+      },
+      headers: {
+        "X-CSRF-Token": $('meta[name="csrf-token"]').attr("content"),
+      },
+      dataType: "json",
+      complete: function () {
+        hideModal("moveItemsModal");
+        refreshCurrentView();
+        if (typeof window.clearBulkSelection === "function") {
+          window.clearBulkSelection();
+        }
+      },
+    });
+  });
+
+window.openMoveModal = openMoveModal;
+window.bulkMoveFiles = bulkMoveFiles;
+window.selectMoveTarget = selectMoveTarget;

@@ -313,6 +313,14 @@ echo Html::beginTag('div', [
     ]);
     Pjax::end();
 
+    Pjax::begin([
+      'id' => 'move-items-pjax',
+      'history' => false,
+      'timeout' => false,
+      'enablePushState' => false
+    ]);
+    Pjax::end();
+
     echo Html::endTag('div'); // file-list
     echo Html::endTag('div'); // file-manager
 
