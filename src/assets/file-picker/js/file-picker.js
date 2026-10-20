@@ -503,6 +503,9 @@ if (!window.openFilePickerModal) {
                 : inputValue;
 
         if (document.getElementById('file-picker-modal')) {
+            // Drop the previous picker's in-flight thumbnails before its markup
+            // goes away, or they keep occupying connections the new one needs.
+            window.cancelPendingThumbnails && window.cancelPendingThumbnails($('#file-picker-modal'));
             window.closeModalById('file-picker-modal');
         }
 
@@ -590,11 +593,33 @@ $(document).ready(function() {
     window.restoreMainPageEvents();
 });
 
+// Replacing the grid leaves the outgoing cards' thumbnails downloading: the
+// browser keeps a request alive even after its <img> is gone, so paging
+// quickly stacked page after page of them against the six-connection limit
+// and everything behind it — including the next page — waited. Pointing each
+// image at nothing first tells the browser to drop those requests.
+if (!window.cancelPendingThumbnails) {
+    window.cancelPendingThumbnails = function(container) {
+        const $container = container && container.length ? container : $('#file-picker-modal .files-container');
+
+        // A blank src makes some browsers re-request the page itself, so the
+        // images are pointed at an empty inline image instead.
+        const blank = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+
+        $container.find('img').each(function() {
+            if (!this.complete) {
+                this.src = blank;
+            }
+        });
+    };
+}
+
 // Supporting functions
 if (!window.refreshFilePicker) {
     window.refreshFilePicker = function() {
         const container = $('#file-picker-modal .files-container');
         if (container.length) {
+            window.cancelPendingThumbnails(container);
             $.get(FP.urls.pickerContent, {
                 fileExtensions: window.fileExtensions,
                 isPicker: window.isPicker,
