@@ -280,22 +280,22 @@ class StorageShare extends \yii\db\ActiveRecord
                 ['>', 'expires_at', date('Y-m-d H:i:s')]
             ]);
 
-        // Check direct file share
-        if ($storage !== null) {
-            $query->andWhere(['OR',
-                ['id_storage' => $storage->id_storage],
-                ['id_directory' => $storage->id_directory],
-                ['id_user_owner' => $storage->id_user]
-            ]);
-        }
-
-        // Check directory share (includes parent directories)
-        if ($directory !== null) {
-            $directoryIds = self::getParentDirectoryIds($directory->id_storage);
-            $query->andWhere(['OR',
-                ['id_directory' => $directoryIds],
-                ['id_user_owner' => $directory->id_user]
-            ]);
+        // A share grants access only to the item it covers:
+        // file share -> that file; directory share -> that directory and its descendants;
+        // full-storage share (both file and directory empty) -> all of the owner's items.
+        $item = $storage ?? $directory;
+        if ($item !== null) {
+            $scope = ['OR',
+                ['and', ['id_user_owner' => $item->id_user], ['id_storage' => null], ['id_directory' => null]],
+            ];
+            if ($storage !== null) {
+                $scope[] = ['id_storage' => $storage->id_storage];
+            }
+            $start = $directory !== null ? $directory->id_storage : $storage->id_directory;
+            if ($start) {
+                $scope[] = ['and', ['id_storage' => null], ['id_directory' => self::getParentDirectoryIds($start)]];
+            }
+            $query->andWhere($scope);
         }
 
         // Check if shared with this user or their workspace
@@ -325,6 +325,93 @@ class StorageShare extends \yii\db\ActiveRecord
         $query->andWhere(['permission_level' => $validPermissions]);
 
         return $query->exists();
+    }
+
+    const PERMISSION_LEVELS = [
+        self::PERMISSION_VIEW => 1,
+        self::PERMISSION_EDIT => 2,
+        self::PERMISSION_MANAGE => 3,
+    ];
+
+    /**
+     * Numeric value of a share's permission level; an unknown level is 0.
+     */
+    public static function levelOf($permission)
+    {
+        return self::PERMISSION_LEVELS[$permission] ?? 0;
+    }
+
+    /**
+     * Whether this share allows the requested level (view < edit < manage).
+     */
+    public function allows($requiredPermission)
+    {
+        $required = self::levelOf($requiredPermission);
+        return $required > 0 && self::levelOf($this->permission_level) >= $required;
+    }
+
+    /**
+     * Whether this share covers the given item.
+     */
+    public function covers($item)
+    {
+        if ($item === null) {
+            return false;
+        }
+        if ($this->id_storage) {
+            return (int) $this->id_storage === (int) $item->id_storage;
+        }
+        if ($this->id_directory) {
+            $start = $item->type === Storage::TYPE_DIRECTORY ? $item->id_storage : $item->id_directory;
+            if (!$start) {
+                return false;
+            }
+            return in_array((int) $this->id_directory, array_map('intval', self::getParentDirectoryIds($start)), true);
+        }
+        if ($this->id_user_owner) {
+            return (int) $this->id_user_owner === (int) $item->id_user;
+        }
+        return false;
+    }
+
+    /**
+     * Whether this share was granted to the current session's user. A link share only
+     * counts once its token has been opened in this session (actionViewShare); knowing
+     * the id alone is not enough.
+     */
+    public function isForCurrentUser()
+    {
+        switch ($this->shared_with_type) {
+            case self::TYPE_USER:
+                return !Yii::$app->user->isGuest && (int) $this->id_shared_with === (int) Yii::$app->user->id;
+            case self::TYPE_WORKSPACE:
+                return !Yii::$app->user->isGuest
+                    && Yii::$app->workspace->isMember($this->id_shared_with, Yii::$app->user->id);
+            case self::TYPE_LINK:
+                $opened = Yii::$app->has('session') ? (array) Yii::$app->session->get('storage_opened_link_shares', []) : [];
+                return in_array((int) $this->id_share, array_map('intval', $opened), true);
+        }
+        return false;
+    }
+
+    /**
+     * Whether a share referenced by id_share authorizes this operation on this item.
+     */
+    public function grants($item, $requiredPermission)
+    {
+        return $this->isValid() && $this->allows($requiredPermission) && $this->covers($item) && $this->isForCurrentUser();
+    }
+
+    /**
+     * Records in the session that a link share's token has been opened.
+     */
+    public function rememberOpenedLink()
+    {
+        if (Yii::$app->has('session')) {
+            $opened = (array) Yii::$app->session->get('storage_opened_link_shares', []);
+            $opened[] = (int) $this->id_share;
+            Yii::$app->session->set('storage_opened_link_shares', array_values(array_unique($opened)));
+        }
     }
 
     /**

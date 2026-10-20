@@ -6,6 +6,11 @@ use Yii;
 use yii\base\BaseObject;
 use portalium\site\models\Setting;
 use portalium\storage\Module;
+use portalium\storage\models\Storage;
+use portalium\storage\models\StorageShare;
+use portalium\user\components\UserDataHandler;
+use portalium\user\components\UserDeleteException;
+use portalium\user\components\UserDeleter;
 use portalium\workspace\models\WorkspaceUser;
 
 class TriggerActions extends BaseObject
@@ -24,16 +29,24 @@ class TriggerActions extends BaseObject
         }
 
         $default_role = Yii::$app->setting->getValue('storage::workspace::default_role');
-        $admin_role = Yii::$app->setting->getValue('storage::workspace::admin_role');
-        $settingModel = Yii::$app->setting->getValue('workspace::available_roles');
-        
+
         foreach ($deletedRoles as $deletedRole) {
-            if ($default_role == $deletedRole['role']) {
-                $availableRoles = json_decode($settingModel->value, true);
-                if (!in_array($deletedRole['role'], $availableRoles['storage'])) {
-                    $availableRoles['storage'][] = $deletedRole['role'];
-                    $settingModel->value = json_encode($availableRoles);
-                    $settingModel->save();
+            // Only a default role removed from the storage module itself is re-added;
+            // another module's role of the same name (e.g. flow/user) is not storage's concern.
+            if (($deletedRole['module'] ?? null) !== 'storage' || $default_role != ($deletedRole['role'] ?? null)) {
+                continue;
+            }
+            $settingModel = Setting::find()->where(['name' => 'workspace::available_roles'])->one();
+            if ($settingModel === null) {
+                continue;
+            }
+            $availableRoles = json_decode((string) $settingModel->value, true) ?: [];
+            $storageRoles = $availableRoles['storage'] ?? [];
+            if (!in_array($deletedRole['role'], $storageRoles, true)) {
+                $availableRoles['storage'] = array_values(array_merge($storageRoles, [$deletedRole['role']]));
+                $settingModel->value = json_encode($availableRoles);
+                $settingModel->save();
+                if (Yii::$app->has('session')) {
                     Yii::$app->session->addFlash('error', Module::t('Default role is not available for storage module. Please check your settings.'));
                 }
             }
@@ -76,4 +89,45 @@ class TriggerActions extends BaseObject
 
     }
 
+    public function onUserDeleteBefore($event)
+    {
+        [$idUser, $action, $defaultUser] = UserDataHandler::payload($event);
+
+        UserDataHandler::apply($action, StorageShare::class, $idUser, $defaultUser, 'id_user_owner');
+
+        if ($action === UserDataHandler::ACTION_TRANSFER) {
+            UserDataHandler::transfer(Storage::class, $idUser, $defaultUser);
+            return;
+        }
+
+        $directoryIds = Storage::find()->select('id_storage')->where(['id_user' => $idUser, 'type' => 'directory'])->column();
+        if ($directoryIds !== []) {
+            Storage::updateAll(['id_directory' => null], ['and', ['id_directory' => $directoryIds], ['<>', 'id_user', $idUser]]);
+        }
+
+        $files = [];
+        foreach (Storage::find()->where(['id_user' => $idUser])->all() as $storage) {
+            if (!$storage->isDirectory()) {
+                $files[] = [$storage->getProvider(), $storage->name, $storage->thumbnail];
+            }
+            if ($storage->delete() === false) {
+                throw new UserDeleteException(Module::t('Could not delete {title}.', ['title' => $storage->title]));
+            }
+        }
+
+        if ($files !== []) {
+            UserDeleter::afterCommit(static function () use ($files) {
+                foreach ($files as [$provider, $name, $thumbnail]) {
+                    try {
+                        $provider->delete($name);
+                        if ($thumbnail) {
+                            $provider->delete($thumbnail);
+                        }
+                    } catch (\Throwable $e) {
+                        Yii::warning('Storage file could not be removed: ' . $name . ' - ' . $e->getMessage(), __METHOD__);
+                    }
+                }
+            });
+        }
+    }
 }
