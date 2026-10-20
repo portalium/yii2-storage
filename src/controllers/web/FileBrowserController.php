@@ -232,7 +232,10 @@ class FileBrowserController extends Controller
                 $model->title = $this->request->post('title');
 
                 $fileName = md5(rand()) . '.' . $file->extension;
-                if ($file->saveAs(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName)) {
+                $provider = \portalium\storage\providers\StorageProviderFactory::getDefault();
+                if ($provider->write($fileName, $file->tempName)) {
+                    $model->disk = $provider->getName();
+                    $model->id_provider = $provider->getProviderId();
                     $model->name = $fileName;
                     $model->id_user = Yii::$app->user->id;
                     $model->access = $this->request->post('access');
@@ -243,7 +246,7 @@ class FileBrowserController extends Controller
                         $model = new Storage();
                         \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
                     } else {
-                        unlink(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName);
+                        $provider->delete($fileName);
                         \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
                         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
                         return ['success' => false, 'error' => $model->getErrors()];
@@ -281,20 +284,24 @@ class FileBrowserController extends Controller
         if ($this->request->isAjax) {
             if ($file = UploadedFile::getInstance($model, 'file[' . $id . ']')) {
                 if ($model->load($this->request->post())) {
+                    $oldProvider = $model->getProvider();
                     $oldFileName = $model->name;
                     $fileName = md5(rand()) . '.' . $file->extension;
-                    if ($file->saveAs(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName)) {
+                    $provider = \portalium\storage\providers\StorageProviderFactory::getDefault();
+                    if ($provider->write($fileName, $file->tempName)) {
+                        $model->disk = $provider->getName();
+                        $model->id_provider = $provider->getProviderId();
                         $model->name = $fileName;
                         $model->id_user = Yii::$app->user->id;
                         $model->access = $this->request->post('access');
                         $model->mime_type = (Storage::MIME_TYPE[$file->type] ?? Storage::MIME_TYPE['other']);
                         $model->id_workspace = WorkspaceUser::getActiveWorkspaceId();
                         if ($model->save()) {
-                            unlink(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $oldFileName);
+                            $oldProvider->delete($oldFileName);
                             $model = new Storage();
                             \Yii::$app->session->addFlash('success', Module::t('File uploaded successfully'));
                         } else {
-                            unlink(Yii::$app->basePath . '/../' . Yii::$app->setting->getValue('storage::path') . '/' . $fileName);
+                            $provider->delete($fileName);
                             \Yii::$app->session->addFlash('error', Module::t('Error uploading file'));
                         }
                     }

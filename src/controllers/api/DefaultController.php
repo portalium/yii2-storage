@@ -29,6 +29,17 @@ class DefaultController extends RestActiveController
             'searchModel' => StorageSearch::class,
         ];
 
+        // Users with only the "Own" permission see just their own files and files in the active workspace.
+        $actions['index']['prepareSearchQuery'] = function ($query) {
+            if (!Yii::$app->user->can('storageApiDefaultIndex', ['id_module' => 'storage'])) {
+                $query->andWhere(['or',
+                    ['id_user' => Yii::$app->user->id],
+                    ['id_workspace' => Yii::$app->workspace->id],
+                ]);
+            }
+            return $query;
+        };
+
         // Unset default actions to use our custom ones with permission checks
         unset($actions['view']);
         unset($actions['update']);
@@ -190,44 +201,47 @@ class DefaultController extends RestActiveController
 
         // Handle file upload if a new file is provided
         $uploadedFile = \yii\web\UploadedFile::getInstanceByName('file');
+        $isImageUpload = false;
+
         if ($uploadedFile) {
-            $path = realpath(Yii::$app->basePath . '/../data');
+            $provider = \portalium\storage\providers\StorageProviderFactory::getDefault();
+            $oldProvider = $model->getProvider();
+            $oldFileName = $model->name;
+            $oldThumbName = $model->thumbnail;
+
             $filename = md5(rand()) . '.' . $uploadedFile->extension;
             $hash = md5_file($uploadedFile->tempName);
 
-            if ($uploadedFile->saveAs($path . '/' . $filename)) {
-                // Remove old file
-                $oldFilePath = $path . '/' . $model->name;
-                if ($model->name && file_exists($oldFilePath)) {
-                    @unlink($oldFilePath);
+            if ($provider->write($filename, $uploadedFile->tempName)) {
+                // Remove the previous bytes only once the new ones are stored.
+                if ($oldFileName) {
+                    $oldProvider->delete($oldFileName);
                 }
-                if ($model->thumbnail) {
-                    $oldThumbPath = $path . '/' . $model->thumbnail;
-                    if (file_exists($oldThumbPath)) {
-                        @unlink($oldThumbPath);
-                    }
+                if ($oldThumbName) {
+                    $oldProvider->delete($oldThumbName);
                 }
 
+                $model->disk = $provider->getName();
+                $model->id_provider = $provider->getProviderId();
                 $model->name = $filename;
                 $model->hash_file = $hash;
+                $model->thumbnail = null;
 
                 try {
-                    $model->mime_type = Storage::MIME_TYPE[$model->getMIMEType($path . '/' . $filename)];
+                    $model->mime_type = Storage::MIME_TYPE[$model->getMIMEType($filename)];
                 } catch (\Throwable $th) {
                     $model->mime_type = Storage::MIME_TYPE['video/mpeg'];
                 }
 
-                if (in_array(strtolower($uploadedFile->extension), ['jpg', 'jpeg', 'png'])) {
-                    $thumbName = 'thumb_' . $filename;
-                    $thumbPath = $path . '/' . $thumbName;
-                    $model->thumbnail = $model->generateThumbnail($path . '/' . $filename, $thumbPath) ? $thumbName : null;
-                } else {
-                    $model->thumbnail = null;
-                }
+                $isImageUpload = in_array(strtolower($uploadedFile->extension), ['jpg', 'jpeg', 'png']);
             }
         }
 
         if ($model->save()) {
+            if ($isImageUpload) {
+                $model->ensureThumbnail();
+            }
+
             return $model;
         }
 
@@ -264,7 +278,7 @@ class DefaultController extends RestActiveController
             }
         }
 
-        if ($model->delete()) {
+        if ($model->isDirectory() ? $model->delete() : $model->deleteFile()) {
             \Yii::$app->response->statusCode = 204;
             return null;
         }
@@ -319,40 +333,37 @@ class DefaultController extends RestActiveController
         $model->file = \yii\web\UploadedFile::getInstanceByName('file');
         try {
             if ($model->file && $model->validate()) {
-                $path = realpath(Yii::$app->basePath . '/../data');
+                $provider = \portalium\storage\providers\StorageProviderFactory::getDefault();
                 $filename = md5(rand()) . "." . $model->file->extension;
                 $hash = md5_file($model->file->tempName);
 
-                if ($model->file->saveAs($path . '/' . $filename)) {
+                if ($provider->write($filename, $model->file->tempName)) {
                     $storage = new Storage();
+                    $storage->disk = $provider->getName();
+                    $storage->id_provider = $provider->getProviderId();
                     $storage->name = $filename;
                     $storage->title = $model->title;
                     $storage->id_workspace = Yii::$app->workspace->id;
                     $storage->id_directory = $id_directory;
                     $storage->hash_file = $hash;
+                    $storage->thumbnail = null;
+                    $storage->access = Storage::ACCESS_PRIVATE;
 
                     try {
-                        $storage->mime_type = Storage::MIME_TYPE[$storage->getMIMEType($path . '/' . $filename)];
+                        $storage->mime_type = Storage::MIME_TYPE[$storage->getMIMEType($filename)];
                     } catch (\Throwable $th) {
                         $storage->mime_type = Storage::MIME_TYPE['video/mpeg'];
                     }
 
-                    if (in_array(strtolower($model->file->extension), ['jpg', 'jpeg', 'png'])) {
-                        $thumbName = 'thumb_' . $filename;
-                        $thumbPath = $path . '/' . $thumbName;
-
-                        if ($storage->generateThumbnail($path . '/' . $filename, $thumbPath)) {
-                            $storage->thumbnail = $thumbName;
-                        } else {
-                            $storage->thumbnail = null;
-                        }
-                    } else {
-                        $storage->thumbnail = null;
-                    }
-
                     if ($storage->save(false)) {
+                        if (in_array(strtolower($model->file->extension), ['jpg', 'jpeg', 'png'])) {
+                            $storage->ensureThumbnail();
+                        }
+
                         return $storage;
                     }
+
+                    $provider->delete($filename);
                 }
             }
         } catch (\Throwable $th) {
