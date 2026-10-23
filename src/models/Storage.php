@@ -277,7 +277,7 @@ class Storage extends \yii\db\ActiveRecord
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             [['id_directory'], 'integer'],
             [['id_directory'], 'validateNotSelfParent'],
-            [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions', 'access_count', 'date_last_access'], 'safe'],
+            [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions', 'access_count', 'date_last_access', 'id_provider', 'provider_file_id', 'provider_meta'], 'safe'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE],
             ['access_count', 'integer', 'min' => 0],
@@ -330,6 +330,9 @@ class Storage extends \yii\db\ActiveRecord
             'access' => Module::t('Access'),
             'hash_file' => Module::t('Hash File'),
             'id_directory' => Module::t('Directory'),
+            'id_provider' => Module::t('Provider'),
+            'provider_file_id' => Module::t('Provider File Id'),
+            'provider_meta' => Module::t('Provider Meta'),
         ];
     }
 
@@ -578,6 +581,7 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         if (!is_writable($path)) {
+        Yii::error('Upload path is not writable, you might have forgotten to set the correct permissions, path: ' . $path, __METHOD__);
             return false;
         }
 
