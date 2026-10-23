@@ -13,7 +13,7 @@ use portalium\data\ActiveDataProvider;
 
 use portalium\storage\bundles\StorageAsset;
 use portalium\storage\bundles\IconAsset;
-
+use portalium\storage\helpers\StorageQueryService;
 
 class FilePicker extends InputWidget
 {
@@ -113,6 +113,7 @@ class FilePicker extends InputWidget
         echo Html::button('<span class="btn-text">' . Module::t('Select File') . '</span>', [
             'class' => 'btn btn-primary',
             'data-allowed-extensions' => json_encode($this->allowedExtensions ?? []),
+            'data-file-extensions' => json_encode(array_values(StorageQueryService::normalizeFileExtensions($this->fileExtensions))),
             'onclick' => 'handleFilePickerClick(this, "' . $this->options['id'] . '", "' . $idStorage . '", ' . ($this->multiple ? 'true' : 'false') . ', ' . ($this->isJson ? 'true' : 'false') . ', "' . ($this->callbackName ?? '') . '", ' . ($this->isPicker ? 'true' : 'false') . ', ' . json_encode($this->attributes) . ', ' . json_encode($this->allowedExtensions ?? []) . ', ' . ($this->allowFolderSelection ? 'true' : 'false') . ')'
         ]);
 
@@ -165,6 +166,8 @@ class FilePicker extends InputWidget
                 'fileMissing' => Module::t('The file record exists but the file could not be found on the server.'),
                 'fileLoadFailed' => Module::t('File could not be loaded.'),
                 'fileLoadError' => Module::t('An error occurred while loading the file.'),
+                'listLoadError' => Module::t('The file list could not be loaded, please try again.'),
+                'sessionExpired' => Module::t('Your session may have expired, please refresh the page.'),
                 'confirmDeleteFile' => Module::t('Are you sure you want to delete it?'),
                 'confirmDeleteFolder' => Module::t('Are you sure you want to delete the folder?'),
                 'openingShare' => Module::t('Opening the share screen...'),

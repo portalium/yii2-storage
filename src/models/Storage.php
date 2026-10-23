@@ -9,6 +9,8 @@ use yii\helpers\ArrayHelper;
 use portalium\user\models\User;
 use portalium\base\Event;
 use portalium\storage\models\StorageShare;
+use portalium\storage\providers\StorageProviderFactory;
+use portalium\storage\models\StorageProvider;
 
 /**
  * This is the model class for table "{{%storage_storage}}".
@@ -38,6 +40,11 @@ class Storage extends \yii\db\ActiveRecord
 {
     public $file;
     public $allowedExtensions;
+
+    /**
+     * Top-level directory created (or reused) by the last folder upload.
+     */
+    public $rootDirectoryId;
 
     const TYPE_FILE = 'file';
     const TYPE_DIRECTORY = 'directory';
@@ -99,16 +106,137 @@ class Storage extends \yii\db\ActiveRecord
     ];
 
     /**
-     * Converts file size to a readable format (KB, MB, etc.)  
+     * Provider that owns this record's bytes.
+     *
+     * Always resolved from the record's own `disk` value, never from the
+     * current default setting, so switching providers never breaks old files.
+     */
+    public function getProvider()
+    {
+        return StorageProviderFactory::forModel($this);
+    }
+
+    /**
+     * Gets query for [[Provider]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getProviderRecord()
+    {
+        return $this->hasOne(StorageProvider::class, ['id_provider' => 'id_provider']);
+    }
+
+    /**
+     * Materialise this record as a local file path.
+     *
+     * Remote providers download to a temp file; $isTemporary then tells the
+     * caller it must unlink the path when finished.
+     *
+     * @return string|false
+     */
+    public function getLocalPath(?bool &$isTemporary = null)
+    {
+        return $this->getProvider()->localCopy($this->name, $isTemporary);
+    }
+
+    /**
+     * Make sure a thumbnail exists for this record, generating it if needed.
+     *
+     * Imagick only works on real files, so remote-backed records are pulled to
+     * a temp file, thumbnailed locally, then the result is pushed back through
+     * the provider. Temp files are always cleaned up.
+     *
+     * @return bool True when a thumbnail exists afterwards.
+     */
+    public function ensureThumbnail()
+    {
+        // Only raster images can be thumbnailed. Archives and documents used to
+        // reach Imagick, fail after a full download, and — because no thumbnail
+        // was recorded — be retried on every listing. SVG is left alone too: it
+        // scales on its own and is already small.
+        if (!$this->isThumbnailable()) {
+            return false;
+        }
+
+        $provider = $this->getProvider();
+        $thumbName = $this->thumbnail ?: 'thumb_' . $this->name;
+
+        if ($provider->exists($thumbName)) {
+            if ($this->thumbnail !== $thumbName) {
+                $this->thumbnail = $thumbName;
+                $this->save(false, ['thumbnail']);
+            }
+
+            return true;
+        }
+
+        if (!extension_loaded('imagick')) {
+            return false;
+        }
+
+        $sourceIsTemp = false;
+        $sourcePath = $provider->localCopy($this->name, $sourceIsTemp);
+
+        if ($sourcePath === false) {
+            return false;
+        }
+
+        $thumbPath = tempnam(sys_get_temp_dir(), 'thumb_');
+        $generated = false;
+
+        try {
+            $generated = (bool) $this->generateThumbnail($sourcePath, $thumbPath);
+
+            if ($generated && $provider->write($thumbName, $thumbPath)) {
+                $this->thumbnail = $thumbName;
+                $this->save(false, ['thumbnail']);
+            } else {
+                $generated = false;
+            }
+        } catch (\Throwable $e) {
+            Yii::error('Thumbnail generation failed for storage ' . $this->id_storage . ': ' . $e->getMessage(), __METHOD__);
+            $generated = false;
+        } finally {
+            if ($sourceIsTemp && is_file($sourcePath)) {
+                @unlink($sourcePath);
+            }
+            if (is_file($thumbPath)) {
+                @unlink($thumbPath);
+            }
+        }
+
+        return $generated;
+    }
+
+    /**
+     * Whether a thumbnail can be produced for this record.
+     *
+     * Raster images only: vector and non-image types either gain nothing from
+     * a thumbnail or cannot be read by Imagick at all.
+     *
+     * @return bool
+     */
+    public function isThumbnailable()
+    {
+        $mimeType = $this->mime_type;
+
+        if (is_numeric($mimeType)) {
+            $mimeType = array_search($mimeType, self::MIME_TYPE);
+        }
+
+        return in_array($mimeType, self::THUMBNAIL_ALLOWED_MIMES, true);
+    }
+
+    /**
+     * Converts file size to a readable format (KB, MB, etc.)
      */
     public function getReadableFileSize()
     {
-        $path = \Yii::getAlias('@app') . '/../' . \Yii::$app->setting->getValue('storage::path') . '/' . $this->name;
-        if (!file_exists($path)) {
+        $bytes = $this->getProvider()->size($this->name);
+        if ($bytes <= 0) {
             return \portalium\storage\Module::t('Unknown size');
         }
 
-        $bytes = filesize($path);
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $bytes = max($bytes, 0);
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
@@ -132,10 +260,7 @@ class Storage extends \yii\db\ActiveRecord
         
         foreach ($children as $child) {
             if ($child->type === self::TYPE_FILE) {
-                $path = \Yii::getAlias('@app') . '/../' . \Yii::$app->setting->getValue('storage::path') . '/' . $child->name;
-                if (file_exists($path)) {
-                    $size += filesize($path);
-                }
+                $size += $child->getProvider()->size($child->name);
             } else {
                 $size += $child->getDirectorySize();
             }
@@ -277,7 +402,9 @@ class Storage extends \yii\db\ActiveRecord
             [['id_user'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['id_user' => 'id_user']],
             [['id_directory'], 'integer'],
             [['id_directory'], 'validateNotSelfParent'],
-            [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions', 'access_count', 'date_last_access', 'id_provider', 'provider_file_id', 'provider_meta'], 'safe'],
+            [['file', 'access', 'hash_file', 'id_workspace', 'allowedExtensions', 'access_count', 'date_last_access'], 'safe'],
+            [['disk'], 'string', 'max' => 32],
+            [['id_provider'], 'integer'],
             ['mime_type', 'integer'],
             ['access', 'default', 'value' => self::ACCESS_PRIVATE],
             ['access_count', 'integer', 'min' => 0],
@@ -475,11 +602,16 @@ class Storage extends \yii\db\ActiveRecord
     /**
      * Upload a folder (multiple files) creating directory entries in storage.
      *
+     * Large folders are sent in several requests: the first one creates the
+     * top-level directory, the following ones pass its id as $rootId so their
+     * files land in the same tree instead of a new copy of it.
+     *
      * @param \yii\web\UploadedFile[] $uploadedFiles
      * @param int|null $initialParentId Parent storage id (directory type)
+     * @param int|null $rootId Existing top-level directory of this upload
      * @return bool
      */
-    public function uploadFolder($uploadedFiles, $initialParentId = null)
+    public function uploadFolder($uploadedFiles, $initialParentId = null, $rootId = null)
     {
         if (empty($uploadedFiles)) {
             $this->addError('file', Module::t('No files were uploaded'));
@@ -489,46 +621,17 @@ class Storage extends \yii\db\ActiveRecord
         $userId = Yii::$app->user->id;
         $workspaceId = $this->id_workspace ?? (Yii::$app->workspace->id ?? 1);
 
-        $directories = []; // relative path → new storage id
+        $directories = []; // relative path → storage id
         $success = true;
 
         foreach ($uploadedFiles as $file) {
             $fullPath = $file->fullPath ?? $file->name;
             $pathParts = explode('/', $fullPath);
             $fileName = array_pop($pathParts);
-            $currentPath = '';
-            $parentStorageId = $initialParentId;
 
-            foreach ($pathParts as $depth => $folderName) {
-                $currentPath = $depth === 0 ? $folderName : $currentPath . '/' . $folderName;
-
-                if (!isset($directories[$currentPath])) {
-                    $dir = new self();
-                    $dir->type = self::TYPE_DIRECTORY;
-                    $dir->name = $folderName;
-                    $dir->title = $folderName;
-                    $dir->mime_type = 0;
-                    $dir->id_workspace = $workspaceId;
-                    $dir->date_create = date('Y-m-d H:i:s');
-                    $dir->date_update = date('Y-m-d H:i:s');
-
-                    if ($depth === 0 && $initialParentId !== null) {
-                        $dir->id_directory = $initialParentId;
-                    } else {
-                        $dir->id_directory = $directories[dirname($currentPath)] ?? null;
-                    }
-
-                    if (!$dir->save()) {
-                        foreach ($dir->errors as $attribute => $errors) {
-                            foreach ($errors as $error) {
-                                $this->addError($attribute, $error);
-                            }
-                        }
-                        return false;
-                    }
-                    $directories[$currentPath] = $dir->id_storage;
-                }
-                $parentStorageId = $directories[$currentPath];
+            $parentStorageId = $this->resolveFolderPath($pathParts, $initialParentId, $rootId, $workspaceId, $directories);
+            if ($parentStorageId === false) {
+                return false;
             }
 
             if (!empty($fileName)) {
@@ -559,6 +662,105 @@ class Storage extends \yii\db\ActiveRecord
     }
 
     /**
+     * Creates the directory tree of a folder upload before its files are sent.
+     *
+     * Batches of the same upload run in parallel; creating every directory up
+     * front keeps two batches from creating the same subdirectory twice.
+     *
+     * @param string[] $paths Relative directory paths, e.g. "photos/2024"
+     * @param int|null $initialParentId Parent storage id (directory type)
+     * @return bool
+     */
+    public function createFolderTree(array $paths, $initialParentId = null)
+    {
+        $workspaceId = $this->id_workspace ?? (Yii::$app->workspace->id ?? 1);
+        $directories = [];
+
+        foreach ($paths as $path) {
+            $parts = array_values(array_filter(explode('/', (string) $path), 'strlen'));
+            if (empty($parts)) {
+                continue;
+            }
+            if ($this->resolveFolderPath($parts, $initialParentId, $this->rootDirectoryId, $workspaceId, $directories) === false) {
+                return false;
+            }
+        }
+
+        if ($this->rootDirectoryId === null) {
+            $this->addError('name', Module::t('No files were uploaded'));
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns the storage id of the deepest directory in $pathParts, creating
+     * missing ones. With $rootId the top level is that directory and existing
+     * subdirectories under it are reused.
+     *
+     * @param string[] $pathParts
+     * @param int|null $initialParentId
+     * @param int|null $rootId
+     * @param int|null $workspaceId
+     * @param array $directories Cache of relative path → storage id
+     * @return int|null|false Directory id, the initial parent when there is no directory part, false on error
+     */
+    private function resolveFolderPath(array $pathParts, $initialParentId, $rootId, $workspaceId, array &$directories)
+    {
+        $currentPath = '';
+        $parentId = $initialParentId;
+
+        foreach ($pathParts as $depth => $folderName) {
+            $currentPath = $depth === 0 ? $folderName : $currentPath . '/' . $folderName;
+
+            if (!isset($directories[$currentPath])) {
+                $existing = false;
+                if ($rootId !== null && $depth === 0) {
+                    $existing = (int) $rootId;
+                } elseif ($rootId !== null) {
+                    $existing = self::find()
+                        ->select('id_storage')
+                        ->where(['type' => self::TYPE_DIRECTORY, 'name' => $folderName, 'id_directory' => $parentId])
+                        ->orderBy(['id_storage' => SORT_ASC])
+                        ->scalar();
+                }
+
+                if ($existing) {
+                    $directories[$currentPath] = (int) $existing;
+                } else {
+                    $dir = new self();
+                    $dir->type = self::TYPE_DIRECTORY;
+                    $dir->name = $folderName;
+                    $dir->title = $folderName;
+                    $dir->mime_type = 0;
+                    $dir->id_workspace = $workspaceId;
+                    $dir->date_create = date('Y-m-d H:i:s');
+                    $dir->date_update = date('Y-m-d H:i:s');
+                    $dir->id_directory = $parentId;
+
+                    if (!$dir->save()) {
+                        foreach ($dir->errors as $attribute => $errors) {
+                            foreach ($errors as $error) {
+                                $this->addError($attribute, $error);
+                            }
+                        }
+                        return false;
+                    }
+                    $directories[$currentPath] = $dir->id_storage;
+                }
+
+                if ($depth === 0 && $this->rootDirectoryId === null) {
+                    $this->rootDirectoryId = $directories[$currentPath];
+                }
+            }
+            $parentId = $directories[$currentPath];
+        }
+
+        return $parentId;
+    }
+
+    /**
      * (@inheritdoc)
      */
     public function upload()
@@ -581,7 +783,7 @@ class Storage extends \yii\db\ActiveRecord
         }
 
         if (!is_writable($path)) {
-        Yii::error('Upload path is not writable, you might have forgotten to set the correct permissions, path: ' . $path, __METHOD__);
+            Yii::error('Upload path is not writable, you might have forgotten to set the correct permissions, path: ' . $path, __METHOD__);
             return false;
         }
 
@@ -597,18 +799,28 @@ class Storage extends \yii\db\ActiveRecord
             }
         }
 
-        $fullPath = $path . '/' . $filename;
         $this->date_create = date('Y-m-d H:i:s');
         $this->date_update = date('Y-m-d H:i:s');
-        if (!$this->file->saveAs($fullPath, false)) {
+
+        $provider = StorageProviderFactory::getDefault();
+
+        // Write the bytes first: a failed upload must not leave a database row
+        // pointing at a file that does not exist.
+        if (!$provider->write($filename, $this->file->tempName)) {
+            $this->addError('file', Module::t('The file could not be stored.'));
+
             return false;
         }
 
-        $mimeType = $this->getMIMEType($fullPath);
+        $mimeType = $this->getMIMEType($filename);
+        $this->disk = $provider->getName();
+        $this->id_provider = $provider->getProviderId();
         $this->name = $filename;
         $this->mime_type = self::MIME_TYPE[$mimeType] ?? self::MIME_TYPE['other'];
         $this->id_workspace = Yii::$app->workspace->id;
         if (!$this->save()) {
+            $provider->delete($filename);
+
             return false;
         }
 
@@ -754,9 +966,14 @@ class Storage extends \yii\db\ActiveRecord
      * Get the file storage directory path (physical file system path)
      * @return string
      */
+    /**
+     * Local storage directory.
+     *
+     * @deprecated Only valid for local-disk records; use getProvider() instead.
+     */
     public static function getStorageDir()
     {
-        return realpath(Yii::$app->basePath . '/../data');
+        return (new \portalium\storage\providers\LocalProvider())->getBasePath();
     }
 
     /**
@@ -795,18 +1012,12 @@ class Storage extends \yii\db\ActiveRecord
 
     public function deleteFile()
     {
-        $basePath = Yii::$app->basePath . '/../data/';
+        $provider = $this->getProvider();
 
-        $filePath = $basePath . $this->name;
-        if (file_exists($filePath)) {
-            unlink($filePath);
-        }
+        $provider->delete($this->name);
 
         if ($this->thumbnail) {
-            $thumbPath = $basePath . $this->thumbnail;
-            if (file_exists($thumbPath)) {
-                unlink($thumbPath);
-            }
+            $provider->delete($this->thumbnail);
         }
 
         return $this->delete();
@@ -815,28 +1026,25 @@ class Storage extends \yii\db\ActiveRecord
 
     public function copyFile()
     {
-        $path = realpath(Yii::$app->basePath . '/../data');
-        $sourcePath = $path . '/' . $this->name;
+        $provider = $this->getProvider();
 
         $newModel = new Storage();
         $newModel->attributes = $this->attributes;
         $newModel->id_storage = null;
         $extension = pathinfo($this->name, PATHINFO_EXTENSION);
         $newFileName = md5(rand()) . "." . $extension;
-        $newFilePath = $path . '/' . $newFileName;
         $newModel->title = $this->generateNewTitle($this->title);
 
-        if (copy($sourcePath, $newFilePath)) {
+        if ($provider->copy($this->name, $newFileName)) {
+            $newModel->disk = $provider->getName();
+            $newModel->id_provider = $provider->getProviderId();
             $newModel->name = $newFileName;
 
             if ($this->thumbnail) {
                 $thumbExtension = pathinfo($this->thumbnail, PATHINFO_EXTENSION);
                 $newThumbName = 'thumb_' . pathinfo($newFileName, PATHINFO_FILENAME) . '.' . $thumbExtension;
 
-                $thumbSourcePath = $path . '/' . $this->thumbnail;
-                $thumbDestPath = $path . '/' . $newThumbName;
-
-                if (file_exists($thumbSourcePath) && copy($thumbSourcePath, $thumbDestPath)) {
+                if ($provider->copy($this->thumbnail, $newThumbName)) {
                     $newModel->thumbnail = $newThumbName;
                 }
             }
@@ -844,12 +1052,13 @@ class Storage extends \yii\db\ActiveRecord
             if ($newModel->save()) {
                 return $newModel;
             } else {
-                if (file_exists($newFilePath)) {
-                    unlink($newFilePath);
+                // Roll back the copied bytes so a failed save leaves nothing behind.
+                $provider->delete($newFileName);
+
+                if (!empty($newModel->thumbnail)) {
+                    $provider->delete($newModel->thumbnail);
                 }
-                if (!empty($newModel->thumbnail) && file_exists($path . '/' . $newModel->thumbnail)) {
-                    unlink($path . '/' . $newModel->thumbnail);
-                }
+
                 return false;
             }
         }
@@ -887,15 +1096,22 @@ class Storage extends \yii\db\ActiveRecord
         $newStorage->id_workspace = Yii::$app->workspace->id;
         $newStorage->access = self::ACCESS_PUBLIC;
 
-        $path = realpath(Yii::$app->basePath . '/../data');
         $extension = pathinfo($this->name, PATHINFO_EXTENSION);
         $filename = md5(rand()) . "." . $extension;
+
+        // The copy stays on the provider that already holds the source bytes.
+        $provider = $this->getProvider();
+
         try {
-            if (copy($path . '/' . $this->name, $path . '/' . $filename)) {
+            if ($provider->copy($this->name, $filename)) {
+                $newStorage->disk = $provider->getName();
+                $newStorage->id_provider = $provider->getProviderId();
                 $newStorage->name = $filename;
                 if ($newStorage->save()) {
                     return $newStorage;
                 }
+
+                $provider->delete($filename);
             }
         } catch (\Throwable $th) {
             return false;
@@ -910,80 +1126,50 @@ class Storage extends \yii\db\ActiveRecord
             $mimeType = array_search($mimeType, self::MIME_TYPE);
         }
 
-        $path = Yii::$app->basePath . '/../data/' . $this->name;
         $iconPath = Yii::$app->view->getAssetManager()->getBundle(\portalium\storage\bundles\IconAsset::class)->baseUrl;
 
-        if (file_exists($path)) {
-            switch ($mimeType) {
-                case 'application/pdf':
-                    return [
-                        'url' => $iconPath . '/pdf-icon.png',
-                        'class' => 'non-image'
-                    ];
-                case 'application/msword':
-                case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                    return [
-                        'url' => $iconPath . '/doc-icon.png',
-                        'class' => 'non-image'
-                    ];
-                case 'application/vnd.ms-excel':
-                case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                    return [
-                        'url' => $iconPath . '/xls-icon.png',
-                        'class' => 'non-image'
-                    ];
-                case 'application/vnd.ms-powerpoint':
-                case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-                    return [
-                        'url' => $iconPath . '/ppt-icon.png',
-                        'class' => 'non-image'
-                    ];
-                case 'image/jpeg':
-                case 'image/jpg':
-                case 'image/png':
-                case 'image/svg+xml':
-                    $thumbFullPath = $this->getThumbnailFullPath();
-                    $defaultThumbFullPath = $this->getDefaultThumbnailFullPath();
-                    
-                    if (!empty($this->thumbnail) && file_exists($thumbFullPath)) {
-                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
-                    } else {
-                        $thumbName = 'thumb_' . $this->name;
-                        if (in_array($mimeType, self::THUMBNAIL_ALLOWED_MIMES)) {
-                            try {
-                                if (!empty($this->thumbnail) && file_exists($thumbFullPath)) {
-                                    $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
-                                } else {
-                                    if (!file_exists($defaultThumbFullPath) && extension_loaded('imagick') && file_exists($path)) {
-                                        $this->generateThumbnail($path, $defaultThumbFullPath, self::THUMBNAIL_DEFAULT_HEIGHT, self::THUMBNAIL_MAX_SIZE_KB);
-                                        $this->thumbnail = $thumbName;
-                                        $this->save(false);
-                                    }
-                                    if (file_exists($defaultThumbFullPath)) {
-                                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
-                                    } else {
-                                        $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
-                                    }
-                                }
-                            } catch (\Throwable $e) {
-                                $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
-                            }
-                        } else {
-                            $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
-                        }
-                    }
-                    return [
-                        'url' => $url,
-                        'class' => 'image-file'
-                    ];
-                case 'other':
-                default:
-                    return [
-                        'url' => $iconPath . '/unknown-icon.png',
-                        'class' => 'non-image'
-                    ];
-            }
-        } else {
+        // The icon follows the mime type alone. Probing the provider for every
+        // row used to decide this, which on a remote bucket turned one file
+        // listing into dozens of HTTP requests; the fallback branch returned
+        // the same unknown-file icon the switch already ends with.
+        switch ($mimeType) {
+            case 'application/pdf':
+                return [
+                    'url' => $iconPath . '/pdf-icon.png',
+                    'class' => 'non-image'
+                ];
+            case 'application/msword':
+            case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                return [
+                    'url' => $iconPath . '/doc-icon.png',
+                    'class' => 'non-image'
+                ];
+            case 'application/vnd.ms-excel':
+            case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+                return [
+                    'url' => $iconPath . '/xls-icon.png',
+                    'class' => 'non-image'
+                ];
+            case 'application/vnd.ms-powerpoint':
+            case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+                return [
+                    'url' => $iconPath . '/ppt-icon.png',
+                    'class' => 'non-image'
+                ];
+            case 'image/jpeg':
+            case 'image/jpg':
+            case 'image/png':
+            case 'image/svg+xml':
+                // Serving this asks for the thumbnail but never builds one; a
+                // record without one falls back to its original until
+                // `storage/thumbnail/generate` has run.
+                $url = Yii::$app->urlManager->baseUrl . '/storage/default/get-file?id=' . $this->id_storage . '&type=thumb';
+                return [
+                    'url' => $url,
+                    'class' => 'image-file'
+                ];
+            case 'other':
+            default:
             return [
                 'url' => $iconPath . '/unknown-icon.png',
                 'class' => 'non-image'
@@ -1035,8 +1221,7 @@ class Storage extends \yii\db\ActiveRecord
 
     public function fileExists()
     {
-        $path = realpath(Yii::$app->basePath . '/../data');
-        return file_exists($path . '/' . $this->name);
+        return $this->getProvider()->exists($this->name);
     }
 
     public function getExtension()
@@ -1065,9 +1250,15 @@ class Storage extends \yii\db\ActiveRecord
         }
     }
 
+    /**
+     * Delete local files that no Storage record points at.
+     *
+     * Deliberately limited to the local disk: a remote provider's bucket may be
+     * shared, so scanning and deleting unknown keys there is not safe.
+     */
     public static function cleanOrphanFiles()
     {
-        $dataPath = realpath(Yii::$app->basePath . '/../data');
+        $dataPath = (new \portalium\storage\providers\LocalProvider())->getBasePath();
         if (!$dataPath || !is_dir($dataPath)) {
             return false;
         }
@@ -1090,18 +1281,18 @@ class Storage extends \yii\db\ActiveRecord
         return $deletedFiles;
     }
 
+    /**
+     * Delete records whose bytes are missing from their own provider.
+     *
+     * Each record is checked against the provider named in its `disk` column,
+     * so switching the default provider never makes existing rows look orphaned.
+     */
     public static function cleanOrphanRecords()
     {
-        $dataPath = realpath(Yii::$app->basePath . '/../data');
-        if (!$dataPath || !is_dir($dataPath)) {
-            return false;
-        }
-
         $deletedRecords = [];
-        $storages = self::find()->all();
+        $storages = self::find()->where(['type' => self::TYPE_FILE])->all();
         foreach ($storages as $storage) {
-            $filePath = $dataPath . '/' . $storage->name;
-            if (!file_exists($filePath)) {
+            if (!$storage->getProvider()->exists($storage->name)) {
                 if ($storage->delete()) {
                     $deletedRecords[] = $storage->id_storage;
                 }
@@ -1173,9 +1364,20 @@ class Storage extends \yii\db\ActiveRecord
                 $loopCount++;
                 $image->setImageCompressionQuality($quality);
 
+                // PNG is lossless, so lowering the quality does almost nothing
+                // to its size: the loop below would spin down to the minimum and
+                // still write a full-size file. Thumbnails are previews, so a
+                // PNG without transparency is better served as JPEG; one with
+                // transparency keeps PNG but gets its palette reduced instead.
                 $format = strtolower($image->getImageFormat());
+
                 if ($format === 'png') {
-                    $image->setImageFormat('png');
+                    if ($image->getImageAlphaChannel()) {
+                        $image->setImageFormat('png');
+                        $image->quantizeImage(64, \Imagick::COLORSPACE_RGB, 0, false, false);
+                    } else {
+                        $image->setImageFormat('jpeg');
+                    }
                 } elseif ($format === 'webp') {
                     $image->setImageFormat('webp');
                 } else {
@@ -1215,30 +1417,21 @@ class Storage extends \yii\db\ActiveRecord
     {
         $storages = self::find()->where(['thumbnail' => null])->all();
         $updated = 0;
-        $dataPath = realpath(Yii::$app->basePath . '/../data');
 
         foreach ($storages as $storage) {
-            $filePath = $dataPath . '/' . $storage->name;
-
-            if (!file_exists($filePath)) {
+            if ($storage->type !== self::TYPE_FILE) {
                 continue;
             }
 
-            $mime = $storage->getMIMEType($filePath);
-            if (!in_array($mime, self::THUMBNAIL_ALLOWED_MIMES)) {
+            // The stored mime type already says what this is; sniffing the
+            // name again told us nothing extra and skipped records whose
+            // extension disagreed with what was uploaded.
+            if (!$storage->isThumbnailable()) {
                 continue;
             }
 
-            $thumbName = 'thumb_' . $storage->name;
-            $thumbPath = $dataPath . '/' . $thumbName;
-
-            $success = $storage->generateThumbnail($filePath, $thumbPath, self::THUMBNAIL_DEFAULT_HEIGHT ?? 200, self::THUMBNAIL_MAX_SIZE_KB ?? 40);
-
-            if ($success) {
-                $storage->thumbnail = $thumbName;
-                if ($storage->save(false, ['thumbnail'])) {
-                    $updated++;
-                } 
+            if ($storage->ensureThumbnail()) {
+                $updated++;
             }
         }
 

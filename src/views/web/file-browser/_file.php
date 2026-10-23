@@ -94,7 +94,14 @@ if ($isPicker) {
         $mime = explode('/', $mimeType)[0];
 
         if ($mime == 'image') {
-            echo Html::img(Html::encode($path . $model->id_storage), ['style' => ' 
+            // A card is a couple of hundred pixels wide, so the original is
+            // never needed here; asking for it downloaded full-size images for
+            // every row. Loading is deferred as well, so paging through the
+            // picker does not queue requests for cards nobody scrolled to.
+            echo Html::img(Html::encode($path . $model->id_storage . '&type=thumb'), [
+                'loading' => 'lazy',
+                'decoding' => 'async',
+                'style' => '
         object-fit: cover;
         width: 100%;
         object-position: center 40%;

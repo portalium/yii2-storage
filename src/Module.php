@@ -56,6 +56,16 @@ class Module extends \portalium\base\Module
                     'menu' => 'web',
                     'type' => 'action',
                     'route' => '/storage/default/my-shares',
+                ],
+                [
+                    'menu' => 'web',
+                    'type' => 'action',
+                    'route' => '/storage/provider/index',
+                ],
+                [
+                    'menu' => 'web',
+                    'type' => 'action',
+                    'route' => '/storage/provider/manage',
                 ]
             ],
         ];
@@ -72,5 +82,7 @@ class Module extends \portalium\base\Module
         Event::on($this::className(), \portalium\workspace\Module::EVENT_ROLE_UPDATE_AFTER, [new TriggerActions(), 'onWorkspaceAvailableRoleUpdateAfter']);
 
         Event::on($this::className(), \portalium\workspace\Module::EVENT_USER_CREATE_AFTER, [new TriggerActions(), 'onWorkspaceUserCreateAfter']);
+
+        Event::on($this::className(), \portalium\user\Module::EVENT_USER_DELETE_BEFORE, [new TriggerActions(), 'onUserDeleteBefore']);
     }
 }

@@ -54,6 +54,10 @@ Yii::$app->view->registerCss("
         max-height: 400px;
         padding: 3px;
         min-height: 240px;
+        /* Lazy loading measures against this box, not the window. Marking it
+           as the containing block keeps the browser from treating the whole
+           grid as on-screen and fetching every thumbnail at once. */
+        contain: paint;
     }
         
     .file-select-checkbox{

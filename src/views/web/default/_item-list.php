@@ -641,6 +641,10 @@ echo ListView::widget([
         $content .= Html::img($iconData['url'], [
             'alt' => $model->title,
             'class' => 'file-icon ' . $iconData['class'],
+            // Deferred so that switching pages does not leave the previous
+            // page's images competing for the connection pool.
+            'loading' => 'lazy',
+            'decoding' => 'async',
             'style' => 'width: 100%; height: 100%;',
         ]);
         $content .= Html::endTag('div'); // .file-preview

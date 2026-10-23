@@ -108,8 +108,21 @@ if (!window.handleFilePickerClick) {
         if ($btn.hasClass("btn-loading")) return;
 
         $btn.addClass("btn-loading").css("pointer-events", "none");
-        
+
         window.currentAllowedExtensions = allowedExtensions || [];
+
+        // window.fileExtensions is written by every picker widget on the page,
+        // so the last one rendered would filter all of them. Use the clicked
+        // picker's own filter instead.
+        var ownExtensions = btn.getAttribute('data-file-extensions');
+        if (ownExtensions !== null) {
+            try {
+                var parsed = JSON.parse(ownExtensions);
+                window.fileExtensions = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                window.fileExtensions = [];
+            }
+        }
 
         window.openFilePickerModal(id, id_storage, multiple, isJson, callbackName, isPicker, attributes, allowedExtensions, allowFolderSelection);
 
@@ -303,6 +316,32 @@ if (!window.bindFilePickerEvents) {
             menu.toggleClass('show');
         });
 
+        // The modal is fetched with $.get, so the Pjax widget's own link
+        // binding never reaches the page and a pager link would load the
+        // bare picker-modal response as the whole page.
+        $(document).off('click.picker-pager').on('click.picker-pager', '#file-picker-modal .pagination a', function(e) {
+            // Where the response did carry the Pjax binding, it has taken the click already.
+            if (e.isDefaultPrevented()) {
+                return;
+            }
+            e.preventDefault();
+
+            const $item = $(this).closest('li');
+            const href = $(this).attr('href');
+            if (!href || href === '#' || $item.hasClass('active') || $item.hasClass('disabled')) {
+                return;
+            }
+
+            window.cancelPendingThumbnails && window.cancelPendingThumbnails();
+            $.pjax.reload({
+                container: '#list-item-pjax',
+                url: href,
+                push: false,
+                replace: false,
+                timeout: false,
+            });
+        });
+
         $(document).off('click.picker-outside').on('click.picker-outside', '#file-picker-modal', function(e) {
             if (!$(e.target).closest('#file-picker-modal .dropdown').length) {
                 $('#file-picker-modal .dropdown-menu').removeClass('show');
@@ -485,6 +524,7 @@ if (!window.openFilePickerModal) {
         window.currentAttributes = Array.isArray(attributes) ? attributes : [attributes];
         window.allowedExtensions = allowedExtensions || [];
         window.allowFolderSelection = allowFolderSelection || false;
+        window.pickerSelection = new Map();
 
         let inputValue = $('#' + id).val();
         let parsedValue = {};
@@ -503,6 +543,9 @@ if (!window.openFilePickerModal) {
                 : inputValue;
 
         if (document.getElementById('file-picker-modal')) {
+            // Drop the previous picker's in-flight thumbnails before its markup
+            // goes away, or they keep occupying connections the new one needs.
+            window.cancelPendingThumbnails && window.cancelPendingThumbnails($('#file-picker-modal'));
             window.closeModalById('file-picker-modal');
         }
 
@@ -590,11 +633,89 @@ $(document).ready(function() {
     window.restoreMainPageEvents();
 });
 
+// When a reload inside the picker fails or times out, pjax falls back to
+// loading its URL as the whole page and the user loses the form they opened
+// the picker from. Stay on the page and report it instead.
+if (!window._pickerPjaxErrorBound) {
+    window._pickerPjaxErrorBound = true;
+    $(document).on('pjax:error', '#file-picker-modal #list-item-pjax', function(e, xhr, textStatus) {
+        e.preventDefault();
+        if (textStatus === 'abort') {
+            return;
+        }
+        // An expired session answers AJAX with 403 rather than a redirect.
+        const expired = xhr && (xhr.status === 401 || xhr.status === 403);
+        showPickerToast(expired ? FP.t.sessionExpired : (FP.t.listLoadError || FP.t.fileLoadError), false);
+    });
+}
+
+// Cards exist only for the page on screen, so the selection made on other
+// pages is kept here (id => attributes) and marked again after each reload.
+if (!window.syncPickerSelection) {
+    window.syncPickerSelection = function() {
+        const selection = window.pickerSelection || (window.pickerSelection = new Map());
+
+        $('#file-picker-modal .file-card[data-id]').each(function() {
+            const id = Number($(this).data('id'));
+            const selected = window.multiple
+                ? $(this).find('input[type="checkbox"]').prop('checked')
+                : $(this).hasClass('active');
+
+            if (selected) {
+                selection.set(id, window.getAttributesFromDOM(id));
+            } else if (window.multiple) {
+                selection.delete(id);
+            }
+        });
+    };
+
+    window.restorePickerSelection = function() {
+        if (!window.multiple || !window.pickerSelection) {
+            return;
+        }
+        window.pickerSelection.forEach(function(attributes, id) {
+            const card = $('#file-picker-modal .file-card[data-id="' + id + '"]');
+            card.addClass('active');
+            card.find('input[type="checkbox"]').prop('checked', true);
+        });
+    };
+
+    $(document).on('pjax:beforeSend', '#file-picker-modal #list-item-pjax', function() {
+        window.syncPickerSelection();
+    });
+    $(document).on('pjax:end', '#file-picker-modal #list-item-pjax', function() {
+        // storageActions.js resets the cards on pjax:end as well; run after it.
+        setTimeout(window.restorePickerSelection, 0);
+    });
+}
+
+// Replacing the grid leaves the outgoing cards' thumbnails downloading: the
+// browser keeps a request alive even after its <img> is gone, so paging
+// quickly stacked page after page of them against the six-connection limit
+// and everything behind it — including the next page — waited. Pointing each
+// image at nothing first tells the browser to drop those requests.
+if (!window.cancelPendingThumbnails) {
+    window.cancelPendingThumbnails = function(container) {
+        const $container = container && container.length ? container : $('#file-picker-modal .files-container');
+
+        // A blank src makes some browsers re-request the page itself, so the
+        // images are pointed at an empty inline image instead.
+        const blank = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+
+        $container.find('img').each(function() {
+            if (!this.complete) {
+                this.src = blank;
+            }
+        });
+    };
+}
+
 // Supporting functions
 if (!window.refreshFilePicker) {
     window.refreshFilePicker = function() {
         const container = $('#file-picker-modal .files-container');
         if (container.length) {
+            window.cancelPendingThumbnails(container);
             $.get(FP.urls.pickerContent, {
                 fileExtensions: window.fileExtensions,
                 isPicker: window.isPicker,
@@ -664,17 +785,27 @@ if (!window.saveSelect) {
             return;
         }
 
+        window.syncPickerSelection();
+        const selection = window.pickerSelection;
+        const activeId = $('.file-card.active').data('id');
+
+        // Nothing marked on this page while the selection sits on a page that
+        // was never opened (the value the field already holds): keep it.
+        if (!window.multiple && !activeId && window.selectedIdStorage && !selection.has(Number(window.selectedIdStorage))) {
+            window.closeModalById('file-picker-modal');
+            return;
+        }
+
         const selectedFiles = window.multiple ?
-            $('.file-card input[type="checkbox"]:checked').map(function() {
-                return $(this).closest('.file-card').data('id');
-            }).get() :
-            $('.file-card.active').data('id');
-            
+            Array.from(selection.keys()) :
+            (activeId || Number(window.selectedIdStorage) || undefined);
+        const getAttributes = id => selection.get(Number(id)) || getAttributesFromDOM(id);
+
         let value;
         if (window.isJson) {
             if (window.multiple) {
                 value = JSON.stringify(selectedFiles.map(id => {
-                    const fullData = getAttributesFromDOM(id);
+                    const fullData = getAttributes(id);
                     const obj = {};
                     attributes.forEach(attr => {
                         obj[attr] = fullData[attr] || null;
@@ -682,7 +813,7 @@ if (!window.saveSelect) {
                     return obj;
                 }));
             } else {
-                const fullData = getAttributesFromDOM(selectedFiles);
+                const fullData = getAttributes(selectedFiles);
                 if (attributes.length === 1) {
                     value = JSON.stringify(fullData[attributes[0]] || null);
                 } else {
