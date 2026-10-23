@@ -457,6 +457,9 @@ class Storage extends \yii\db\ActiveRecord
             'access' => Module::t('Access'),
             'hash_file' => Module::t('Hash File'),
             'id_directory' => Module::t('Directory'),
+            'id_provider' => Module::t('Provider'),
+            'provider_file_id' => Module::t('Provider File Id'),
+            'provider_meta' => Module::t('Provider Meta'),
         ];
     }
 
@@ -772,6 +775,16 @@ class Storage extends \yii\db\ActiveRecord
 
         if (!$this->file) {
             return $this->save();
+        }
+
+        $path = Yii::getAlias('@app/../data');
+        if (!is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+
+        if (!is_writable($path)) {
+            Yii::error('Upload path is not writable, you might have forgotten to set the correct permissions, path: ' . $path, __METHOD__);
+            return false;
         }
 
         $filename = md5(rand()) . '.' . $this->file->extension;

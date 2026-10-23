@@ -211,6 +211,12 @@ echo Html::tag('li', Html::a(Module::t("Least to Most"), '#', [
 echo Html::endTag('ul');
 echo Html::endTag('div');
 
+$currentViewMode = Yii::$app->request->get('viewMode');
+if (!$currentViewMode) {
+    $rawViewMode = $_COOKIE['viewMode'] ?? null;
+    $currentViewMode = in_array($rawViewMode, ['grid', 'list'], true) ? $rawViewMode : 'grid';
+}
+
 echo Html::beginTag('div', [
  'class' => 'view-toggle d-flex align-items-center ms-auto align-self-center mb-0 flex-shrink-0'
 ]);
@@ -220,7 +226,7 @@ echo Html::beginTag('div', [
       Html::tag('span', Module::t('Grid View'), ['class' => 'btn-text']),
       [
         'id' => 'btn-grid',
-        'class' => 'btn btn-selected btn-sm me-2 d-flex align-items-center',
+        'class' => 'btn btn-sm me-2 d-flex align-items-center ' . ($currentViewMode === 'grid' ? 'btn-selected' : 'btn-unselected'),
         'type' => 'button',
         'onclick' => 'setViewMode("grid")',
       ]
@@ -231,7 +237,7 @@ echo Html::beginTag('div', [
       Html::tag('span', Module::t('List View'), ['class' => 'btn-text']),
       [
         'id' => 'btn-list',
-        'class' => 'btn btn-unselected btn-sm d-flex align-items-center',
+        'class' => 'btn btn-sm d-flex align-items-center ' . ($currentViewMode === 'list' ? 'btn-selected' : 'btn-unselected'),
         'type' => 'button',
         'onclick' => 'setViewMode("list")',
       ]
@@ -327,6 +333,27 @@ echo Html::beginTag('div', [
     echo $this->render('_filePreviewModal');
     ?>
 <script>
+function readCookieViewMode() {
+  const m = document.cookie.match(/(?:^|;\s*)viewMode=(grid|list)\b/);
+  return m ? m[1] : null;
+}
+
+// Gecerli mod: oturum tercihi > sunucunun bastigi sinif > cookie > grid.
+// Sunucu dogru sinifi bastigi icin, sessionStorage bos oldugunda (or. yeni
+// sekme, eski localStorage'dan gecis) korumali bir varsayilan yerine ekranda
+// zaten dogru olan mod okunur; aksi halde list secilmisken grid'e doner.
+function currentViewMode() {
+  const stored = sessionStorage.getItem('viewMode');
+  if (stored === 'grid' || stored === 'list') return stored;
+
+  const section = document.getElementById('files-section') || document.getElementById('folders-section');
+  if (section) {
+    if (section.classList.contains('list-view')) return 'list';
+    if (section.classList.contains('grid-view')) return 'grid';
+  }
+  return readCookieViewMode() || 'grid';
+}
+
 function applyViewModeClasses(mode) {
   const el = document.getElementById('files-section');
   const el2 = document.getElementById('folders-section');
@@ -369,8 +396,14 @@ function applyViewModeClasses(mode) {
 }
 
 function setViewMode(mode) {
-  localStorage.setItem('viewMode', mode);
-  document.cookie = "viewMode=" + mode + "; path=/; max-age=31536000";
+  // sessionStorage + max-age'siz cookie: tercih oturum boyunca korunur,
+  // tarayıcı kapanınca sıfırlanır.
+  sessionStorage.setItem('viewMode', mode);
+  // HTTPS'te Secure bayragi olmadan bazi tarayicilar SameSite cookie'yi
+  // reddedebiliyor; sunucu tarafi bu cookie'yi okuyup dogru sinifi bastigi
+  // icin bayragin dogru olmasi kritik.
+  const secureFlag = (location.protocol === 'https:') ? '; Secure' : '';
+  document.cookie = "viewMode=" + mode + "; path=/; SameSite=Lax" + secureFlag;
 
   applyViewModeClasses(mode);
 }
@@ -378,7 +411,7 @@ function setViewMode(mode) {
 document.addEventListener('DOMContentLoaded', function() {
 
   const baseUrlToUse = (document.getElementById('file-picker-modal') && window.pjaxBaseUrl) ? window.pjaxBaseUrl : pjaxBaseUrl;
-  const savedMode = localStorage.getItem('viewMode') || 'grid';
+  const savedMode = currentViewMode();
   applyViewModeClasses(savedMode);
 
   const savedSortField = localStorage.getItem('sortField');
@@ -412,7 +445,7 @@ function getSortScope() {
 }
 
 $(document).on('pjax:end', function () {
-  const mode = localStorage.getItem('viewMode') || 'grid';
+  const mode = currentViewMode();
   applyViewModeClasses(mode);
   
   updateSortDirectionLabels();
@@ -463,7 +496,7 @@ $(document).on('click', '.sort-option', function(e) {
   }).done(function () {
     $.pjax.reload({ container: "#pjax-flash-message" });
 
-    const mode = localStorage.getItem('viewMode') || 'grid';
+    const mode = currentViewMode();
     setViewMode(mode);
 
     lastListItemPjaxUrl = url.toString();
@@ -500,7 +533,7 @@ $(document).on('click', '.sort-direction', function(e) {
     timeout: 10000,
   }).done(function () {
     $.pjax.reload({ container: "#pjax-flash-message" });
-    const mode = localStorage.getItem('viewMode') || 'grid';
+    const mode = currentViewMode();
     setViewMode(mode);
     lastListItemPjaxUrl = url.toString();
   });
