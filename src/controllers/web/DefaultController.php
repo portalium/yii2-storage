@@ -95,9 +95,7 @@ class DefaultController extends Controller
 
         $userWorkspaceIds = StorageQueryService::getUserWorkspaceIds($id_user);
 
-        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManage')) {
-            StorageQueryService::applyFileShareConditions($fileDataProvider->query, $id_user, $userWorkspaceIds);
-        }
+        StorageQueryService::applyFileShareConditions($fileDataProvider->query, $id_user, $userWorkspaceIds);
 
         StorageQueryService::applyFileExtensionFilter($fileDataProvider->query, $fileExtensions);
 
@@ -108,9 +106,7 @@ class DefaultController extends Controller
             ->andWhere(['id_directory' => $id_directory])
             ->orderBy(['id_storage' => SORT_DESC]);
 
-        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
-            StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
-        }
+        StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
 
         $directoryDataProvider = new ActiveDataProvider([
             'query' => $directoryQuery,
@@ -908,13 +904,12 @@ class DefaultController extends Controller
         $userWorkspaceIds = StorageQueryService::getUserWorkspaceIds($id_user);
 
         $query = Storage::find();
+        $query->andWhere(['type' => Storage::TYPE_FILE]);
         $query->andWhere(['id_directory' => $id_directory]);
 
         StorageQueryService::applyFileExtensionFilter($query, $fileExtensions);
 
-        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManage')) {
-            StorageQueryService::applyFileShareConditions($query, $id_user, $userWorkspaceIds);
-        }
+        StorageQueryService::applyFileShareConditions($query, $id_user, $userWorkspaceIds);
 
         if (!empty($selectedIds)) {
             $params = [];
@@ -943,9 +938,7 @@ class DefaultController extends Controller
             ->andWhere(['id_directory' => $id_directory])
             ->orderBy(['id_storage' => SORT_DESC]);
 
-        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
-            StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
-        }
+        StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
 
         $directoryDataProvider = new ActiveDataProvider([
             'query' => $directoryQuery,
@@ -1059,9 +1052,7 @@ class DefaultController extends Controller
 
         $userWorkspaceIds = StorageQueryService::getUserWorkspaceIds($id_user);
 
-        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManage')) {
-            StorageQueryService::applyFileShareConditions($fileQuery, $id_user, $userWorkspaceIds);
-        }
+        StorageQueryService::applyFileShareConditions($fileQuery, $id_user, $userWorkspaceIds);
 
         StorageQueryService::applyFileExtensionFilter($fileQuery, $fileExtensions);
 
@@ -1083,9 +1074,7 @@ class DefaultController extends Controller
             $directoryQuery->andFilterWhere(['like', 'name', $q]);
         }
 
-        if (!$isPicker || !\Yii::$app->user->can('storageWebDefaultManageDirectory')) {
-            StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
-        }
+        StorageQueryService::applyDirectoryShareConditions($directoryQuery, $id_user, $userWorkspaceIds);
 
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
             'query' => $directoryQuery,

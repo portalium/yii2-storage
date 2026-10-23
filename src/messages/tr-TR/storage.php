@@ -200,6 +200,8 @@ return [
     'The file record exists but the file could not be found on the server.' => 'Dosya kaydı mevcut ancak dosya sunucuda bulunamadı.',
     'File could not be loaded.' => 'Dosya yüklenemedi.',
     'An error occurred while loading the file.' => 'Dosya yüklenirken bir hata oluştu.',
+    'The file list could not be loaded, please try again.' => 'Dosya listesi yüklenemedi, tekrar deneyin.',
+    'Your session may have expired, please refresh the page.' => 'Oturumunuz sona ermiş olabilir, sayfayı yenileyin.',
     'Are you sure you want to delete it?' => 'Silmek istediğinizden emin misiniz?',
     'Are you sure you want to delete the folder?' => 'Klasörü silmek istediğinizden emin misiniz?',
     'Opening the share screen...' => 'Paylaşım ekranı açılıyor...',
