@@ -1157,48 +1157,63 @@ async function refreshFileList() {
 }
 
 function bindPageSizer() {
-  const $select = $("#file-page-sizer select");
+  if (window.storagePageSizerBound) {
+    return;
+  }
+  window.storagePageSizerBound = true;
 
-  $select.each(function () {
-    this.onchange = null;
-  });
+  // Capture phase on document: runs before the select's inline onchange (which would load the
+  // URL as a whole page) and also covers lists loaded later, like the picker modal.
+  document.addEventListener(
+    "change",
+    function (e) {
+      const select = e.target.closest && e.target.closest("#file-page-sizer select");
+      if (!select) {
+        return;
+      }
+      e.stopPropagation();
+      reloadWithPageSize($(select));
+    },
+    true
+  );
+}
 
-  $select.off("change").on("change", function (e) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    const container = "#list-item-pjax";
-    const sizeUrl = new URL(
-      $(this).find("option:selected").attr("redirect-url") || getBaseUrl(),
-      window.location.origin
-    );
-    // search results reload themselves; every other list (picker included) reloads through index/manage
-    const isSearch = sizeUrl.pathname.endsWith("/storage/default/search");
-    const url = isSearch ? sizeUrl : new URL(getBaseUrl(), window.location.origin);
-    if (!isSearch) {
-      ["viewMode", "sortField", "sortDirection"].forEach(function (key) {
-        if (sizeUrl.searchParams.has(key)) {
-          url.searchParams.set(key, sizeUrl.searchParams.get(key));
-        }
-      });
-    }
-    url.searchParams.delete("_pjax");
-    url.searchParams.delete("page");
-    url.searchParams.set("per-page", $(this).val());
-
-    if (window.selectedIdStorage) {
-      url.searchParams.set("selectedFileId", window.selectedIdStorage);
-    } else {
-      url.searchParams.delete("selectedFileId");
-    }
-    const reloadUrl = url.pathname + url.search;
-
-    $.pjax.reload({
-      container: container,
-      url: reloadUrl,
-      push: false,
-      replace: false,
-      timeout: 10000,
+function reloadWithPageSize($select) {
+  const container = "#list-item-pjax";
+  const sizeUrl = new URL(
+    $select.find("option:selected").attr("redirect-url") || getBaseUrl(),
+    window.location.origin
+  );
+  // the picker modal and search results reload through their own URL, like their pager links;
+  // other lists reload through index/manage
+  const ownUrl =
+    $select.closest("#file-picker-modal").length > 0 ||
+    sizeUrl.pathname.endsWith("/storage/default/search");
+  const url = ownUrl ? sizeUrl : new URL(getBaseUrl(), window.location.origin);
+  if (!ownUrl) {
+    ["viewMode", "sortField", "sortDirection"].forEach(function (key) {
+      if (sizeUrl.searchParams.has(key)) {
+        url.searchParams.set(key, sizeUrl.searchParams.get(key));
+      }
     });
+  }
+  url.searchParams.delete("_pjax");
+  url.searchParams.delete("page");
+  url.searchParams.set("per-page", $select.val());
+
+  if (window.selectedIdStorage) {
+    url.searchParams.set("selectedFileId", window.selectedIdStorage);
+  } else {
+    url.searchParams.delete("selectedFileId");
+  }
+
+  window.cancelPendingThumbnails && window.cancelPendingThumbnails();
+  $.pjax.reload({
+    container: container,
+    url: url.pathname + url.search,
+    push: false,
+    replace: false,
+    timeout: 10000,
   });
 }
 
