@@ -1166,15 +1166,31 @@ function bindPageSizer() {
   $select.off("change").on("change", function (e) {
     e.preventDefault();
     e.stopImmediatePropagation();
-    const perPage = $(this).val();
     const container = "#list-item-pjax";
-    let reloadUrl = getBaseUrl();
-    const separator = reloadUrl.includes("?") ? "&" : "?";
-    reloadUrl += separator + "per-page=" + perPage;
+    const sizeUrl = new URL(
+      $(this).find("option:selected").attr("redirect-url") || getBaseUrl(),
+      window.location.origin
+    );
+    // search results reload themselves; every other list (picker included) reloads through index/manage
+    const isSearch = sizeUrl.pathname.endsWith("/storage/default/search");
+    const url = isSearch ? sizeUrl : new URL(getBaseUrl(), window.location.origin);
+    if (!isSearch) {
+      ["viewMode", "sortField", "sortDirection"].forEach(function (key) {
+        if (sizeUrl.searchParams.has(key)) {
+          url.searchParams.set(key, sizeUrl.searchParams.get(key));
+        }
+      });
+    }
+    url.searchParams.delete("_pjax");
+    url.searchParams.delete("page");
+    url.searchParams.set("per-page", $(this).val());
 
     if (window.selectedIdStorage) {
-      reloadUrl += "&selectedFileId=" + window.selectedIdStorage;
+      url.searchParams.set("selectedFileId", window.selectedIdStorage);
+    } else {
+      url.searchParams.delete("selectedFileId");
     }
+    const reloadUrl = url.pathname + url.search;
 
     $.pjax.reload({
       container: container,

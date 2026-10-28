@@ -12,6 +12,8 @@ use portalium\storage\models\Storage;
 use portalium\theme\bundles\IconAsset;
 use portalium\theme\widgets\Panel;
 
+$multiple = $multiple ?? 0;
+
 $this->registerCss(
     <<<CSS
     .storage-item {
@@ -254,7 +256,7 @@ echo ListView::widget([
                 ];
         },
     'layout' => '{items}{summary}{pagesizer}{pager}',
-
+    'pageSizer' => ['availableSizes' => [12 => 12, 24 => 24, 48 => 48]],
 ]);
 Pjax::end();
 if ($isPicker) {

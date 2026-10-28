@@ -100,6 +100,7 @@ class DefaultController extends Controller
         StorageQueryService::applyFileExtensionFilter($fileDataProvider->query, $fileExtensions);
 
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
+        $fileDataProvider->pageSizeKey = 'storage/files';
 
         $directoryQuery = Storage::find()
             ->where(['type' => Storage::TYPE_DIRECTORY])
@@ -110,9 +111,7 @@ class DefaultController extends Controller
 
         $directoryDataProvider = new ActiveDataProvider([
             'query' => $directoryQuery,
-            'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
-            ],
+            'pagination' => false,
         ]);
 
         if (Yii::$app->request->isPjax) {
@@ -169,6 +168,7 @@ class DefaultController extends Controller
         StorageQueryService::applyFileExtensionFilter($fileDataProvider->query, $fileExtensions);
 
         $fileDataProvider->pagination->pageSize = self::DEFAULT_PAGE_SIZE;
+        $fileDataProvider->pageSizeKey = 'storage/files';
 
 
         $directoryQuery = Storage::find()
@@ -178,9 +178,7 @@ class DefaultController extends Controller
 
         $directoryDataProvider = new ActiveDataProvider([
             'query' => $directoryQuery,
-            'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
-            ],
+            'pagination' => false,
         ]);
 
         if (Yii::$app->request->isPjax) {
@@ -929,6 +927,7 @@ class DefaultController extends Controller
             'pagination' => [
                 'pageSize' => self::DEFAULT_PAGE_SIZE,
             ],
+            'pageSizeKey' => 'storage/files',
             'sort' => [
                 'defaultOrder' => ['id_storage' => SORT_DESC],
             ],
@@ -942,9 +941,7 @@ class DefaultController extends Controller
 
         $directoryDataProvider = new ActiveDataProvider([
             'query' => $directoryQuery,
-            'pagination' => [
-                'pageSize' => self::DEFAULT_PAGE_SIZE - 1,
-            ],
+            'pagination' => false,
         ]);
 
         ob_start();
@@ -1056,9 +1053,10 @@ class DefaultController extends Controller
 
         StorageQueryService::applyFileExtensionFilter($fileQuery, $fileExtensions);
 
-        $fileDataProvider = new \yii\data\ActiveDataProvider([
+        $fileDataProvider = new \portalium\data\ActiveDataProvider([
             'query' => $fileQuery,
             'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE],
+            'pageSizeKey' => 'storage/files',
             'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
         ]);
 
@@ -1078,7 +1076,7 @@ class DefaultController extends Controller
 
         $directoryDataProvider = new \yii\data\ActiveDataProvider([
             'query' => $directoryQuery,
-            'pagination' => ['pageSize' => self::DEFAULT_PAGE_SIZE - 1],
+            'pagination' => false,
             'sort' => ['defaultOrder' => ['id_storage' => SORT_DESC]],
         ]);
 
@@ -2001,9 +1999,7 @@ class DefaultController extends Controller
                     ->where(['type' => Storage::TYPE_DIRECTORY])
                     ->andWhere(['id_directory' => $directory->id_storage])
                     ->orderBy(['id_storage' => SORT_DESC]),
-                'pagination' => [
-                    'pageSize' => 24,
-                ],
+                'pagination' => false,
             ]);
 
             return $this->render('view-share-folder', [

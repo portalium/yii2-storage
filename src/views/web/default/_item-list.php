@@ -449,6 +449,7 @@ echo ListView::widget([
         . '<div id="file-page-sizer" class="d-flex" style="gap: 10px;">{pagesizer}{pager}</div>'
         . '</div>',
     'customLayout' => true,
+    'pageSizer' => ['availableSizes' => [12 => 12, 24 => 24, 48 => 48]],
     'emptyText' => '',
     'itemView' => function ($model, $key, $index, $widget) use ($isPicker) {
 
