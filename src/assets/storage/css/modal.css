@@ -1213,3 +1213,40 @@
     height: 65vh;
   }
 }
+
+/* Toolbar on phones: search on its own row, buttons below, secondary buttons icon-only */
+@media (max-width: 767px) {
+  .file-controls > .d-flex {
+    flex-wrap: wrap !important;
+    row-gap: 8px;
+  }
+
+  .file-controls .input-group {
+    flex: 1 0 100% !important;
+    min-width: 0 !important;
+  }
+
+  .file-controls #sortDropdownBtn .btn-text,
+  .file-controls .view-toggle .btn-text,
+  .file-controls [onclick^="openShareStorageModal"] .btn-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .file-controls #sortDropdownBtn .fa,
+  .file-controls .view-toggle .fa,
+  .file-controls [onclick^="openShareStorageModal"] .fa {
+    margin-right: 0 !important;
+  }
+
+  .file-controls [onclick^="openShareStorageModal"],
+  .file-controls #sortDropdownBtn {
+    min-width: 42px !important;
+    width: auto !important;
+    justify-content: center;
+  }
+}
