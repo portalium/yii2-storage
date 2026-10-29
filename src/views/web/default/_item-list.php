@@ -158,7 +158,7 @@ foreach ($directories as $model) {
     $folderName = Html::encode($model->name);
 
     $content = Html::beginTag('div', [
-        'class' => ($isPicker ? 'col-md-3 col-sm-6 col-12 mb-3' : 'col-md-2 col-sm-3 col-6 mb-3'),
+        'class' => ($isPicker ? 'col-md-3 col-sm-6 col-12 mb-3' : 'col-xl-2 col-lg-3 col-sm-4 col-6 mb-3'),
         'id' => 'folder-' . $folderId,
     ]);
 

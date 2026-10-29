@@ -1214,8 +1214,8 @@
   }
 }
 
-/* Toolbar on phones: search on its own row, buttons below, secondary buttons icon-only */
-@media (max-width: 767px) {
+/* Toolbar below 992px (phones, and tablets with the sidebar open): search on its own row, buttons below, secondary buttons icon-only */
+@media (max-width: 991.98px) {
   .file-controls > .d-flex {
     flex-wrap: wrap !important;
     row-gap: 8px;
